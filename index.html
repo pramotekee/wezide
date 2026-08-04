@@ -852,51 +852,88 @@ document.getElementById('lightbox').addEventListener('click', (e)=>{
   if(e.target.id === 'lightbox') e.currentTarget.classList.remove('open');
 });
 
-/* ---------- Hero carousel (auto-scroll + drag) — ดึงจาก tab herobanner ที่ admin ดูแลเอง ---------- */
+/* ---------- Hero carousel (auto-scroll + drag) — ดึงจาก tab herobanner ที่ admin ดูแลเอง ----------
+   จำนวนชุดที่ต่อซ้ำคำนวณแบบ dynamic จากความกว้างจอ + จำนวน banner จริง เพื่อให้วนลูปแบบไม่มีรอยต่อ
+   โดยไม่เห็นภาพซ้ำเต็มจอเวลามี banner น้อย (เช่น 1-2 ใบ) ------------------------------------------ */
+let heroPeriod = 0; // ความกว้างของ banner "1 ชุด" (รวม gap) หน่วยพิกเซล ใช้เป็นระยะรีเซ็ตตอนวนลูป
+let heroDragging = false, heroStartX = 0, heroStartOffset = 0, heroUserOffset = 0, heroAutoOffset = 0;
+let heroRafStarted = false, heroDragBound = false;
+
 async function loadHeroBanners(){
   const res = await api('getHeroBanners');
+  STATE.heroBanners = res.success ? res.banners : [];
+  buildHeroTrack();
+  bindHeroDrag();
+  runHeroLoop();
+
+  // จอเปลี่ยนขนาด (resize เบราว์เซอร์ / หมุนจอมือถือ) -> คำนวณจำนวนชุดใหม่ให้พอดีกับความกว้างจอปัจจุบัน
+  let resizeTimer;
+  window.addEventListener('resize', ()=>{
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(buildHeroTrack, 200);
+  });
+}
+
+// สร้าง/คำนวณจำนวนชุดของ track ใหม่ ให้กว้างพอสำหรับวนลูปแบบไม่มีรอยต่อ ไม่ว่าจะมี banner กี่ใบ หรือจอกว้างแค่ไหน
+function buildHeroTrack(){
   const track = document.getElementById('heroTrack');
-  const banners = res.success ? res.banners : [];
-  if(banners.length === 0){ track.innerHTML=''; return; }
-  const items = banners.map(b => `
+  const wrap = document.getElementById('heroWrap');
+  const banners = STATE.heroBanners || [];
+  if(banners.length === 0){ track.innerHTML=''; heroPeriod = 0; return; }
+
+  const oneSet = banners.map(b => `
     <a class="hero-card" href="${b.link_url || '#'}" target="_blank" rel="noopener">
       <img src="${b.image_url}" alt="banner" style="width:100%;border-radius:10px;display:block;">
     </a>`).join('');
-  track.innerHTML = items + items; // ต่อซ้ำเพื่อวนลูปไม่มีรอยต่อ
-  initHeroDrag();
+
+  // step 1: render 2 ชุดก่อน เพื่อวัดความกว้างจริงของ "1 ชุด" (รวม gap ระหว่างการ์ด) จาก offsetLeft จริงในเบราว์เซอร์
+  track.innerHTML = oneSet + oneSet;
+  const cards = track.querySelectorAll('.hero-card');
+  const n = banners.length;
+  let period = cards.length > n ? (cards[n].offsetLeft - cards[0].offsetLeft) : 0;
+  if(!period || period <= 0) period = track.scrollWidth / 2 || 1; // กันหารด้วย 0 เผื่อวัดไม่ได้
+
+  // step 2: ต่อซ้ำให้ความกว้างรวม >= 2 เท่าของความกว้างจอ + เผื่ออีก 1 ชุด กันเห็นรอยต่อ/โล่งตอนลากเร็วๆ
+  const wrapWidth = wrap.clientWidth || window.innerWidth;
+  const copiesNeeded = Math.max(2, Math.ceil((wrapWidth * 2) / period) + 1);
+  track.innerHTML = oneSet.repeat(copiesNeeded);
+
+  heroPeriod = period;
+  heroAutoOffset = 0; // รีเซ็ตตำแหน่งเมื่อคำนวณ layout ใหม่ (เช่นตอน resize) กันภาพกระโดด
 }
 
-function initHeroDrag(){
-  const wrap = document.getElementById('heroWrap');
+function runHeroLoop(){
+  if(heroRafStarted) return; // ผูกลูป animation ครั้งเดียวพอ ไม่ต้องเริ่มซ้ำตอน resize
+  heroRafStarted = true;
   const track = document.getElementById('heroTrack');
-  let autoOffset = 0;
-  let dragging = false, startX = 0, startOffset = 0, userOffset = 0;
-  let rafId;
-
   function loop(){
-    if(!dragging){
-      autoOffset -= 0.4;
-      const trackWidth = track.scrollWidth / 2;
-      if(Math.abs(autoOffset) >= trackWidth) autoOffset = 0;
-      track.style.transform = `translateX(${autoOffset + userOffset}px)`;
+    if(!heroDragging && heroPeriod > 0){
+      heroAutoOffset -= 0.4;
+      if(Math.abs(heroAutoOffset) >= heroPeriod) heroAutoOffset += heroPeriod; // วนกลับทีละ 1 คาบ ไม่ใช่รีเซ็ตเป็น 0 กันภาพกระตุก
+      track.style.transform = `translateX(${heroAutoOffset + heroUserOffset}px)`;
     }
-    rafId = requestAnimationFrame(loop);
+    requestAnimationFrame(loop);
   }
   loop();
+}
 
+function bindHeroDrag(){
+  if(heroDragBound) return; // ผูก event ครั้งเดียวพอ
+  heroDragBound = true;
+  const wrap = document.getElementById('heroWrap');
   wrap.addEventListener('pointerdown', (e)=>{
-    dragging = true; wrap.classList.add('dragging');
-    startX = e.clientX; startOffset = userOffset;
+    heroDragging = true; wrap.classList.add('dragging');
+    heroStartX = e.clientX; heroStartOffset = heroUserOffset;
   });
   window.addEventListener('pointermove', (e)=>{
-    if(!dragging) return;
-    userOffset = startOffset + (e.clientX - startX);
+    if(!heroDragging) return;
+    heroUserOffset = heroStartOffset + (e.clientX - heroStartX);
   });
   window.addEventListener('pointerup', ()=>{
-    if(!dragging) return;
-    dragging = false; wrap.classList.remove('dragging');
-    autoOffset += userOffset;
-    userOffset = 0;
+    if(!heroDragging) return;
+    heroDragging = false; wrap.classList.remove('dragging');
+    heroAutoOffset += heroUserOffset;
+    heroUserOffset = 0;
   });
 }
 
