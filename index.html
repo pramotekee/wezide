@@ -881,10 +881,23 @@ function buildHeroTrack(){
   const banners = STATE.heroBanners || [];
   if(banners.length === 0){ track.innerHTML=''; heroPeriod = 0; return; }
 
-  const oneSet = banners.map(b => `
-    <a class="hero-card" href="${b.link_url || '#'}" target="_blank" rel="noopener">
-      <img src="${b.image_url}" alt="banner" style="width:100%;border-radius:10px;display:block;">
-    </a>`).join('');
+  // เติม https:// ให้ลิงก์ที่พิมพ์แบบไม่มี protocol (เช่น "www.google.com") กัน browser ตีความเป็น path ของเว็บตัวเอง -> 404
+  // ถ้าช่อง link_url ว่าง คืนค่าว่างกลับไป เพื่อให้ renderer ด้านล่างรู้ว่าไม่ต้องทำเป็นลิงก์
+  function normalizeHeroLink(url){
+    const u = String(url || '').trim();
+    if(!u) return '';
+    if(/^(https?:|mailto:|tel:)/i.test(u)) return u;
+    return 'https://' + u;
+  }
+
+  const oneSet = banners.map(b => {
+    const link = normalizeHeroLink(b.link_url);
+    const img = `<img src="${b.image_url}" alt="banner" style="width:100%;border-radius:10px;display:block;">`;
+    // A) มีลิงก์ -> ผูก <a> กดเปิดได้ / B) ไม่มีลิงก์ -> <div> เฉยๆ แตะ/คลิกแล้วไม่เกิดอะไรขึ้น
+    return link
+      ? `<a class="hero-card" href="${link}" target="_blank" rel="noopener">${img}</a>`
+      : `<div class="hero-card" style="cursor:default;">${img}</div>`;
+  }).join('');
 
   // step 1: render 2 ชุดก่อน เพื่อวัดความกว้างจริงของ "1 ชุด" (รวม gap ระหว่างการ์ด) จาก offsetLeft จริงในเบราว์เซอร์
   track.innerHTML = oneSet + oneSet;
