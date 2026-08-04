@@ -12,7 +12,17 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Antonio:wght@100;400;700&family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Antonio:wght@100;400;700&family=Lexend:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Vercel Analytics + Speed Insights (static site) -->
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
 
 <style>
   :root{
@@ -35,8 +45,11 @@
   html{ scroll-behavior:smooth; }
   body{
     margin:0; background:var(--bg); color:var(--text);
-    font-family:'Kanit', sans-serif; font-weight:400;
+    font-family:'Inter', sans-serif; font-weight:400; font-size:15px; line-height:1.6;
     -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3, .topic-title, .vb-label, .btn, .modal-head h3, .creator-name{
+    font-family:'Lexend', sans-serif;
   }
   img{ max-width:100%; display:block; }
   button{ font-family:inherit; cursor:pointer; border:none; background:none; }
@@ -106,14 +119,10 @@
     will-change:transform;
   }
   .hero-card{
-    width:180px; flex-shrink:0; background:rgba(255,255,255,0.08);
-    border:1px solid rgba(255,255,255,0.18); border-radius:14px; padding:14px;
-    color:#fff; backdrop-filter:blur(6px);
+    width:260px; flex-shrink:0; border-radius:14px; overflow:hidden;
+    border:1px solid rgba(255,255,255,0.18); display:block;
   }
-  .hero-card .hc-cat{ font-size:11px; color:var(--accent); margin-bottom:6px; }
-  .hero-card .hc-title{ font-size:14px; font-weight:500; line-height:1.4; min-height:38px; }
-  .hero-card .hc-bar{ height:6px; border-radius:4px; background:rgba(255,255,255,0.18); margin-top:12px; overflow:hidden; display:flex; }
-  .hero-card .hc-bar span{ height:100%; background:var(--accent); }
+  .hero-card img{ aspect-ratio:16/9; object-fit:cover; }
 
   /* ===== Search + Category pills ===== */
   .filter-bar{
@@ -141,7 +150,7 @@
   .category-pill.selected{ background:var(--primary); border-color:var(--primary); color:#fff; font-weight:500; }
 
   /* ===== Feed ===== */
-  .feed{ max-width:640px; margin:0 auto; padding:20px 16px 100px; display:flex; flex-direction:column; gap:20px; }
+  .feed{ max-width:640px; margin:0 auto; padding:20px 16px 60px; display:flex; flex-direction:column; gap:20px; }
   .empty-state{ text-align:center; padding:60px 20px; color:var(--text-muted); }
   .empty-state .emoji{ font-size:40px; margin-bottom:10px; }
 
@@ -264,17 +273,24 @@
   }
   .jump-top.show{ display:flex; }
 
-  /* FAB create */
-  .fab-create{
-    position:fixed; bottom:24px; left:20px; padding:13px 20px; border-radius:100px;
-    background:var(--accent); color:var(--primary-dark); font-weight:600; font-size:14px;
-    box-shadow:0 8px 20px rgba(255,201,60,0.5); z-index:60; display:flex; align-items:center; gap:6px;
-  }
-
   footer.site-footer{
-    text-align:center; padding:32px 20px 100px; color:var(--text-muted); font-size:12.5px;
+    background:var(--primary-dark); color:rgba(255,255,255,0.85); padding:40px 20px 24px; margin-top:20px;
   }
-  footer.site-footer .f-brand{ font-family:'Antonio',sans-serif; font-weight:700; color:var(--primary); font-size:18px; margin-bottom:6px; }
+  .footer-inner{
+    max-width:640px; margin:0 auto; display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:24px;
+    padding-bottom:24px; border-bottom:1px solid rgba(255,255,255,0.15);
+  }
+  @media(max-width:480px){ .footer-inner{ grid-template-columns:1fr; gap:20px; } }
+  footer.site-footer .f-brand{ font-family:'Antonio',sans-serif; font-weight:700; color:#fff; font-size:22px; margin-bottom:8px; }
+  footer.site-footer .f-desc{ font-size:12.5px; line-height:1.7; color:rgba(255,255,255,0.65); }
+  footer.site-footer .f-heading{ font-family:'Lexend',sans-serif; font-size:13px; font-weight:600; color:#fff; margin-bottom:10px; }
+  footer.site-footer .footer-col{ display:flex; flex-direction:column; gap:8px; }
+  footer.site-footer .footer-col a{ font-size:12.5px; color:rgba(255,255,255,0.7); }
+  footer.site-footer .footer-col a:hover{ color:var(--accent); }
+  #footerCategoryLinks{ display:flex; flex-direction:column; gap:8px; }
+  footer.site-footer .footer-bottom{
+    max-width:640px; margin:18px auto 0; text-align:center; font-size:11.5px; color:rgba(255,255,255,0.5);
+  }
 </style>
 </head>
 <body>
@@ -282,9 +298,9 @@
 <header class="site-header">
   <div class="logo-wrap">
     <span class="brand">WEZIDE</span>
-    <span class="tagline">Opinion matter!</span>
   </div>
   <div class="header-actions" id="headerActions">
+    <button class="btn btn-accent" id="createBtn">＋ สร้างหัวข้อ</button>
     <button class="btn btn-ghost" id="loginBtn">เข้าสู่ระบบ</button>
   </div>
 </header>
@@ -308,12 +324,26 @@
 
 <main class="feed" id="feed"></main>
 
-<button class="fab-create" id="fabCreate">＋ สร้างหัวข้อ</button>
 <button class="jump-top" id="jumpTop">↑</button>
 
 <footer class="site-footer">
-  <div class="f-brand">WEZIDE</div>
-  เวทีความเห็น เลือกข้างที่ใช่ของคุณ<br>© 2026 WEZIDE. All opinions matter.
+  <div class="footer-inner">
+    <div class="footer-col footer-brand-col">
+      <div class="f-brand">WEZIDE</div>
+      <p class="f-desc">เวทีความเห็น เลือกข้างที่ใช่ของคุณ<br>สร้างหัวข้อ แชร์มุมมอง แล้วดูว่าคนอื่นคิดเห็นยังไง</p>
+    </div>
+    <div class="footer-col">
+      <div class="f-heading">เมนู</div>
+      <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">หน้าแรก</a>
+      <a href="#" id="footerCreateLink">สร้างหัวข้อ</a>
+      <a href="#" id="footerLoginLink">เข้าสู่ระบบ / สมัครสมาชิก</a>
+    </div>
+    <div class="footer-col">
+      <div class="f-heading">หมวดยอดนิยม</div>
+      <div id="footerCategoryLinks"></div>
+    </div>
+  </div>
+  <div class="footer-bottom">© 2026 WEZIDE. All opinions matter.</div>
 </footer>
 
 <!-- ===== Login Modal ===== -->
@@ -468,16 +498,20 @@ function logout(){
 
 function renderHeaderAuth(){
   const el = document.getElementById('headerActions');
-  if(isLoggedIn()){
-    el.innerHTML = `
-      <button class="btn btn-ghost" id="createBtnHeader">สร้างหัวข้อ</button>
-      <button class="avatar-btn" id="logoutBtn" title="ออกจากระบบ">${STATE.session.username ? STATE.session.username.charAt(0).toUpperCase() : '?'}</button>
-    `;
-    document.getElementById('logoutBtn').addEventListener('click', logout);
-  } else {
-    el.innerHTML = `<button class="btn btn-ghost" id="loginBtn">เข้าสู่ระบบ</button>`;
-    document.getElementById('loginBtn').addEventListener('click', ()=> openModal('loginModal'));
-  }
+  el.innerHTML = `
+    <button class="btn btn-accent" id="createBtn">＋ สร้างหัวข้อ</button>
+    <button class="btn btn-ghost" id="authBtn">${isLoggedIn() ? 'ออกจากระบบ' : 'เข้าสู่ระบบ'}</button>
+  `;
+  document.getElementById('createBtn').addEventListener('click', handleCreateClick);
+  document.getElementById('authBtn').addEventListener('click', ()=>{
+    if(isLoggedIn()) logout();
+    else openModal('loginModal');
+  });
+}
+
+function handleCreateClick(){
+  if(!isLoggedIn()){ openModal('loginModal'); return; }
+  openModal('createModal');
 }
 
 document.getElementById('openSignupBtn').addEventListener('click', ()=>{
@@ -647,8 +681,23 @@ async function loadCategories(){
 function selectCategory(cat, el){
   STATE.activeCategory = cat;
   document.querySelectorAll('.category-pill').forEach(p=> p.classList.remove('selected'));
-  el.classList.add('selected');
+  if(el) el.classList.add('selected');
   loadTopics();
+}
+
+function renderFooterCategories(){
+  const wrap = document.getElementById('footerCategoryLinks');
+  wrap.innerHTML = STATE.categories.slice(0, 6).map(cat =>
+    `<a href="#" data-cat="${escapeHtml(cat)}">${escapeHtml(cat)}</a>`
+  ).join('');
+  wrap.querySelectorAll('a').forEach(a=>{
+    a.addEventListener('click', (e)=>{
+      e.preventDefault();
+      const pillEl = Array.from(document.querySelectorAll('.category-pill')).find(p => p.textContent === a.dataset.cat);
+      selectCategory(a.dataset.cat, pillEl);
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+  });
 }
 
 /* ---------- Topics / Feed ---------- */
@@ -659,7 +708,6 @@ async function loadTopics(){
   const res = await api('getTopics', params);
   STATE.topics = res.success ? res.topics : [];
   renderFeed();
-  renderHero();
 }
 
 let searchTimer;
@@ -731,7 +779,7 @@ function topicCardHTML(t){
     <div class="vote-footnote">${t.total_votes} คนร่วมโหวตแล้ว · เปลี่ยนใจได้อีก 2 ครั้ง</div>
 
     <div class="mini-dash">
-      <div class="mini-dash-title">สรุปผู้ร่วมโหวต</div>
+      <div class="mini-dash-title">สรุปผู้ร่วมโหวตทั้งหมด <b style="color:var(--primary)">${t.total_votes}</b> คน</div>
       <div id="dash-${t.topic_id}"></div>
     </div>
   </div>`;
@@ -820,17 +868,16 @@ document.getElementById('lightbox').addEventListener('click', (e)=>{
   if(e.target.id === 'lightbox') e.currentTarget.classList.remove('open');
 });
 
-/* ---------- Hero carousel (auto-scroll + drag) ---------- */
-function renderHero(){
+/* ---------- Hero carousel (auto-scroll + drag) — ดึงจาก tab herobanner ที่ admin ดูแลเอง ---------- */
+async function loadHeroBanners(){
+  const res = await api('getHeroBanners');
   const track = document.getElementById('heroTrack');
-  const top5 = STATE.topics.slice(0, 8);
-  if(top5.length === 0){ track.innerHTML=''; return; }
-  const items = top5.map(t=> `
-    <div class="hero-card">
-      <div class="hc-cat">${escapeHtml(t.category)}</div>
-      <div class="hc-title">${escapeHtml(t.title)}</div>
-      <div class="hc-bar"><span style="width:${t.side_a_percent}%"></span></div>
-    </div>`).join('');
+  const banners = res.success ? res.banners : [];
+  if(banners.length === 0){ track.innerHTML=''; return; }
+  const items = banners.map(b => `
+    <a class="hero-card" href="${b.link_url || '#'}" target="_blank" rel="noopener">
+      <img src="${b.image_url}" alt="banner" style="width:100%;border-radius:10px;display:block;">
+    </a>`).join('');
   track.innerHTML = items + items; // ต่อซ้ำเพื่อวนลูปไม่มีรอยต่อ
   initHeroDrag();
 }
@@ -877,13 +924,11 @@ document.getElementById('jumpTop').addEventListener('click', ()=>{
   window.scrollTo({top:0, behavior:'smooth'});
 });
 
-/* ---------- FAB create ---------- */
-document.getElementById('fabCreate').addEventListener('click', ()=>{
-  if(!isLoggedIn()){
-    openModal('loginModal');
-    return;
-  }
-  openModal('createModal');
+/* ---------- Footer links ---------- */
+document.getElementById('footerCreateLink').addEventListener('click', (e)=>{ e.preventDefault(); handleCreateClick(); });
+document.getElementById('footerLoginLink').addEventListener('click', (e)=>{
+  e.preventDefault();
+  if(isLoggedIn()) logout(); else openModal('loginModal');
 });
 
 /* ---------- Init ---------- */
@@ -891,8 +936,10 @@ document.getElementById('fabCreate').addEventListener('click', ()=>{
   renderHeaderAuth();
   loadProvinces();
   await loadCategories();
+  renderFooterCategories();
   await loadTopics();
   loadDashboards();
+  loadHeroBanners();
 
   // ถ้าเปิดมาจากลิงก์แชร์ ?topic=ID ให้เลื่อนไปหาการ์ดนั้น
   const params = new URLSearchParams(location.search);
