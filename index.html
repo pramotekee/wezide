@@ -282,7 +282,10 @@
   }
   .footer-col{ display:flex; flex-direction:column; gap:8px; text-align:left; }
   .footer-col.footer-brand-col{ flex:1 1 260px; max-width:340px; }
-  @media(max-width:480px){ .footer-inner{ flex-direction:column; gap:20px; } }
+  @media(max-width:480px){
+    .footer-inner{ flex-direction:column; flex-wrap:nowrap; gap:24px; }
+    .footer-col.footer-brand-col{ flex:none; max-width:none; }
+  }
   footer.site-footer .f-brand{ font-family:'Antonio',sans-serif; font-weight:700; color:#fff; font-size:22px; margin-bottom:8px; }
   footer.site-footer .f-desc{ font-size:12.5px; line-height:1.7; color:rgba(255,255,255,0.65); text-align:left; }
   footer.site-footer .f-heading{ font-family:'Lexend',sans-serif; font-size:13px; font-weight:600; color:#fff; margin-bottom:10px; }
@@ -664,7 +667,7 @@ async function loadCategories(){
   wrap.innerHTML = '';
   const allPill = document.createElement('button');
   allPill.className = 'category-pill selected';
-  allPill.textContent = 'ทั้งหมด';
+  allPill.textContent = 'All';
   allPill.addEventListener('click', ()=> selectCategory('', allPill));
   wrap.appendChild(allPill);
 
