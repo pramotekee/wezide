@@ -238,6 +238,31 @@
   }
   .field input:focus, .field select:focus, .field textarea:focus{ border-color:var(--primary); background:#fff; }
   .field-error{ color:#D64545; font-size:12px; margin-top:4px; display:none; }
+  .field-hint{ font-weight:400; color:var(--text-muted); }
+
+  /* passcode show/hide toggle */
+  .passcode-wrap{ position:relative; }
+  .passcode-wrap input{ padding-right:42px; }
+  .passcode-toggle{
+    position:absolute; right:4px; top:50%; transform:translateY(-50%);
+    width:32px; height:32px; display:flex; align-items:center; justify-content:center;
+    font-size:16px; color:var(--text-muted); border-radius:8px;
+  }
+  .passcode-toggle:hover{ color:var(--primary); }
+
+  /* loading spinners (แทนข้อความ "..." ตอนกำลังประมวลผล) */
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .upload-spinner{
+    width:22px; height:22px; margin:0 auto; border-radius:50%;
+    border:3px solid rgba(255,255,255,0.4); border-top-color:#fff;
+    animation:spin .7s linear infinite;
+  }
+  .btn-spinner{
+    display:inline-block; width:14px; height:14px; margin-right:7px; vertical-align:-2px;
+    border-radius:50%; border:2px solid rgba(255,255,255,0.45); border-top-color:#fff;
+    animation:spin .7s linear infinite;
+  }
+  .btn-ghost .btn-spinner{ border-color:rgba(91,42,158,0.3); border-top-color:var(--primary); }
   .full-btn{ width:100%; padding:13px; border-radius:12px; font-size:15px; font-weight:600; }
   .divider-note{
     text-align:center; margin-top:18px; padding-top:16px; border-top:1px dashed var(--line);
@@ -362,7 +387,10 @@
     </div>
     <div class="field">
       <label>Passcode</label>
-      <input type="password" id="loginPasscode" placeholder="Passcode">
+      <div class="passcode-wrap">
+        <input type="password" id="loginPasscode" placeholder="Passcode">
+        <button type="button" class="passcode-toggle" data-target="loginPasscode" aria-label="แสดง/ซ่อน Passcode">👁️</button>
+      </div>
     </div>
     <div class="field-error" id="loginError"></div>
     <button class="btn btn-primary full-btn" id="loginSubmitBtn">เข้าสู่ระบบ</button>
@@ -383,14 +411,20 @@
     </div>
 
     <div class="field" style="text-align:center;">
-      <label>รูปโปรไฟล์ (ไม่บังคับ)</label>
+      <label>รูปโปรไฟล์</label>
       <div class="creator-avatar" id="signupAvatarPreview" style="width:72px;height:72px;margin:0 auto;font-size:24px;" onclick="document.getElementById('signupAvatarFile').click()">＋</div>
       <input type="file" accept="image/*" id="signupAvatarFile" style="display:none;">
     </div>
     <div class="field"><label>Username</label><input type="text" id="suUsername"></div>
     <div class="field"><label>Email</label><input type="email" id="suEmail" placeholder="you@email.com"></div>
     <div class="field"><label>เบอร์โทรศัพท์</label><input type="tel" id="suPhone" placeholder="08xxxxxxxx"></div>
-    <div class="field"><label>ตั้ง Passcode</label><input type="password" id="suPasscode"></div>
+    <div class="field">
+      <label>ตั้ง Passcode <span class="field-hint">(อย่างน้อย 6 หลัก)</span></label>
+      <div class="passcode-wrap">
+        <input type="password" id="suPasscode" minlength="6">
+        <button type="button" class="passcode-toggle" data-target="suPasscode" aria-label="แสดง/ซ่อน Passcode">👁️</button>
+      </div>
+    </div>
     <div class="field"><label>วันเกิด</label><input type="date" id="suBirthday"></div>
     <div class="field">
       <label>เพศ</label>
@@ -407,6 +441,19 @@
     </div>
     <div class="field-error" id="signupError"></div>
     <button class="btn btn-primary full-btn" id="signupSubmitBtn">สมัครสมาชิก</button>
+  </div>
+</div>
+
+<!-- ===== Welcome Modal (โผล่หลังสมัครสมาชิกสำเร็จ แทน toast เล็กๆ เดิม) ===== -->
+<div class="modal-overlay" id="welcomeModal">
+  <div class="modal-box" style="text-align:center;">
+    <button class="modal-close" data-close="welcomeModal" style="margin-left:auto;display:block;">✕</button>
+    <h3 style="margin:0 0 10px;">ยินดีต้อนรับคุณ <span id="welcomeUsername" style="color:var(--primary)"></span> เข้าสู่ WEZIDE</h3>
+    <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 22px;line-height:1.6;">การตั้งคำถามและความขี้สงสัย คือทักษะที่สำคัญของคนยุคใหม่</p>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-primary full-btn" id="welcomeCreateBtn">สร้างคำถาม</button>
+      <button class="btn btn-ghost full-btn" id="welcomeHomeBtn">กลับหน้าแรก</button>
+    </div>
   </div>
 </div>
 
@@ -482,6 +529,28 @@ document.querySelectorAll('.modal-overlay').forEach(ov=>{
   ov.addEventListener('click', (e)=>{ if(e.target === ov) ov.classList.remove('open'); });
 });
 
+/* ---------- Passcode show/hide toggle ---------- */
+document.querySelectorAll('.passcode-toggle').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const input = document.getElementById(btn.dataset.target);
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    btn.textContent = show ? '🙈' : '👁️';
+  });
+});
+
+/* ---------- Button loading state helper (แทนข้อความ "..." ตอนรอผลจาก server) ---------- */
+function setBtnLoading(btn, loading, loadingLabel){
+  if(loading){
+    btn.dataset.originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="btn-spinner"></span>${loadingLabel === undefined ? 'กำลังดำเนินการ...' : loadingLabel}`;
+  } else {
+    btn.disabled = false;
+    if(btn.dataset.originalHtml) btn.innerHTML = btn.dataset.originalHtml;
+  }
+}
+
 /* ---------- Auth ---------- */
 function isLoggedIn(){ return !!(STATE.session && STATE.session.session_token); }
 
@@ -500,7 +569,14 @@ function logout(){
 
 function renderHeaderAuth(){
   const el = document.getElementById('headerActions');
+  // avatar-btn มี CSS พร้อมอยู่แล้วแต่ไม่เคยถูกสร้างขึ้นจริง เลยไม่เคยเห็นรูปโปรไฟล์ที่ header หลัง login/signup เลย เพิ่มส่วนนี้เข้าไป
+  const avatarUrl = isLoggedIn() ? (STATE.session.profile_image_url || '') : '';
+  const avatarInitial = isLoggedIn() ? String(STATE.session.username || '?').charAt(0).toUpperCase() : '';
+  const avatarHTML = isLoggedIn()
+    ? `<div class="avatar-btn" id="headerAvatar">${avatarUrl ? `<img src="${avatarUrl}" onerror="this.parentElement.textContent='${avatarInitial}';">` : avatarInitial}</div>`
+    : '';
   el.innerHTML = `
+    ${avatarHTML}
     <button class="btn btn-accent" id="createBtn">＋ สร้างหัวข้อ</button>
     <button class="btn btn-ghost" id="authBtn">${isLoggedIn() ? 'ออกจากระบบ' : 'เข้าสู่ระบบ'}</button>
   `;
@@ -531,7 +607,10 @@ document.getElementById('loginSubmitBtn').addEventListener('click', async ()=>{
     errEl.style.display = 'block';
     return;
   }
+  const btn = document.getElementById('loginSubmitBtn');
+  setBtnLoading(btn, true, 'กำลังเข้าสู่ระบบ...');
   const res = await api('login', {phone, passcode}, 'POST');
+  setBtnLoading(btn, false);
   if(!res.success){
     errEl.textContent = res.message;
     errEl.style.display = 'block';
@@ -567,6 +646,16 @@ document.getElementById('signupSubmitBtn').addEventListener('click', async ()=>{
     errEl.style.display = 'block';
     return;
   }
+  if(!payload.profile_image_url){
+    errEl.textContent = 'กรุณาอัพโหลดรูปโปรไฟล์ก่อนสมัครสมาชิก';
+    errEl.style.display = 'block';
+    return;
+  }
+  if(payload.passcode.length < 6){
+    errEl.textContent = 'Passcode ต้องมีอย่างน้อย 6 หลัก';
+    errEl.style.display = 'block';
+    return;
+  }
   for(const k of ['username','email','phone','passcode','birthday','gender','province']){
     if(!payload[k]){
       errEl.textContent = 'กรุณากรอกข้อมูลให้ครบทุกช่อง';
@@ -575,7 +664,10 @@ document.getElementById('signupSubmitBtn').addEventListener('click', async ()=>{
     }
   }
 
+  const btn = document.getElementById('signupSubmitBtn');
+  setBtnLoading(btn, true, 'กำลังสมัครสมาชิก...');
   const res = await api('signup', payload, 'POST');
+  setBtnLoading(btn, false);
   if(!res.success){
     errEl.textContent = res.message;
     errEl.style.display = 'block';
@@ -583,12 +675,21 @@ document.getElementById('signupSubmitBtn').addEventListener('click', async ()=>{
   }
   saveSession(res);
   closeModal('signupModal');
-  showToast(`สมัครสำเร็จ! ยินดีต้อนรับ ${res.username} 🎉`);
+  document.getElementById('welcomeUsername').textContent = res.username;
+  openModal('welcomeModal');
   if(STATE.pendingVote){
     const { topicId, side } = STATE.pendingVote;
     STATE.pendingVote = null;
     castVote(topicId, side);
   }
+});
+
+document.getElementById('welcomeCreateBtn').addEventListener('click', ()=>{
+  closeModal('welcomeModal');
+  openModal('createModal');
+});
+document.getElementById('welcomeHomeBtn').addEventListener('click', ()=>{
+  closeModal('welcomeModal');
 });
 
 /* ---------- Image upload (profile & cover) ---------- */
@@ -640,15 +741,37 @@ document.getElementById('signupAvatarFile').addEventListener('change', async (e)
   const file = e.target.files[0];
   if(!file) return;
   const preview = document.getElementById('signupAvatarPreview');
-  preview.textContent = '...';
+  preview.innerHTML = '<div class="upload-spinner"></div>';
   try{
-    signupAvatarUrl = await uploadImageFile(file);
-    preview.innerHTML = `<img src="${signupAvatarUrl}">`;
+    const url = await uploadImageFile(file);
+    // เช็คว่ารูปโหลดขึ้นจริงก่อนเซ็ตเป็นรูปโปรไฟล์ กันเคสรูปที่เพิ่งอัพโหลดขึ้น Google Drive
+    // ยังไม่พร้อมให้ endpoint thumbnail เสิร์ฟภาพทันที (ใช้เวลาสร้าง thumbnail สักครู่) ซึ่งจะเห็นเป็น
+    // ไอคอนรูปพัง (กรอบ "?") ชั่วคราว เลยลอง retry สัก 2-3 ครั้งก่อนค่อยฟันธงว่าโหลดไม่ได้จริง
+    tryLoadAvatar(url, preview, 0);
   }catch(err){
     showToast('อัพโหลดรูปไม่สำเร็จ: ' + err.message);
     preview.textContent = '＋';
   }
 });
+
+function tryLoadAvatar(url, preview, attempt){
+  const MAX_ATTEMPTS = 4;
+  const testImg = new Image();
+  testImg.onload = ()=>{
+    signupAvatarUrl = url;
+    preview.innerHTML = `<img src="${url}">`;
+  };
+  testImg.onerror = ()=>{
+    if(attempt < MAX_ATTEMPTS - 1){
+      setTimeout(()=> tryLoadAvatar(url, preview, attempt + 1), 1500);
+      return;
+    }
+    signupAvatarUrl = '';
+    preview.textContent = '＋';
+    showToast('อัพโหลดรูปสำเร็จ แต่ลิงก์รูปที่ได้จาก backend โหลดแสดงผลไม่ได้ ลองอัพโหลดใหม่อีกครั้ง หรือแจ้งแอดมินเพื่อตรวจ uploadImage ฝั่ง Apps Script');
+  };
+  testImg.src = url;
+}
 
 /* ---------- Reference data ---------- */
 async function loadProvinces(){
@@ -714,7 +837,7 @@ function renderFeed(){
   }
   feed.innerHTML = STATE.topics.map(topicCardHTML).join('');
   feed.querySelectorAll('.vote-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=> handleVoteClick(btn.dataset.topic, btn.dataset.side));
+    btn.addEventListener('click', ()=> handleVoteClick(btn.dataset.topic, btn.dataset.side, btn));
   });
   feed.querySelectorAll('.share-icon-btn').forEach(btn=>{
     btn.addEventListener('click', ()=> shareTopic(btn.dataset.topic));
@@ -805,21 +928,23 @@ function renderDashboard(topicId, dash){
 }
 
 /* ---------- Voting ---------- */
-function handleVoteClick(topicId, side){
+function handleVoteClick(topicId, side, btnEl){
   if(!isLoggedIn()){
     STATE.pendingVote = { topicId, side };
     openModal('loginModal');
     return;
   }
-  castVote(topicId, side);
+  castVote(topicId, side, btnEl);
 }
 
-async function castVote(topicId, side){
+async function castVote(topicId, side, btnEl){
+  if(btnEl) setBtnLoading(btnEl, true, '');
   const res = await api('vote', {
     session_token: STATE.session.session_token,
     topic_id: topicId,
     side
   }, 'POST');
+  if(btnEl) setBtnLoading(btnEl, false);
   if(!res.success){
     showToast(res.message);
     return;
