@@ -586,16 +586,30 @@ let STATE = {
 
 /* ---------- API helper ---------- */
 async function api(action, params = {}, method = 'GET'){
-  if(method === 'GET'){
-    const qs = new URLSearchParams({action, ...params}).toString();
-    const res = await fetch(`${CONFIG.API_URL}?${qs}`);
-    return res.json();
-  } else {
-    const res = await fetch(CONFIG.API_URL, {
-      method: 'POST',
-      body: JSON.stringify({action, ...params})
-    });
-    return res.json();
+  // ใส่ timeout กันปุ่มหมุนค้างไม่รู้จบ — ถ้า Apps Script ประมวลผลช้าเกินไป (เช่นคิวยาวจากการทดสอบหลายโปรเจคพร้อมกัน)
+  // จะตัดจบแล้วแจ้ง error ที่ชัดเจนแทนการรอเงียบๆ ไม่มีกำหนด
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20000);
+  try{
+    if(method === 'GET'){
+      const qs = new URLSearchParams({action, ...params}).toString();
+      const res = await fetch(`${CONFIG.API_URL}?${qs}`, { signal: controller.signal });
+      return await res.json();
+    } else {
+      const res = await fetch(CONFIG.API_URL, {
+        method: 'POST',
+        body: JSON.stringify({action, ...params}),
+        signal: controller.signal
+      });
+      return await res.json();
+    }
+  }catch(err){
+    if(err.name === 'AbortError'){
+      return { success:false, message:'เซิร์ฟเวอร์ตอบสนองช้าเกินไป (เกิน 20 วินาที) กรุณาลองใหม่อีกครั้ง หรือรอสักครู่แล้วลอง login ดูก่อนว่าข้อมูลอาจบันทึกไปแล้ว' };
+    }
+    throw err;
+  }finally{
+    clearTimeout(timeoutId);
   }
 }
 
