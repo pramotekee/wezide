@@ -262,6 +262,8 @@
   .tag-grid input{ padding:9px 12px !important; font-size:13px !important; }
   .date-row{ display:flex; gap:10px; }
   .date-row .field{ flex:1; }
+  .dob-row{ display:flex; gap:8px; }
+  .dob-row select{ flex:1; }
 
   /* passcode show/hide toggle */
   .passcode-wrap{ position:relative; }
@@ -449,7 +451,14 @@
         <button type="button" class="passcode-toggle" data-target="suPasscode" aria-label="แสดง/ซ่อน Passcode">👁️</button>
       </div>
     </div>
-    <div class="field"><label>วันเกิด</label><input type="date" id="suBirthday"></div>
+    <div class="field">
+      <label>วันเกิด <span class="field-hint">(ค.ศ.)</span></label>
+      <div class="dob-row">
+        <select id="suBirthDay"><option value="">วัน</option></select>
+        <select id="suBirthMonth"><option value="">เดือน</option></select>
+        <select id="suBirthYear"><option value="">ปี</option></select>
+      </div>
+    </div>
     <div class="field">
       <label>เพศ</label>
       <select id="suGender">
@@ -700,12 +709,21 @@ document.getElementById('signupSubmitBtn').addEventListener('click', async ()=>{
   const errEl = document.getElementById('signupError');
   errEl.style.display = 'none';
 
+  const bDay = document.getElementById('suBirthDay').value;
+  const bMonth = document.getElementById('suBirthMonth').value;
+  const bYear = document.getElementById('suBirthYear').value;
+  if(!bDay || !bMonth || !bYear){
+    errEl.textContent = 'กรุณาเลือกวันเกิดให้ครบ วัน/เดือน/ปี';
+    errEl.style.display = 'block';
+    return;
+  }
+
   const payload = {
     username: document.getElementById('suUsername').value.trim(),
     email: document.getElementById('suEmail').value.trim(),
     phone: document.getElementById('suPhone').value.trim(),
     passcode: document.getElementById('suPasscode').value.trim(),
-    birthday: document.getElementById('suBirthday').value,
+    birthday: `${bYear}-${bMonth}-${bDay}`,
     gender: document.getElementById('suGender').value,
     province: document.getElementById('suProvince').value,
     profile_image_url: signupAvatarUrl || ''
@@ -848,6 +866,30 @@ async function loadProvinces(){
     opt.value = p; opt.textContent = p;
     sel.appendChild(opt);
   });
+}
+
+const THAI_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+
+function loadBirthdaySelects(){
+  const daySel = document.getElementById('suBirthDay');
+  for(let d = 1; d <= 31; d++){
+    const opt = document.createElement('option');
+    opt.value = String(d).padStart(2,'0'); opt.textContent = d;
+    daySel.appendChild(opt);
+  }
+  const monthSel = document.getElementById('suBirthMonth');
+  THAI_MONTHS.forEach((m, i)=>{
+    const opt = document.createElement('option');
+    opt.value = String(i+1).padStart(2,'0'); opt.textContent = m;
+    monthSel.appendChild(opt);
+  });
+  const yearSel = document.getElementById('suBirthYear');
+  const thisYear = new Date().getFullYear();
+  for(let y = thisYear - 13; y >= thisYear - 90; y--){
+    const opt = document.createElement('option');
+    opt.value = String(y); opt.textContent = y; // ค.ศ. (Gregorian) ล้วนๆ ไม่มี พ.ศ. ปนเลย เพื่อไม่ให้สับสน
+    yearSel.appendChild(opt);
+  }
 }
 
 async function loadCategories(){
@@ -1293,6 +1335,7 @@ document.getElementById('footerLoginLink').addEventListener('click', (e)=>{
 (async function init(){
   renderHeaderAuth();
   loadProvinces();
+  loadBirthdaySelects();
   await loadCategories();
   await loadCreateFormOptions();
   await loadTopics();
