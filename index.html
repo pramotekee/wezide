@@ -240,6 +240,29 @@
   .field-error{ color:#D64545; font-size:12px; margin-top:4px; display:none; }
   .field-hint{ font-weight:400; color:var(--text-muted); }
 
+  /* create-topic form */
+  .type-toggle{ display:flex; gap:8px; }
+  .type-toggle button{
+    flex:1; padding:10px; border:1.5px solid var(--line); border-radius:10px;
+    font-size:13.5px; font-weight:600; color:var(--text-muted); background:var(--bg);
+  }
+  .type-toggle button.selected{ border-color:var(--primary); color:var(--primary); background:#fff; }
+  .cover-upload{
+    width:100%; aspect-ratio:9/16; max-height:220px; border:1.5px dashed var(--line); border-radius:12px;
+    display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:13px;
+    background:var(--bg); overflow:hidden; text-align:center; padding:10px;
+  }
+  .cover-upload img{ width:100%; height:100%; object-fit:cover; }
+  .color-swatches{ display:flex; flex-wrap:wrap; gap:10px; }
+  .color-swatch{
+    width:30px; height:30px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 0 1.5px var(--line);
+  }
+  .color-swatch.selected{ box-shadow:0 0 0 2px var(--text); }
+  .tag-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .tag-grid input{ padding:9px 12px !important; font-size:13px !important; }
+  .date-row{ display:flex; gap:10px; }
+  .date-row .field{ flex:1; }
+
   /* passcode show/hide toggle */
   .passcode-wrap{ position:relative; }
   .passcode-wrap input{ padding-right:42px; }
@@ -457,16 +480,69 @@
   </div>
 </div>
 
-<!-- ===== Create Topic Modal (โครงเบื้องต้น — จะขยายรายละเอียดเทิร์นถัดไป) ===== -->
+<!-- ===== Create Topic Modal ===== -->
 <div class="modal-overlay" id="createModal">
   <div class="modal-box">
     <div class="modal-head">
       <h3>สร้างหัวข้อใหม่</h3>
       <button class="modal-close" data-close="createModal">✕</button>
     </div>
-    <p style="font-size:13px;color:var(--text-muted);">ฟอร์มสร้างหัวข้อฉบับเต็ม (แนบไฟล์/วาง URL, เลือกสี, หมวด, tag, วันเริ่ม-จบ) จะทำในเทิร์นถัดไปครับ</p>
+
+    <div class="field">
+      <label>รูปแบบหัวข้อ</label>
+      <div class="type-toggle">
+        <button type="button" id="typeTextBtn" class="selected">ข้อความ</button>
+        <button type="button" id="typeImageBtn">รูปภาพ</button>
+      </div>
+    </div>
+
+    <div class="field" id="coverField" style="display:none;">
+      <label>รูปหน้าปก</label>
+      <div class="cover-upload" id="coverPreview" onclick="document.getElementById('coverFile').click()">
+        ＋ แตะเพื่อแนบรูปหน้าปก
+      </div>
+      <input type="file" accept="image/*" id="coverFile" style="display:none;">
+    </div>
+
+    <div class="field"><label>หัวข้อ</label><input type="text" id="ctTitle" placeholder="เช่น กาแฟดำดีต่อสุขภาพจริงไหม?"></div>
+    <div class="field"><label>รายละเอียด <span class="field-hint">(ไม่บังคับ)</span></label><textarea id="ctDescription" rows="3" placeholder="อธิบายเพิ่มเติม..."></textarea></div>
+
+    <div class="date-row">
+      <div class="field"><label>ฝั่ง A</label><input type="text" id="ctSideA" placeholder="เช่น เห็นด้วย"></div>
+      <div class="field"><label>ฝั่ง B</label><input type="text" id="ctSideB" placeholder="เช่น ไม่เห็นด้วย"></div>
+    </div>
+
+    <div class="field">
+      <label>หมวดหมู่</label>
+      <select id="ctCategory"><option value="">เลือกหมวดหมู่</option></select>
+    </div>
+
+    <div class="field">
+      <label>Tag <span class="field-hint">(ใส่อย่างน้อย 1 อัน สูงสุด 5 อัน)</span></label>
+      <div class="tag-grid">
+        <input type="text" id="ctTag1" placeholder="Tag 1">
+        <input type="text" id="ctTag2" placeholder="Tag 2">
+        <input type="text" id="ctTag3" placeholder="Tag 3">
+        <input type="text" id="ctTag4" placeholder="Tag 4">
+        <input type="text" id="ctTag5" placeholder="Tag 5">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>สีการ์ด</label>
+      <div class="color-swatches" id="colorSwatches"></div>
+    </div>
+
+    <div class="date-row">
+      <div class="field"><label>วันเริ่ม</label><input type="date" id="ctStartDate"></div>
+      <div class="field"><label>วันจบ</label><input type="date" id="ctEndDate"></div>
+    </div>
+
+    <div class="field-error" id="createError"></div>
+    <button class="btn btn-primary full-btn" id="createSubmitBtn">โพสต์หัวข้อ</button>
   </div>
 </div>
+
 
 <!-- ===== Lightbox ===== -->
 <div class="lightbox" id="lightbox">
@@ -569,14 +645,7 @@ function logout(){
 
 function renderHeaderAuth(){
   const el = document.getElementById('headerActions');
-  // avatar-btn มี CSS พร้อมอยู่แล้วแต่ไม่เคยถูกสร้างขึ้นจริง เลยไม่เคยเห็นรูปโปรไฟล์ที่ header หลัง login/signup เลย เพิ่มส่วนนี้เข้าไป
-  const avatarUrl = isLoggedIn() ? (STATE.session.profile_image_url || '') : '';
-  const avatarInitial = isLoggedIn() ? String(STATE.session.username || '?').charAt(0).toUpperCase() : '';
-  const avatarHTML = isLoggedIn()
-    ? `<div class="avatar-btn" id="headerAvatar">${avatarUrl ? `<img src="${avatarUrl}" onerror="this.parentElement.textContent='${avatarInitial}';">` : avatarInitial}</div>`
-    : '';
   el.innerHTML = `
-    ${avatarHTML}
     <button class="btn btn-accent" id="createBtn">＋ สร้างหัวข้อ</button>
     <button class="btn btn-ghost" id="authBtn">${isLoggedIn() ? 'ออกจากระบบ' : 'เข้าสู่ระบบ'}</button>
   `;
@@ -744,31 +813,28 @@ document.getElementById('signupAvatarFile').addEventListener('change', async (e)
   preview.innerHTML = '<div class="upload-spinner"></div>';
   try{
     const url = await uploadImageFile(file);
-    // เช็คว่ารูปโหลดขึ้นจริงก่อนเซ็ตเป็นรูปโปรไฟล์ กันเคสรูปที่เพิ่งอัพโหลดขึ้น Google Drive
-    // ยังไม่พร้อมให้ endpoint thumbnail เสิร์ฟภาพทันที (ใช้เวลาสร้าง thumbnail สักครู่) ซึ่งจะเห็นเป็น
-    // ไอคอนรูปพัง (กรอบ "?") ชั่วคราว เลยลอง retry สัก 2-3 ครั้งก่อนค่อยฟันธงว่าโหลดไม่ได้จริง
-    tryLoadAvatar(url, preview, 0);
+    loadImageWithRetry(url,
+      (u)=>{ signupAvatarUrl = u; preview.innerHTML = `<img src="${u}">`; },
+      ()=>{ signupAvatarUrl = ''; preview.textContent = '＋'; showToast('โหลดรูปไม่สำเร็จ กรุณาลองอัพโหลดรูปใหม่อีกครั้ง'); }
+    );
   }catch(err){
     showToast('อัพโหลดรูปไม่สำเร็จ: ' + err.message);
     preview.textContent = '＋';
   }
 });
 
-function tryLoadAvatar(url, preview, attempt){
+// ลองโหลดรูปเช็คก่อนใช้จริง กันเคสรูปเพิ่งอัพโหลดขึ้น Google Drive ยังไม่พร้อมให้ endpoint thumbnail เสิร์ฟภาพทันที
+// (ใช้เวลาสร้าง thumbnail สักครู่) เลย retry สัก 2-3 ครั้งก่อนค่อยฟันธงว่าโหลดไม่ได้จริง — ใช้ร่วมกันทั้งรูปโปรไฟล์และรูปหน้าปกหัวข้อ
+function loadImageWithRetry(url, onSuccess, onFail, attempt = 0){
   const MAX_ATTEMPTS = 4;
   const testImg = new Image();
-  testImg.onload = ()=>{
-    signupAvatarUrl = url;
-    preview.innerHTML = `<img src="${url}">`;
-  };
+  testImg.onload = ()=> onSuccess(url);
   testImg.onerror = ()=>{
     if(attempt < MAX_ATTEMPTS - 1){
-      setTimeout(()=> tryLoadAvatar(url, preview, attempt + 1), 1500);
+      setTimeout(()=> loadImageWithRetry(url, onSuccess, onFail, attempt + 1), 1500);
       return;
     }
-    signupAvatarUrl = '';
-    preview.textContent = '＋';
-    showToast('อัพโหลดรูปสำเร็จ แต่ลิงก์รูปที่ได้จาก backend โหลดแสดงผลไม่ได้ ลองอัพโหลดใหม่อีกครั้ง หรือแจ้งแอดมินเพื่อตรวจ uploadImage ฝั่ง Apps Script');
+    onFail();
   };
   testImg.src = url;
 }
@@ -808,6 +874,135 @@ function selectCategory(cat, el){
   document.querySelectorAll('.category-pill').forEach(p=> p.classList.remove('selected'));
   if(el) el.classList.add('selected');
   loadTopics();
+}
+
+/* ---------- Create Topic form ---------- */
+let ctSelectedColor = '';
+let ctCoverUrl = '';
+
+async function loadCreateFormOptions(){
+  // หมวดหมู่ใช้ list เดียวกับ filter บนหน้าแรก (STATE.categories โหลดไว้แล้วตอน init)
+  const catSel = document.getElementById('ctCategory');
+  STATE.categories.forEach(cat=>{
+    const opt = document.createElement('option');
+    opt.value = cat; opt.textContent = cat;
+    catSel.appendChild(opt);
+  });
+
+  const res = await api('getCardColors');
+  STATE.cardColors = res.success ? res.colors : [];
+  const wrap = document.getElementById('colorSwatches');
+  const DEFAULT_IDX = 8; // ม่วง — ตรงกับ default ฝั่ง backend
+  STATE.cardColors.forEach((c, i)=>{
+    const sw = document.createElement('button');
+    sw.type = 'button';
+    sw.className = 'color-swatch' + (i === DEFAULT_IDX ? ' selected' : '');
+    sw.style.background = c.hex;
+    sw.title = c.name;
+    sw.addEventListener('click', ()=>{
+      document.querySelectorAll('.color-swatch').forEach(s=> s.classList.remove('selected'));
+      sw.classList.add('selected');
+      ctSelectedColor = c.hex;
+    });
+    wrap.appendChild(sw);
+  });
+  if(STATE.cardColors[DEFAULT_IDX]) ctSelectedColor = STATE.cardColors[DEFAULT_IDX].hex;
+}
+
+document.getElementById('typeTextBtn').addEventListener('click', ()=>{
+  document.getElementById('typeTextBtn').classList.add('selected');
+  document.getElementById('typeImageBtn').classList.remove('selected');
+  document.getElementById('coverField').style.display = 'none';
+});
+document.getElementById('typeImageBtn').addEventListener('click', ()=>{
+  document.getElementById('typeImageBtn').classList.add('selected');
+  document.getElementById('typeTextBtn').classList.remove('selected');
+  document.getElementById('coverField').style.display = 'block';
+});
+
+document.getElementById('coverFile').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const preview = document.getElementById('coverPreview');
+  preview.innerHTML = '<div class="upload-spinner"></div>';
+  try{
+    const url = await uploadImageFile(file);
+    loadImageWithRetry(url,
+      (u)=>{ ctCoverUrl = u; preview.innerHTML = `<img src="${u}">`; },
+      ()=>{ ctCoverUrl = ''; preview.innerHTML = '＋ แตะเพื่อแนบรูปหน้าปก'; showToast('โหลดรูปไม่สำเร็จ กรุณาลองอัพโหลดรูปใหม่อีกครั้ง'); }
+    );
+  }catch(err){
+    showToast('อัพโหลดรูปไม่สำเร็จ: ' + err.message);
+    preview.innerHTML = '＋ แตะเพื่อแนบรูปหน้าปก';
+  }
+});
+
+document.getElementById('createSubmitBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('createError');
+  errEl.style.display = 'none';
+
+  const topicType = document.getElementById('typeImageBtn').classList.contains('selected') ? 'image' : 'text';
+  const title = document.getElementById('ctTitle').value.trim();
+  const description = document.getElementById('ctDescription').value.trim();
+  const sideA = document.getElementById('ctSideA').value.trim();
+  const sideB = document.getElementById('ctSideB').value.trim();
+  const category = document.getElementById('ctCategory').value;
+  const tags = ['ctTag1','ctTag2','ctTag3','ctTag4','ctTag5'].map(id => document.getElementById(id).value.trim());
+  const startDate = document.getElementById('ctStartDate').value;
+  const endDate = document.getElementById('ctEndDate').value;
+
+  if(!title){ errEl.textContent = 'กรุณากรอกหัวข้อ'; errEl.style.display = 'block'; return; }
+  if(!sideA || !sideB){ errEl.textContent = 'กรุณากรอกชื่อทั้ง 2 ฝั่งให้ครบ'; errEl.style.display = 'block'; return; }
+  if(!category){ errEl.textContent = 'กรุณาเลือกหมวดหมู่'; errEl.style.display = 'block'; return; }
+  if(!tags.some(t => t)){ errEl.textContent = 'กรุณาใส่ Tag อย่างน้อย 1 อัน'; errEl.style.display = 'block'; return; }
+  if(!startDate || !endDate){ errEl.textContent = 'กรุณาเลือกวันเริ่มและวันจบ'; errEl.style.display = 'block'; return; }
+  if(new Date(endDate) < new Date(startDate)){ errEl.textContent = 'วันจบต้องไม่ก่อนวันเริ่ม'; errEl.style.display = 'block'; return; }
+  if(topicType === 'image' && !ctCoverUrl){ errEl.textContent = 'กรุณาแนบรูปหน้าปกให้เรียบร้อยก่อนโพสต์'; errEl.style.display = 'block'; return; }
+
+  const payload = {
+    session_token: STATE.session.session_token,
+    topic_type: topicType,
+    title, description,
+    side_a_label: sideA, side_b_label: sideB,
+    category,
+    tag_1: tags[0], tag_2: tags[1], tag_3: tags[2], tag_4: tags[3], tag_5: tags[4],
+    card_color: ctSelectedColor,
+    start_date: startDate, end_date: endDate,
+    image_url_raw: topicType === 'image' ? ctCoverUrl : ''
+  };
+
+  const btn = document.getElementById('createSubmitBtn');
+  setBtnLoading(btn, true, 'กำลังส่งหัวข้อ...');
+  const res = await api('createTopic', payload, 'POST');
+  setBtnLoading(btn, false);
+  if(!res.success){
+    errEl.textContent = res.message;
+    errEl.style.display = 'block';
+    return;
+  }
+  closeModal('createModal');
+  resetCreateForm();
+  showToast(res.message || 'ส่งหัวข้อเรียบร้อย รอแอดมินตรวจสอบก่อนเผยแพร่');
+});
+
+function resetCreateForm(){
+  document.getElementById('typeTextBtn').click();
+  document.getElementById('ctTitle').value = '';
+  document.getElementById('ctDescription').value = '';
+  document.getElementById('ctSideA').value = '';
+  document.getElementById('ctSideB').value = '';
+  document.getElementById('ctCategory').value = '';
+  ['ctTag1','ctTag2','ctTag3','ctTag4','ctTag5'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ctStartDate').value = '';
+  document.getElementById('ctEndDate').value = '';
+  document.getElementById('createError').style.display = 'none';
+  ctCoverUrl = '';
+  document.getElementById('coverPreview').innerHTML = '＋ แตะเพื่อแนบรูปหน้าปก';
+  const swatches = document.querySelectorAll('.color-swatch');
+  const DEFAULT_IDX = 8;
+  swatches.forEach(s => s.classList.remove('selected'));
+  if(swatches[DEFAULT_IDX]) swatches[DEFAULT_IDX].classList.add('selected');
+  ctSelectedColor = STATE.cardColors && STATE.cardColors[DEFAULT_IDX] ? STATE.cardColors[DEFAULT_IDX].hex : '';
 }
 
 /* ---------- Topics / Feed ---------- */
@@ -1098,6 +1293,7 @@ document.getElementById('footerLoginLink').addEventListener('click', (e)=>{
   renderHeaderAuth();
   loadProvinces();
   await loadCategories();
+  await loadCreateFormOptions();
   await loadTopics();
   loadDashboards();
   loadHeroBanners();
