@@ -112,7 +112,7 @@
     letter-spacing:.5px; opacity:.9;
   }
   .hero-title b{ color:var(--accent); font-weight:600; }
-  .hero-track-wrap{ position:relative; z-index:2; overflow:hidden; cursor:grab; }
+  .hero-track-wrap{ position:relative; z-index:2; overflow:hidden; cursor:grab; touch-action:pan-y; }
   .hero-track-wrap.dragging{ cursor:grabbing; }
   .hero-track{
     display:flex; gap:14px; width:max-content; padding:0 20px;
@@ -1350,11 +1350,19 @@ document.getElementById('footerLoginLink').addEventListener('click', (e)=>{
   renderHeaderAuth();
   loadProvinces();
   loadBirthdaySelects();
-  await loadCategories();
-  await loadCreateFormOptions();
-  await loadTopics();
-  loadDashboards();
+
+  // เดิม: 3 await เรียงคิว (categories -> card colors -> topics) แล้ว hero banner ค่อยเริ่มโหลดทีหลังสุด
+  // ทำให้ต้องรอ 3 round-trip ไป Apps Script ก่อน hero banner จะเริ่มขยับ
+  // ใหม่: ยิง hero banner / categories / topics พร้อมกันตั้งแต่ต้น เพราะไม่ได้พึ่งพากัน
   loadHeroBanners();
+  const categoriesPromise = loadCategories();
+  const topicsPromise = loadTopics();
+
+  await categoriesPromise;
+  loadCreateFormOptions(); // เติม dropdown ของ modal สร้างหัวข้อเท่านั้น ไม่ใช่สิ่งที่เห็นตอนเปิดหน้าแรก ไม่ต้อง block
+
+  await topicsPromise;
+  loadDashboards();
 
   // ถ้าเปิดมาจากลิงก์แชร์ ?topic=ID ให้เลื่อนไปหาการ์ดนั้น
   const params = new URLSearchParams(location.search);
