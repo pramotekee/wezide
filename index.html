@@ -295,8 +295,9 @@
   .signup-cta-btn{ margin-top:10px; }
   .toast{
     position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
-    background:var(--primary-dark); color:#fff; padding:12px 22px; border-radius:100px;
+    background:var(--primary-dark); color:#fff; padding:12px 20px; border-radius:14px;
     font-size:13.5px; z-index:200; display:none; box-shadow:0 8px 24px rgba(0,0,0,0.25);
+    max-width:min(92vw, 380px); width:max-content; text-align:center; line-height:1.5;
   }
   .toast.show{ display:block; animation:fadeInUp .2s ease; }
   @keyframes fadeInUp{ from{ opacity:0; transform:translate(-50%,10px);} to{opacity:1; transform:translate(-50%,0);} }
