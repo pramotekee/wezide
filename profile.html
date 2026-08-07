@@ -375,6 +375,10 @@
       </div>
     </div>
 
+    <div style="text-align:center; margin-top:26px;">
+      <button class="btn btn-ghost" id="logoutBtn">ออกจากระบบ</button>
+    </div>
+
   </div>
 </div>
 
@@ -815,7 +819,6 @@ document.getElementById('deleteAccountBtn').addEventListener('click', async ()=>
 
   STATE.profile = res.user;
   document.getElementById('profileContent').style.display = 'block';
-  document.getElementById('headerActions').innerHTML += '<button class="btn btn-ghost" id="logoutBtn">ออกจากระบบ</button>';
   document.getElementById('logoutBtn').addEventListener('click', ()=>{
     logout();
     showToast('ออกจากระบบแล้ว');
