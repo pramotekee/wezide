@@ -175,7 +175,7 @@
   }
 
   .card-content-block{ padding:12px 14px 4px; }
-  .cover-img{ width:100%; aspect-ratio:9/16; max-height:340px; object-fit:cover; border-radius:12px; background:var(--bg); }
+  .cover-img{ width:100%; aspect-ratio:16/9; max-height:340px; object-fit:contain; border-radius:12px; background:var(--bg); }
   .text-topic-box{
     background:var(--bg); border-radius:12px; padding:22px 16px; text-align:center; min-height:120px;
     display:flex; flex-direction:column; justify-content:center; gap:8px;
@@ -248,11 +248,11 @@
   }
   .type-toggle button.selected{ border-color:var(--primary); color:var(--primary); background:#fff; }
   .cover-upload{
-    width:100%; aspect-ratio:9/16; max-height:220px; border:1.5px dashed var(--line); border-radius:12px;
+    width:100%; aspect-ratio:16/9; max-height:340px; border:1.5px dashed var(--line); border-radius:12px;
     display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:13px;
     background:var(--bg); overflow:hidden; text-align:center; padding:10px;
   }
-  .cover-upload img{ width:100%; height:100%; object-fit:cover; }
+  .cover-upload img{ width:100%; height:100%; object-fit:contain; }
   .color-swatches{ display:flex; flex-wrap:wrap; gap:10px; }
   .color-swatch{
     width:30px; height:30px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 0 1.5px var(--line);
@@ -260,8 +260,8 @@
   .color-swatch.selected{ box-shadow:0 0 0 2px var(--text); }
   .tag-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .tag-grid input{ padding:9px 12px !important; font-size:13px !important; }
-  .date-row{ display:flex; gap:10px; }
-  .date-row .field{ flex:1; }
+  .date-row{ display:flex; gap:16px; flex-wrap:wrap; }
+  .date-row .field{ flex:1 1 140px; min-width:140px; }
   .dob-row{ display:flex; gap:8px; }
   .dob-row select{ flex:1; }
 
@@ -507,9 +507,9 @@
     </div>
 
     <div class="field" id="coverField" style="display:none;">
-      <label>รูปหน้าปก</label>
+      <label>รูปประกอบ (สัดส่วน 16:9)</label>
       <div class="cover-upload" id="coverPreview" onclick="document.getElementById('coverFile').click()">
-        ＋ แตะเพื่อแนบรูปหน้าปก
+        ＋ แตะเพื่อแนบรูปประกอบหัวข้อ
       </div>
       <input type="file" accept="image/*" id="coverFile" style="display:none;">
     </div>
@@ -544,12 +544,12 @@
     </div>
 
     <div class="date-row">
-      <div class="field"><label>วันเริ่ม</label><input type="date" id="ctStartDate"></div>
-      <div class="field"><label>วันจบ</label><input type="date" id="ctEndDate"></div>
+      <div class="field"><label>วันเริ่มต้นเผยแพร่</label><input type="date" id="ctStartDate"></div>
+      <div class="field"><label>วันสิ้นสุดเผยแพร่</label><input type="date" id="ctEndDate"></div>
     </div>
 
     <div class="field-error" id="createError"></div>
-    <button class="btn btn-primary full-btn" id="createSubmitBtn">โพสต์หัวข้อ</button>
+    <button class="btn btn-primary full-btn" id="createSubmitBtn">สร้างหัวข้อ</button>
   </div>
 </div>
 
@@ -857,7 +857,7 @@ document.getElementById('signupAvatarFile').addEventListener('change', async (e)
 });
 
 // ลองโหลดรูปเช็คก่อนใช้จริง กันเคสรูปเพิ่งอัพโหลดขึ้น Google Drive ยังไม่พร้อมให้ endpoint thumbnail เสิร์ฟภาพทันที
-// (ใช้เวลาสร้าง thumbnail สักครู่) เลย retry สัก 2-3 ครั้งก่อนค่อยฟันธงว่าโหลดไม่ได้จริง — ใช้ร่วมกันทั้งรูปโปรไฟล์และรูปหน้าปกหัวข้อ
+// (ใช้เวลาสร้าง thumbnail สักครู่) เลย retry สัก 2-3 ครั้งก่อนค่อยฟันธงว่าโหลดไม่ได้จริง — ใช้ร่วมกันทั้งรูปโปรไฟล์และรูปประกอบหัวข้อ
 function loadImageWithRetry(url, onSuccess, onFail, attempt = 0){
   const MAX_ATTEMPTS = 4;
   const testImg = new Image();
@@ -986,11 +986,11 @@ document.getElementById('coverFile').addEventListener('change', async (e)=>{
     const url = await uploadImageFile(file);
     loadImageWithRetry(url,
       (u)=>{ ctCoverUrl = u; preview.innerHTML = `<img src="${u}">`; },
-      ()=>{ ctCoverUrl = ''; preview.innerHTML = '＋ แตะเพื่อแนบรูปหน้าปก'; showToast('โหลดรูปไม่สำเร็จ กรุณาลองอัพโหลดรูปใหม่อีกครั้ง'); }
+      ()=>{ ctCoverUrl = ''; preview.innerHTML = '＋ แตะเพื่อแนบรูปประกอบหัวข้อ'; showToast('โหลดรูปไม่สำเร็จ กรุณาลองอัพโหลดรูปใหม่อีกครั้ง'); }
     );
   }catch(err){
     showToast('อัพโหลดรูปไม่สำเร็จ: ' + err.message);
-    preview.innerHTML = '＋ แตะเพื่อแนบรูปหน้าปก';
+    preview.innerHTML = '＋ แตะเพื่อแนบรูปประกอบหัวข้อ';
   }
 });
 
@@ -1012,9 +1012,9 @@ document.getElementById('createSubmitBtn').addEventListener('click', async ()=>{
   if(!sideA || !sideB){ errEl.textContent = 'กรุณากรอกชื่อทั้ง 2 ฝั่งให้ครบ'; errEl.style.display = 'block'; return; }
   if(!category){ errEl.textContent = 'กรุณาเลือกหมวดหมู่'; errEl.style.display = 'block'; return; }
   if(!tags.some(t => t)){ errEl.textContent = 'กรุณาใส่ Tag อย่างน้อย 1 อัน'; errEl.style.display = 'block'; return; }
-  if(!startDate || !endDate){ errEl.textContent = 'กรุณาเลือกวันเริ่มและวันจบ'; errEl.style.display = 'block'; return; }
-  if(new Date(endDate) < new Date(startDate)){ errEl.textContent = 'วันจบต้องไม่ก่อนวันเริ่ม'; errEl.style.display = 'block'; return; }
-  if(topicType === 'image' && !ctCoverUrl){ errEl.textContent = 'กรุณาแนบรูปหน้าปกให้เรียบร้อยก่อนโพสต์'; errEl.style.display = 'block'; return; }
+  if(!startDate || !endDate){ errEl.textContent = 'กรุณาเลือกวันเริ่มต้นและวันสิ้นสุดเผยแพร่'; errEl.style.display = 'block'; return; }
+  if(new Date(endDate) < new Date(startDate)){ errEl.textContent = 'วันสิ้นสุดเผยแพร่ต้องไม่ก่อนวันเริ่มต้นเผยแพร่'; errEl.style.display = 'block'; return; }
+  if(topicType === 'image' && !ctCoverUrl){ errEl.textContent = 'กรุณาแนบรูปประกอบให้เรียบร้อยก่อนสร้างหัวข้อ'; errEl.style.display = 'block'; return; }
 
   const payload = {
     session_token: STATE.session.session_token,
@@ -1054,7 +1054,7 @@ function resetCreateForm(){
   document.getElementById('ctEndDate').value = '';
   document.getElementById('createError').style.display = 'none';
   ctCoverUrl = '';
-  document.getElementById('coverPreview').innerHTML = '＋ แตะเพื่อแนบรูปหน้าปก';
+  document.getElementById('coverPreview').innerHTML = '＋ แตะเพื่อแนบรูปประกอบหัวข้อ';
   const swatches = document.querySelectorAll('.color-swatch');
   const DEFAULT_IDX = 8;
   swatches.forEach(s => s.classList.remove('selected'));
