@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>โปรไฟล์ของฉัน — WEZIDE</title>
+
+<meta property="og:title" content="โปรไฟล์ของฉัน — WEZIDE">
+<meta property="og:description" content="จัดการบัญชี WEZIDE ของคุณ">
+<meta property="og:type" content="website">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Antonio:wght@100;400;700&family=Lexend:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+
+<style>
+  :root{
+    --primary: #5B2A9E;
+    --primary-dark: #3A1B66;
+    --primary-light: #8B5FD1;
+    --accent: #FFC93C;
+    --bg: #F3F1F7;
+    --surface: #FFFFFF;
+    --text: #1C1329;
+    --text-muted: #6E6680;
+    --line: #E6E2EF;
+    --side-a: #4B2C82;
+    --side-b: #7A56C4;
+    --danger: #D64545;
+    --radius: 16px;
+    --shadow: 0 4px 20px rgba(59, 27, 102, 0.08);
+  }
+
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Inter', sans-serif; font-weight:400; font-size:15px; line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,h4, .btn, .creator-name{ font-family:'Lexend', sans-serif; }
+  img{ max-width:100%; display:block; }
+  button{ font-family:inherit; cursor:pointer; border:none; background:none; }
+  input, select, textarea{ font-family:inherit; }
+  a{ color:inherit; text-decoration:none; }
+
+  /* ===== Header (เหมือน index.html เพื่อความต่อเนื่อง) ===== */
+  header.site-header{
+    position:sticky; top:0; z-index:50;
+    background:rgba(255,255,255,0.9); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 20px;
+  }
+  .logo-wrap{ display:flex; align-items:baseline; gap:10px; }
+  .logo-wrap .brand{
+    font-family:'Antonio', sans-serif; font-weight:700; font-size:28px;
+    letter-spacing:1px; color:var(--primary);
+  }
+  .logo-wrap .tagline{
+    font-family:'Antonio', sans-serif; font-weight:100; font-size:14px;
+    color:var(--accent); text-transform:uppercase; letter-spacing:2px;
+    background:var(--primary-dark); padding:2px 8px; border-radius:6px;
+  }
+  .header-actions{ display:flex; align-items:center; gap:10px; }
+  .btn{
+    padding:9px 18px; border-radius:100px; font-size:14px; font-weight:500;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:active{ transform:scale(0.96); }
+  .btn-primary{ background:var(--primary); color:#fff; }
+  .btn-primary:hover{ box-shadow:0 6px 16px rgba(91,42,158,0.35); }
+  .btn-ghost{ background:var(--surface); color:var(--primary); border:1.5px solid var(--line); }
+  .btn-accent{ background:var(--accent); color:var(--primary-dark); font-weight:600; }
+  .btn-danger{ background:var(--danger); color:#fff; }
+  .btn-danger:hover{ box-shadow:0 6px 16px rgba(214,69,69,0.35); }
+  .full-btn{ width:100%; padding:13px; border-radius:12px; font-size:15px; font-weight:600; }
+  .btn:disabled{ opacity:.6; cursor:not-allowed; }
+  .btn-spinner{
+    display:inline-block; width:14px; height:14px; border-radius:50%;
+    border:2px solid rgba(255,255,255,0.5); border-top-color:#fff;
+    animation:spin .7s linear infinite; margin-right:6px; vertical-align:-2px;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* ===== Layout ===== */
+  .wrap{ max-width:640px; margin:0 auto; padding:24px 16px 70px; }
+
+  .locked-state{ text-align:center; padding:80px 20px; color:var(--text-muted); }
+  .locked-state .emoji{ font-size:42px; margin-bottom:14px; }
+  .locked-state h3{ color:var(--text); margin:0 0 8px; }
+
+  .profile-head{ display:flex; align-items:center; gap:14px; margin-bottom:22px; }
+  .profile-avatar{
+    width:64px; height:64px; border-radius:50%; overflow:hidden; flex-shrink:0;
+    background:var(--primary-light); border:2px solid var(--primary);
+    display:flex; align-items:center; justify-content:center; color:#fff; font-size:22px; font-weight:600;
+  }
+  .profile-avatar img{ width:100%; height:100%; object-fit:cover; }
+  .profile-name{ font-size:19px; font-weight:700; }
+  .profile-sub{ font-size:13px; color:var(--text-muted); margin-top:2px; }
+
+  /* ===== Tabs ===== */
+  .tab-row{
+    display:flex; gap:4px; overflow-x:auto; margin-bottom:20px;
+    border-bottom:1.5px solid var(--line); scrollbar-width:none;
+  }
+  .tab-row::-webkit-scrollbar{ display:none; }
+  .tab-btn{
+    padding:10px 14px; font-size:13.5px; color:var(--text-muted);
+    border-bottom:2.5px solid transparent; white-space:nowrap; font-weight:500;
+  }
+  .tab-btn.active{ color:var(--primary); border-color:var(--primary); font-weight:700; }
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+
+  /* ===== Dashboard ===== */
+  .stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+  .stat-card{
+    background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:18px 10px; text-align:center;
+  }
+  .stat-num{ font-family:'Antonio',sans-serif; font-size:32px; font-weight:700; color:var(--primary); line-height:1; }
+  .stat-label{ font-size:12px; color:var(--text-muted); margin-top:6px; }
+
+  .dash-card{
+    background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:18px 16px; margin-bottom:14px;
+  }
+  .dash-card h4{ margin:0 0 14px; font-size:14px; }
+  .dash-row{ display:flex; align-items:center; gap:8px; font-size:11.5px; margin-bottom:6px; }
+  .dash-label{ width:56px; flex-shrink:0; color:var(--text-muted); }
+  .dash-bar-bg{ flex:1; height:9px; border-radius:5px; background:var(--bg); overflow:hidden; display:flex; }
+  .dash-bar-seg{ height:100%; }
+  .dash-legend{ display:flex; flex-wrap:wrap; gap:6px 12px; font-size:11px; color:var(--text-muted); margin-bottom:14px; }
+  .dash-legend span{ display:inline-flex; align-items:center; gap:4px; }
+  .dash-legend i{ width:8px; height:8px; border-radius:2px; display:inline-block; }
+  .dash-empty{ text-align:center; color:var(--text-muted); font-size:13px; padding:16px 0; }
+
+  /* ===== My Topics ===== */
+  .sort-row{ display:flex; justify-content:flex-end; margin-bottom:14px; }
+  .view-toggle{ display:flex; background:var(--surface); border:1.5px solid var(--line); border-radius:100px; padding:3px; }
+  .view-toggle button{ padding:6px 14px; border-radius:100px; font-size:12.5px; color:var(--text-muted); }
+  .view-toggle button.active{ background:var(--primary); color:#fff; }
+
+  .my-topic-card{
+    display:block; background:var(--surface); border-radius:14px; box-shadow:var(--shadow);
+    padding:14px; margin-bottom:12px; border-top:4px solid var(--card-color, var(--primary));
+  }
+  .mt-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:6px; }
+  .mt-title{ font-size:14.5px; font-weight:600; line-height:1.4; }
+  .status-badge{
+    flex-shrink:0; font-size:10.5px; font-weight:600; padding:3px 9px; border-radius:100px;
+    white-space:nowrap;
+  }
+  .status-badge.active{ background:#E4F5E9; color:#2C8A4B; }
+  .status-badge.pending{ background:#FFF3DE; color:#B8790C; }
+  .status-badge.inactive{ background:#EFECF5; color:var(--text-muted); }
+  .status-badge.expired{ background:#FBE7E7; color:var(--danger); }
+  .mt-meta{ display:flex; flex-wrap:wrap; gap:6px; font-size:11px; color:var(--text-muted); margin-bottom:10px; }
+  .mt-meta .cat-tag{ background:var(--primary); color:#fff; padding:3px 9px; border-radius:100px; font-size:11px; }
+  .mt-bar{ height:8px; border-radius:4px; background:var(--bg); overflow:hidden; display:flex; margin-bottom:6px; }
+  .mt-bar span{ height:100%; }
+  .mt-bar .a{ background:var(--side-a); }
+  .mt-bar .b{ background:var(--side-b); }
+  .mt-votes{ font-size:11.5px; color:var(--text-muted); }
+  .empty-state{ text-align:center; padding:50px 20px; color:var(--text-muted); }
+  .empty-state .emoji{ font-size:36px; margin-bottom:10px; }
+
+  /* ===== Form (reuse field styling เดียวกับ modal ใน index.html) ===== */
+  .form-card{ background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px 16px; margin-bottom:16px; }
+  .form-card h4{ margin:0 0 16px; font-size:14.5px; }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:12.5px; color:var(--text-muted); margin-bottom:6px; font-weight:500; }
+  .field input, .field select, .field textarea{
+    width:100%; padding:11px 14px; border-radius:10px; border:1.5px solid var(--line);
+    background:var(--bg); font-size:14.5px; outline:none; color:var(--text);
+  }
+  .field input:focus, .field select:focus{ border-color:var(--primary); background:#fff; }
+  .field-error{ color:var(--danger); font-size:12px; margin-top:4px; display:none; }
+  .field-hint{ font-weight:400; color:var(--text-muted); }
+  .dob-row{ display:flex; gap:8px; }
+  .dob-row select{ flex:1; }
+  .passcode-wrap{ position:relative; }
+  .passcode-wrap input{ padding-right:42px; }
+  .passcode-toggle{ position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:16px; }
+  .field-avatar-row{ text-align:center; margin-bottom:18px; }
+  .edit-avatar{
+    width:76px; height:76px; border-radius:50%; overflow:hidden; margin:0 auto;
+    background:var(--primary-light); border:2px solid var(--primary); cursor:pointer;
+    display:flex; align-items:center; justify-content:center; color:#fff; font-size:24px;
+  }
+  .edit-avatar img{ width:100%; height:100%; object-fit:cover; }
+  .upload-spinner{
+    width:22px; height:22px; border-radius:50%; border:2.5px solid rgba(255,255,255,0.5);
+    border-top-color:#fff; animation:spin .7s linear infinite;
+  }
+  .section-divider{ border:none; border-top:1.5px dashed var(--line); margin:18px 0; }
+
+  /* ===== Danger zone ===== */
+  .danger-box{
+    border:1.5px solid var(--danger); border-radius:var(--radius); background:#FFF6F6;
+    padding:20px 16px;
+  }
+  .danger-box h4{ margin:0 0 8px; font-size:14.5px; color:var(--danger); }
+  .danger-box p{ font-size:13px; color:var(--text-muted); line-height:1.6; margin:0 0 16px; }
+
+  /* ===== Toast ===== */
+  #toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--primary-dark); color:#fff; padding:12px 22px; border-radius:100px;
+    font-size:13.5px; opacity:0; pointer-events:none; transition:all .25s ease; z-index:200;
+    max-width:90vw; text-align:center;
+  }
+  #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo-wrap" href="index.html">
+    <span class="brand">WEZIDE</span>
+    <span class="tagline">Opinion matter!</span>
+  </a>
+  <div class="header-actions" id="headerActions">
+    <a class="btn btn-ghost" href="index.html">← กลับหน้าแรก</a>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ===== แสดงเมื่อยังไม่ login ===== -->
+  <div class="locked-state" id="lockedState" style="display:none;">
+    <div class="emoji">🔒</div>
+    <h3>กรุณาเข้าสู่ระบบก่อน</h3>
+    <p>เข้าสู่ระบบที่หน้าแรกเพื่อจัดการโปรไฟล์ของคุณ</p>
+    <a class="btn btn-primary" href="index.html" style="margin-top:10px; display:inline-block;">ไปหน้าแรก</a>
+  </div>
+
+  <!-- ===== เนื้อหาโปรไฟล์ (แสดงเมื่อ login แล้ว) ===== -->
+  <div id="profileContent" style="display:none;">
+
+    <div class="profile-head">
+      <div class="profile-avatar" id="profileAvatar">?</div>
+      <div>
+        <div class="profile-name" id="profileName">—</div>
+        <div class="profile-sub" id="profileSub">—</div>
+      </div>
+    </div>
+
+    <div class="tab-row">
+      <button class="tab-btn active" data-tab="dashboard">My Dashboard</button>
+      <button class="tab-btn" data-tab="mytopics">หัวข้อของฉัน</button>
+      <button class="tab-btn" data-tab="editinfo">แก้ไขข้อมูล</button>
+      <button class="tab-btn" data-tab="deleteaccount">ลบบัญชี</button>
+    </div>
+
+    <!-- ===== Tab: My Dashboard ===== -->
+    <div class="tab-panel active" id="tab-dashboard">
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-num" id="statTopics">0</div>
+          <div class="stat-label">หัวข้อที่สร้าง</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statVoters">0</div>
+          <div class="stat-label">คนร่วมโหวตทั้งหมด</div>
+        </div>
+      </div>
+      <div class="dash-card">
+        <h4>ภาพรวมคนที่มาร่วมโหวตหัวข้อของคุณ</h4>
+        <div id="dashboardBreakdown"><div class="dash-empty">กำลังโหลด...</div></div>
+      </div>
+    </div>
+
+    <!-- ===== Tab: My Topics ===== -->
+    <div class="tab-panel" id="tab-mytopics">
+      <div class="sort-row">
+        <div class="view-toggle" id="sortToggle">
+          <button data-sort="latest" class="active">ล่าสุด</button>
+          <button data-sort="popular">ยอดนิยม</button>
+        </div>
+      </div>
+      <div id="myTopicsList"><div class="dash-empty">กำลังโหลด...</div></div>
+    </div>
+
+    <!-- ===== Tab: Edit info ===== -->
+    <div class="tab-panel" id="tab-editinfo">
+      <div class="form-card">
+        <h4>ข้อมูลส่วนตัว</h4>
+        <div class="field-avatar-row">
+          <div class="edit-avatar" id="editAvatarPreview" onclick="document.getElementById('editAvatarFile').click()">＋</div>
+          <input type="file" accept="image/*" id="editAvatarFile" style="display:none;">
+        </div>
+        <div class="field"><label>Username</label><input type="text" id="editUsername"></div>
+        <div class="field"><label>Email</label><input type="email" id="editEmail"></div>
+        <div class="field">
+          <label>วันเกิด <span class="field-hint">(ค.ศ.)</span></label>
+          <div class="dob-row">
+            <select id="editBirthDay"><option value="">วัน</option></select>
+            <select id="editBirthMonth"><option value="">เดือน</option></select>
+            <select id="editBirthYear"><option value="">ปี</option></select>
+          </div>
+        </div>
+        <div class="field">
+          <label>เพศ</label>
+          <select id="editGender">
+            <option value="">เลือกเพศ</option>
+            <option value="ชาย">ชาย</option>
+            <option value="หญิง">หญิง</option>
+            <option value="อื่นๆ">อื่นๆ</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>จังหวัด</label>
+          <select id="editProvince"><option value="">เลือกจังหวัด</option></select>
+        </div>
+
+        <hr class="section-divider">
+
+        <h4>เปลี่ยน Passcode <span class="field-hint">(ไม่บังคับ — เว้นว่างถ้าไม่ต้องการเปลี่ยน)</span></h4>
+        <div class="field">
+          <label>Passcode เดิม</label>
+          <div class="passcode-wrap">
+            <input type="password" id="editOldPasscode">
+            <button type="button" class="passcode-toggle" data-target="editOldPasscode">👁️</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Passcode ใหม่ <span class="field-hint">(อย่างน้อย 6 หลัก)</span></label>
+          <div class="passcode-wrap">
+            <input type="password" id="editNewPasscode" minlength="6">
+            <button type="button" class="passcode-toggle" data-target="editNewPasscode">👁️</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>ยืนยัน Passcode ใหม่</label>
+          <div class="passcode-wrap">
+            <input type="password" id="editNewPasscode2" minlength="6">
+            <button type="button" class="passcode-toggle" data-target="editNewPasscode2">👁️</button>
+          </div>
+        </div>
+
+        <div class="field-error" id="editError"></div>
+        <button class="btn btn-primary full-btn" id="editSaveBtn">บันทึกข้อมูล</button>
+      </div>
+    </div>
+
+    <!-- ===== Tab: Delete account ===== -->
+    <div class="tab-panel" id="tab-deleteaccount">
+      <div class="danger-box">
+        <h4>ปิดบัญชีถาวร</h4>
+        <p>
+          การลบบัญชีจะทำให้คุณเข้าสู่ระบบด้วยเบอร์นี้ไม่ได้อีก แต่หัวข้อและผลโหวตที่คุณเคยสร้างไว้จะยังคงอยู่ในระบบตามเดิม
+          เพื่อไม่ให้กระทบข้อมูลของคนอื่นที่เกี่ยวข้อง การกระทำนี้ไม่สามารถย้อนกลับได้
+        </p>
+        <div class="field">
+          <label>กรอก Passcode เพื่อยืนยัน</label>
+          <div class="passcode-wrap">
+            <input type="password" id="deletePasscode">
+            <button type="button" class="passcode-toggle" data-target="deletePasscode">👁️</button>
+          </div>
+        </div>
+        <div class="field-error" id="deleteError"></div>
+        <button class="btn btn-danger full-btn" id="deleteAccountBtn">ยืนยันปิดบัญชี</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const CONFIG = {
+  API_URL: 'https://script.google.com/macros/s/AKfycbwUBBRSKVfEkr-FmanTnQ1pHDD_-gNQ53pWkzHLvm3kvDWSTu-ARtV70yXiuN8hep8Gmg/exec'
+};
+
+const PROVINCES = ['กรุงเทพมหานคร','กระบี่','กาญจนบุรี','กาฬสินธุ์','กำแพงเพชร','ขอนแก่น','จันทบุรี','ฉะเชิงเทรา','ชลบุรี','ชัยนาท','ชัยภูมิ','ชุมพร','เชียงราย','เชียงใหม่','ตรัง','ตราด','ตาก','นครนายก','นครปฐม','นครพนม','นครราชสีมา','นครศรีธรรมราช','นครสวรรค์','นนทบุรี','นราธิวาส','น่าน','บึงกาฬ','บุรีรัมย์','ปทุมธานี','ประจวบคีรีขันธ์','ปราจีนบุรี','ปัตตานี','พระนครศรีอยุธยา','พังงา','พัทลุง','พิจิตร','พิษณุโลก','เพชรบุรี','เพชรบูรณ์','แพร่','ภูเก็ต','มหาสารคาม','มุกดาหาร','แม่ฮ่องสอน','ยโสธร','ยะลา','ร้อยเอ็ด','ระนอง','ระยอง','ราชบุรี','ลพบุรี','ลำปาง','ลำพูน','เลย','ศรีสะเกษ','สกลนคร','สงขลา','สตูล','สมุทรปราการ','สมุทรสงคราม','สมุทรสาคร','สระแก้ว','สระบุรี','สิงห์บุรี','สุโขทัย','สุพรรณบุรี','สุราษฎร์ธานี','สุรินทร์','หนองคาย','หนองบัวลำภู','อ่างทอง','อำนาจเจริญ','อุดรธานี','อุตรดิตถ์','อุทัยธานี','อุบลราชธานี'];
+const THAI_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const DASH_COLORS = ['#5B2A9E','#FFC93C','#8B5FD1','#D64545','#4B2C82','#7A56C4'];
+
+let STATE = {
+  session: JSON.parse(localStorage.getItem('wz_session') || 'null'),
+  profile: null,
+  myTopics: [],
+  sortMode: 'latest',
+  editAvatarUrl: ''
+};
+
+/* ---------- API helper (เหมือน index.html ใส่ timeout 20 วิกันปุ่มค้าง) ---------- */
+async function api(action, params = {}, method = 'GET'){
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20000);
+  try{
+    if(method === 'GET'){
+      const qs = new URLSearchParams({action, ...params}).toString();
+      const res = await fetch(`${CONFIG.API_URL}?${qs}`, { signal: controller.signal });
+      return await res.json();
+    } else {
+      const res = await fetch(CONFIG.API_URL, {
+        method: 'POST',
+        body: JSON.stringify({action, ...params}),
+        signal: controller.signal
+      });
+      return await res.json();
+    }
+  }catch(err){
+    if(err.name === 'AbortError'){
+      return { success:false, message:'เซิร์ฟเวอร์ตอบสนองช้าเกินไป (เกิน 20 วินาที) กรุณาลองใหม่อีกครั้ง' };
+    }
+    throw err;
+  }finally{
+    clearTimeout(timeoutId);
+  }
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=> t.classList.remove('show'), 2600);
+}
+
+function setBtnLoading(btn, loading, loadingLabel){
+  if(loading){
+    btn.dataset.originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="btn-spinner"></span>${loadingLabel === undefined ? 'กำลังดำเนินการ...' : loadingLabel}`;
+  } else {
+    btn.disabled = false;
+    if(btn.dataset.originalHtml) btn.innerHTML = btn.dataset.originalHtml;
+  }
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
+function isLoggedIn(){ return !!(STATE.session && STATE.session.session_token); }
+
+function logout(){
+  STATE.session = null;
+  localStorage.removeItem('wz_session');
+}
+
+/* ---------- Passcode show/hide toggle ---------- */
+document.querySelectorAll('.passcode-toggle').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const input = document.getElementById(btn.dataset.target);
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    btn.textContent = show ? '🙈' : '👁️';
+  });
+});
+
+/* ---------- Image upload (เหมือน index.html) ---------- */
+function compressImage(file, maxSize = 1600, quality = 0.8){
+  return new Promise((resolve)=>{
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      img.onload = ()=>{
+        let { width, height } = img;
+        if(width > maxSize || height > maxSize){
+          if(width > height){ height = Math.round(height * maxSize / width); width = maxSize; }
+          else { width = Math.round(width * maxSize / height); height = maxSize; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadImageFile(file){
+  const base64 = await compressImage(file);
+  const res = await api('uploadImage', {
+    file_data: base64,
+    mime_type: 'image/jpeg',
+    file_name: file.name
+  }, 'POST');
+  if(!res.success) throw new Error(res.message);
+  return res.image_url;
+}
+
+function loadImageWithRetry(url, onSuccess, onFail, attempt = 0){
+  const MAX_ATTEMPTS = 4;
+  const testImg = new Image();
+  testImg.onload = ()=> onSuccess(url);
+  testImg.onerror = ()=>{
+    if(attempt < MAX_ATTEMPTS - 1){
+      setTimeout(()=> loadImageWithRetry(url, onSuccess, onFail, attempt + 1), 1500);
+      return;
+    }
+    onFail();
+  };
+  testImg.src = url;
+}
+
+document.getElementById('editAvatarFile').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const preview = document.getElementById('editAvatarPreview');
+  preview.innerHTML = '<div class="upload-spinner"></div>';
+  try{
+    const url = await uploadImageFile(file);
+    loadImageWithRetry(url,
+      (u)=>{ STATE.editAvatarUrl = u; preview.innerHTML = `<img src="${u}">`; },
+      ()=>{ showToast('โหลดรูปไม่สำเร็จ กรุณาลองอัพโหลดรูปใหม่อีกครั้ง'); renderAvatarPreview(); }
+    );
+  }catch(err){
+    showToast('อัพโหลดรูปไม่สำเร็จ: ' + err.message);
+    renderAvatarPreview();
+  }
+});
+
+function renderAvatarPreview(){
+  const preview = document.getElementById('editAvatarPreview');
+  const url = STATE.editAvatarUrl;
+  preview.innerHTML = url ? `<img src="${url}">` : '＋';
+}
+
+/* ---------- Reference selects ---------- */
+function fillProvinceSelect(){
+  const sel = document.getElementById('editProvince');
+  PROVINCES.forEach(p=>{
+    const opt = document.createElement('option');
+    opt.value = p; opt.textContent = p;
+    sel.appendChild(opt);
+  });
+}
+
+function fillBirthdaySelects(){
+  const daySel = document.getElementById('editBirthDay');
+  for(let d = 1; d <= 31; d++){
+    const opt = document.createElement('option');
+    opt.value = String(d).padStart(2,'0'); opt.textContent = d;
+    daySel.appendChild(opt);
+  }
+  const monthSel = document.getElementById('editBirthMonth');
+  THAI_MONTHS.forEach((m, i)=>{
+    const opt = document.createElement('option');
+    opt.value = String(i+1).padStart(2,'0'); opt.textContent = m;
+    monthSel.appendChild(opt);
+  });
+  const yearSel = document.getElementById('editBirthYear');
+  const thisYear = new Date().getFullYear();
+  for(let y = thisYear; y >= thisYear - 100; y--){
+    const opt = document.createElement('option');
+    opt.value = String(y); opt.textContent = y;
+    yearSel.appendChild(opt);
+  }
+}
+
+/* ---------- Tabs ---------- */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=> b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=> p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+  });
+});
+
+/* ---------- Profile head ---------- */
+function renderProfileHead(){
+  const u = STATE.profile;
+  const avatarEl = document.getElementById('profileAvatar');
+  if(u.profile_image_url){
+    loadImageWithRetry(u.profile_image_url,
+      (url)=>{ avatarEl.innerHTML = `<img src="${url}">`; },
+      ()=>{ avatarEl.textContent = (u.username||'?').charAt(0).toUpperCase(); }
+    );
+  } else {
+    avatarEl.textContent = (u.username||'?').charAt(0).toUpperCase();
+  }
+  document.getElementById('profileName').textContent = u.username || '—';
+  document.getElementById('profileSub').textContent = u.phone ? `เบอร์: ${u.phone}` : '';
+}
+
+/* ---------- Dashboard tab ---------- */
+async function loadDashboard(){
+  const res = await api('getMyDashboard', { session_token: STATE.session.session_token });
+  if(!res.success){ showToast(res.message); return; }
+  document.getElementById('statTopics').textContent = res.total_topics;
+  document.getElementById('statVoters').textContent = res.total_voters;
+  renderDashboardBreakdown(res);
+}
+
+function renderDashboardBreakdown(dash){
+  const el = document.getElementById('dashboardBreakdown');
+  if(!dash.total_voters){
+    el.innerHTML = '<div class="dash-empty">ยังไม่มีคนมาร่วมโหวตหัวข้อของคุณ</div>';
+    return;
+  }
+  const rows = [
+    {label:'เพศ', data: dash.gender_percent},
+    {label:'ช่วงอายุ', data: dash.age_group_percent},
+    {label:'จังหวัด', data: dash.province_percent}
+  ];
+  el.innerHTML = rows.map(r=>{
+    const entries = Object.entries(r.data || {});
+    if(entries.length === 0) return '';
+    const bars = entries.map(([k,v],i)=> `<span class="dash-bar-seg" style="width:${v}%;background:${DASH_COLORS[i % DASH_COLORS.length]}"></span>`).join('');
+    const legend = entries.map(([k,v],i)=> `<span><i style="background:${DASH_COLORS[i % DASH_COLORS.length]}"></i>${escapeHtml(k)} ${v}%</span>`).join('');
+    return `<div class="dash-row"><span class="dash-label">${r.label}</span><div class="dash-bar-bg">${bars}</div></div><div class="dash-legend">${legend}</div>`;
+  }).join('');
+}
+
+/* ---------- My Topics tab ---------- */
+async function loadMyTopics(){
+  const res = await api('getMyTopics', { session_token: STATE.session.session_token });
+  if(!res.success){ showToast(res.message); return; }
+  STATE.myTopics = res.topics || [];
+  renderMyTopics();
+}
+
+document.getElementById('sortToggle').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button[data-sort]');
+  if(!btn) return;
+  document.querySelectorAll('#sortToggle button').forEach(b=> b.classList.remove('active'));
+  btn.classList.add('active');
+  STATE.sortMode = btn.dataset.sort;
+  renderMyTopics();
+});
+
+const STATUS_LABEL = { active:'กำลังโหวต', pending:'รอตรวจสอบ', inactive:'ปิดใช้งาน', expired:'หมดเวลาแล้ว' };
+
+function renderMyTopics(){
+  const el = document.getElementById('myTopicsList');
+  if(STATE.myTopics.length === 0){
+    el.innerHTML = '<div class="empty-state"><div class="emoji">📭</div>ยังไม่มีหัวข้อที่คุณสร้าง</div>';
+    return;
+  }
+  const sorted = [...STATE.myTopics].sort((a,b)=>{
+    if(STATE.sortMode === 'popular') return b.total_votes - a.total_votes;
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
+  el.innerHTML = sorted.map(t=>{
+    const statusClass = STATUS_LABEL[t.status] ? t.status : 'inactive';
+    const statusText = STATUS_LABEL[t.status] || t.status;
+    return `
+      <a class="my-topic-card" style="--card-color:${t.card_color || 'var(--primary)'}" href="index.html?topic=${t.topic_id}">
+        <div class="mt-top">
+          <div class="mt-title">${escapeHtml(t.title)}</div>
+          <span class="status-badge ${statusClass}">${escapeHtml(statusText)}</span>
+        </div>
+        <div class="mt-meta">
+          ${t.category ? `<span class="cat-tag">${escapeHtml(t.category)}</span>` : ''}
+        </div>
+        <div class="mt-bar">
+          <span class="a" style="width:${t.side_a_percent}%"></span>
+          <span class="b" style="width:${t.side_b_percent}%"></span>
+        </div>
+        <div class="mt-votes">${t.total_votes} โหวต · ${escapeHtml(t.side_a_label)} ${t.side_a_percent}% / ${escapeHtml(t.side_b_label)} ${t.side_b_percent}%</div>
+      </a>`;
+  }).join('');
+}
+
+/* ---------- Edit info tab ---------- */
+function populateEditForm(){
+  const u = STATE.profile;
+  document.getElementById('editUsername').value = u.username || '';
+  document.getElementById('editEmail').value = u.email || '';
+  document.getElementById('editGender').value = u.gender || '';
+  document.getElementById('editProvince').value = u.province || '';
+  STATE.editAvatarUrl = u.profile_image_url || '';
+  renderAvatarPreview();
+
+  if(u.birthday){
+    const d = new Date(u.birthday);
+    if(!isNaN(d)){
+      document.getElementById('editBirthDay').value = String(d.getDate()).padStart(2,'0');
+      document.getElementById('editBirthMonth').value = String(d.getMonth()+1).padStart(2,'0');
+      document.getElementById('editBirthYear').value = String(d.getFullYear());
+    }
+  }
+}
+
+document.getElementById('editSaveBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('editError');
+  errEl.style.display = 'none';
+
+  const username = document.getElementById('editUsername').value.trim();
+  const email = document.getElementById('editEmail').value.trim();
+  const bDay = document.getElementById('editBirthDay').value;
+  const bMonth = document.getElementById('editBirthMonth').value;
+  const bYear = document.getElementById('editBirthYear').value;
+  const gender = document.getElementById('editGender').value;
+  const province = document.getElementById('editProvince').value;
+
+  const oldPasscode = document.getElementById('editOldPasscode').value.trim();
+  const newPasscode = document.getElementById('editNewPasscode').value.trim();
+  const newPasscode2 = document.getElementById('editNewPasscode2').value.trim();
+
+  if(!username || !email || !bDay || !bMonth || !bYear || !gender || !province){
+    errEl.textContent = 'กรุณากรอกข้อมูลให้ครบทุกช่อง';
+    errEl.style.display = 'block';
+    return;
+  }
+  if(email.indexOf('@') === -1){
+    errEl.textContent = 'อีเมลไม่ถูกต้อง กรุณาใส่ @ ด้วย';
+    errEl.style.display = 'block';
+    return;
+  }
+  if(newPasscode || newPasscode2 || oldPasscode){
+    if(!oldPasscode){
+      errEl.textContent = 'กรุณากรอก Passcode เดิมเพื่อยืนยันก่อนเปลี่ยน';
+      errEl.style.display = 'block';
+      return;
+    }
+    if(newPasscode.length < 6){
+      errEl.textContent = 'Passcode ใหม่ต้องมีอย่างน้อย 6 หลัก';
+      errEl.style.display = 'block';
+      return;
+    }
+    if(newPasscode !== newPasscode2){
+      errEl.textContent = 'ยืนยัน Passcode ใหม่ไม่ตรงกัน';
+      errEl.style.display = 'block';
+      return;
+    }
+  }
+
+  const params = {
+    session_token: STATE.session.session_token,
+    username, email, gender, province,
+    birthday: `${bYear}-${bMonth}-${bDay}`,
+    profile_image_url: STATE.editAvatarUrl || ''
+  };
+  if(newPasscode){
+    params.old_passcode = oldPasscode;
+    params.new_passcode = newPasscode;
+  }
+
+  const btn = document.getElementById('editSaveBtn');
+  setBtnLoading(btn, true, 'กำลังบันทึก...');
+  const res = await api('updateProfile', params, 'POST');
+  setBtnLoading(btn, false);
+
+  if(!res.success){
+    errEl.textContent = res.message;
+    errEl.style.display = 'block';
+    return;
+  }
+
+  STATE.profile = Object.assign(STATE.profile, res.user);
+  renderProfileHead();
+  document.getElementById('editOldPasscode').value = '';
+  document.getElementById('editNewPasscode').value = '';
+  document.getElementById('editNewPasscode2').value = '';
+  showToast('บันทึกข้อมูลสำเร็จ');
+});
+
+/* ---------- Delete account tab ---------- */
+document.getElementById('deleteAccountBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('deleteError');
+  errEl.style.display = 'none';
+  const passcode = document.getElementById('deletePasscode').value.trim();
+  if(!passcode){
+    errEl.textContent = 'กรุณากรอก Passcode เพื่อยืนยัน';
+    errEl.style.display = 'block';
+    return;
+  }
+  if(!confirm('ยืนยันปิดบัญชีถาวร? คุณจะเข้าสู่ระบบด้วยเบอร์นี้ไม่ได้อีก')) return;
+
+  const btn = document.getElementById('deleteAccountBtn');
+  setBtnLoading(btn, true, 'กำลังปิดบัญชี...');
+  const res = await api('deleteAccount', { session_token: STATE.session.session_token, passcode }, 'POST');
+  setBtnLoading(btn, false);
+
+  if(!res.success){
+    errEl.textContent = res.message;
+    errEl.style.display = 'block';
+    return;
+  }
+
+  logout();
+  showToast('ปิดบัญชีเรียบร้อยแล้ว');
+  setTimeout(()=>{ location.href = 'index.html'; }, 1200);
+});
+
+/* ---------- Init ---------- */
+(async function init(){
+  if(!isLoggedIn()){
+    document.getElementById('lockedState').style.display = 'block';
+    return;
+  }
+
+  fillProvinceSelect();
+  fillBirthdaySelects();
+
+  const res = await api('getMyProfile', { session_token: STATE.session.session_token });
+  if(!res.success){
+    showToast(res.message);
+    logout();
+    document.getElementById('lockedState').style.display = 'block';
+    return;
+  }
+
+  STATE.profile = res.user;
+  document.getElementById('profileContent').style.display = 'block';
+  document.getElementById('headerActions').innerHTML += '<button class="btn btn-ghost" id="logoutBtn">ออกจากระบบ</button>';
+  document.getElementById('logoutBtn').addEventListener('click', ()=>{
+    logout();
+    showToast('ออกจากระบบแล้ว');
+    setTimeout(()=>{ location.href = 'index.html'; }, 600);
+  });
+
+  renderProfileHead();
+  populateEditForm();
+  loadDashboard();
+  loadMyTopics();
+})();
+</script>
+
+</body>
+</html>
