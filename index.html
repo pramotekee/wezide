@@ -156,7 +156,7 @@
 
   .topic-card{
     background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow);
-    overflow:hidden; border-top:5px solid var(--card-color, var(--primary));
+    overflow:hidden; border:2px solid var(--card-color, var(--primary)); border-top-width:5px;
   }
   .card-top{
     display:flex; align-items:center; justify-content:space-between; padding:12px 14px 0;
@@ -173,6 +173,7 @@
     width:32px; height:32px; border-radius:50%; background:var(--bg);
     display:flex; align-items:center; justify-content:center; font-size:15px; color:var(--primary);
   }
+  .topic-card .share-icon-btn{ color:var(--card-color, var(--primary)); }
 
   .card-content-block{ padding:12px 14px 4px; }
   .cover-img{ width:100%; height:100%; object-fit:contain; display:block; }
@@ -187,6 +188,8 @@
   .meta-row{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:10px 14px 0; }
   .cat-tag{ font-size:11.5px; background:var(--primary); color:#fff; padding:4px 10px; border-radius:100px; }
   .tag-chip{ font-size:11.5px; background:var(--bg); color:var(--text-muted); padding:4px 10px; border-radius:100px; }
+  .topic-card .cat-tag{ background:var(--card-color, var(--primary)); }
+  .topic-card .tag-chip{ background:color-mix(in srgb, var(--card-color, var(--primary)) 10%, white); color:var(--text-muted); }
 
   /* --- vote row: ซ้าย = A / กลาง(ว่างช่องแค่แบ่ง) / ขวา = B --- */
   .vote-row{ display:flex; gap:8px; padding:14px; }
@@ -201,7 +204,11 @@
   .vote-btn.selected.side-a{ background:var(--side-a); border-color:var(--side-a); color:#fff; }
   .vote-btn.selected.side-b{ background:var(--side-b); border-color:var(--side-b); color:#fff; }
   .vote-btn:disabled{ opacity:.55; cursor:not-allowed; }
-  .vote-footnote{ text-align:center; font-size:11.5px; color:var(--text-muted); padding:0 14px 12px; }
+  /* --- โทนสีของการ์ดต้องไหลเข้าไปในองค์ประกอบภายในด้วย ไม่ใช่แค่ขอบ --- */
+  .topic-card .vote-btn{ background:color-mix(in srgb, var(--card-color, var(--primary)) 10%, white); border-color:color-mix(in srgb, var(--card-color, var(--primary)) 30%, white); }
+  .topic-card .vote-btn.selected{ background:var(--card-color, var(--primary)); border-color:var(--card-color, var(--primary)); color:#fff; }
+  .topic-card .cover-img-wrap{ background:color-mix(in srgb, var(--card-color, var(--primary)) 10%, white); }
+  .topic-card .text-topic-box{ background:color-mix(in srgb, var(--card-color, var(--primary)) 8%, white); }
 
   /* --- vote row แบบมีรูป: [A][รูป][B] ทั้ง 3 แท่งสัดส่วนเท่ากันหมด คือสี่เหลี่ยมผืนผ้าแนวตั้ง 9:16 --- */
   .vote-row-image{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; padding:14px; }
@@ -264,10 +271,12 @@
   .preview-3col{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; align-items:stretch; }
   .preview-3col .cover-upload{ max-height:none; }
   .preview-vote-btn{
-    aspect-ratio:9/16; border-radius:12px; background:var(--bg); border:2px solid var(--line);
+    aspect-ratio:9/16; border-radius:12px; background:color-mix(in srgb, var(--card-color, var(--primary)) 10%, white);
+    border:2px solid color-mix(in srgb, var(--card-color, var(--primary)) 30%, white);
     display:flex; align-items:center; justify-content:center; text-align:center;
     font-size:12.5px; font-weight:600; color:var(--text-muted); padding:6px 4px; word-break:break-word;
   }
+  #coverField .cover-upload{ background:color-mix(in srgb, var(--card-color, var(--primary)) 10%, white); }
   .color-swatches{ display:flex; flex-wrap:wrap; gap:10px; }
   .color-swatch{
     width:30px; height:30px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 0 1.5px var(--line);
@@ -276,7 +285,7 @@
   .tag-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .tag-grid input{ padding:9px 12px !important; font-size:13px !important; }
   .date-row{ display:flex; gap:16px; flex-wrap:wrap; }
-  .date-row .field{ flex:1 1 140px; min-width:140px; }
+  .date-row .field{ flex:1 1 140px; min-width:140px; margin-bottom:0; } /* gap ของ flex จัดระยะให้แล้ว ไม่ต้องมี margin-bottom ซ้ำ */
   .date-row.stack-row{ flex-direction:column; gap:14px; } /* บังคับแยกคนละแถวเต็มความกว้าง กันชนกันบนจอแคบ */
   .dob-row{ display:flex; gap:8px; }
   .dob-row select{ flex:1; }
@@ -573,6 +582,32 @@
   </div>
 </div>
 
+
+<!-- ===== Create Topic Success Modal (โผล่หลังสร้างหัวข้อสำเร็จ แทน toast เล็กๆ เดิม) ===== -->
+<div class="modal-overlay" id="createSuccessModal">
+  <div class="modal-box" style="text-align:center;">
+    <button class="modal-close" data-close="createSuccessModal" style="margin-left:auto;display:block;">✕</button>
+    <h3 style="margin:0 0 10px;">หัวข้อของคุณสร้างสำเร็จแล้ว</h3>
+    <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 22px;line-height:1.6;">โปรดรอทีมงานตรวจสอบ เมื่อผ่านแล้วหัวข้อของคุณจะถูกเผยแพร่สู่สังคม</p>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-primary full-btn" id="createSuccessCreateBtn">สร้างหัวข้อต่อ</button>
+      <button class="btn btn-ghost full-btn" id="createSuccessHomeBtn">กลับหน้าแรก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Vote Confirm Modal (ยืนยันก่อนโหวตจริง แทนการโหวตทันทีที่กด) ===== -->
+<div class="modal-overlay" id="voteConfirmModal">
+  <div class="modal-box" style="text-align:center;">
+    <button class="modal-close" data-close="voteConfirmModal" style="margin-left:auto;display:block;">✕</button>
+    <h3 style="margin:0 0 10px;">ยืนยันการเลือก</h3>
+    <p id="voteConfirmText" style="font-size:13.5px;color:var(--text-muted);margin:0 0 22px;line-height:1.6;"></p>
+    <div style="display:flex;gap:10px;" id="voteConfirmActions">
+      <button class="btn btn-ghost full-btn" id="voteCancelBtn">ยกเลิก</button>
+      <button class="btn btn-primary full-btn" id="voteConfirmBtn">ยืนยันเลือก</button>
+    </div>
+  </div>
+</div>
 
 <!-- ===== Lightbox ===== -->
 <div class="lightbox" id="lightbox">
@@ -988,10 +1023,12 @@ async function loadCreateFormOptions(){
       document.querySelectorAll('.color-swatch').forEach(s=> s.classList.remove('selected'));
       sw.classList.add('selected');
       ctSelectedColor = c.hex;
+      document.getElementById('createModal').style.setProperty('--card-color', c.hex);
     });
     wrap.appendChild(sw);
   });
   if(STATE.cardColors[DEFAULT_IDX]) ctSelectedColor = STATE.cardColors[DEFAULT_IDX].hex;
+  if(ctSelectedColor) document.getElementById('createModal').style.setProperty('--card-color', ctSelectedColor);
 }
 
 document.getElementById('typeTextBtn').addEventListener('click', ()=>{
@@ -1074,7 +1111,15 @@ document.getElementById('createSubmitBtn').addEventListener('click', async ()=>{
   }
   closeModal('createModal');
   resetCreateForm();
-  showToast(res.message || 'ส่งหัวข้อเรียบร้อย รอแอดมินตรวจสอบก่อนเผยแพร่');
+  openModal('createSuccessModal');
+});
+
+document.getElementById('createSuccessCreateBtn').addEventListener('click', ()=>{
+  closeModal('createSuccessModal');
+  openModal('createModal');
+});
+document.getElementById('createSuccessHomeBtn').addEventListener('click', ()=>{
+  closeModal('createSuccessModal');
 });
 
 function resetCreateForm(){
@@ -1193,10 +1238,9 @@ function topicCardHTML(t){
     </div>
 
     ${voteRowHTML}
-    <div class="vote-footnote">${t.total_votes} คนร่วมโหวตแล้ว · เปลี่ยนใจได้อีก 2 ครั้ง</div>
 
     <div class="mini-dash">
-      <div class="mini-dash-title">สรุปผู้ร่วมโหวตทั้งหมด <b style="color:var(--primary)">${t.total_votes}</b> คน</div>
+      <div class="mini-dash-title">สรุปผู้ร่วมโหวตทั้งหมด <b style="color:${t.card_color || 'var(--primary)'}">${t.total_votes}</b> คน</div>
       <div id="dash-${t.topic_id}"></div>
     </div>
   </div>`;
@@ -1235,15 +1279,65 @@ function renderDashboard(topicId, dash){
 }
 
 /* ---------- Voting ---------- */
+let pendingVoteConfirm = null; // {topicId, side, btnEl} รอ user กดยืนยันใน voteConfirmModal
+
 function handleVoteClick(topicId, side, btnEl){
   if(!isLoggedIn()){
     STATE.pendingVote = { topicId, side };
     openModal('loginModal');
     return;
   }
-  castVote(topicId, side, btnEl);
+  const t = STATE.topics.find(x=> x.topic_id === topicId);
+  const sideLabel = (side === 'A' ? t?.side_a_label : t?.side_b_label) || `ฝั่ง ${side}`;
+  pendingVoteConfirm = { topicId, side, btnEl };
+
+  document.getElementById('voteConfirmText').textContent =
+    `คุณกำลังเลือก "${sideLabel}" เมื่อยืนยันแล้วคำตอบของคุณจะถูกบันทึกทันที และสามารถเปลี่ยนใจภายหลังได้ในจำนวนจำกัด`;
+  document.getElementById('voteConfirmActions').innerHTML =
+    `<button class="btn btn-ghost full-btn" id="voteCancelBtn">ยกเลิก</button>
+     <button class="btn btn-primary full-btn" id="voteConfirmBtn">ยืนยันเลือก</button>`;
+  document.getElementById('voteCancelBtn').addEventListener('click', ()=>{
+    pendingVoteConfirm = null;
+    closeModal('voteConfirmModal');
+  });
+  document.getElementById('voteConfirmBtn').addEventListener('click', confirmVote);
+
+  openModal('voteConfirmModal');
 }
 
+async function confirmVote(){
+  if(!pendingVoteConfirm) return;
+  const { topicId, side, btnEl } = pendingVoteConfirm;
+  const confirmBtn = document.getElementById('voteConfirmBtn');
+  const cancelBtn = document.getElementById('voteCancelBtn');
+  confirmBtn.disabled = true; if(cancelBtn) cancelBtn.disabled = true;
+  confirmBtn.textContent = 'กำลังบันทึก...';
+
+  const res = await api('vote', {
+    session_token: STATE.session.session_token,
+    topic_id: topicId,
+    side
+  }, 'POST');
+
+  pendingVoteConfirm = null;
+
+  if(!res.success){
+    closeModal('voteConfirmModal');
+    showToast(res.message);
+    return;
+  }
+
+  // แสดงผลลัพธ์เป็น popup แทน toast เล็กๆ ที่อ่านไม่ทัน พร้อมจำนวนครั้งที่เปลี่ยนใจได้จริงของ user คนนี้
+  document.getElementById('voteConfirmText').textContent =
+    res.message + (res.remaining_changes !== undefined ? ` คุณสามารถเปลี่ยนใจได้อีก ${res.remaining_changes} ครั้ง` : '');
+  document.getElementById('voteConfirmActions').innerHTML = `<button class="btn btn-primary full-btn" id="voteOkBtn">ตกลง</button>`;
+  document.getElementById('voteOkBtn').addEventListener('click', ()=> closeModal('voteConfirmModal'));
+
+  loadTopics().then(loadDashboards);
+}
+
+/* ใช้กับ flow "โหวตค้างไว้ก่อน login/สมัคร แล้ว resume อัตโนมัติหลัง login สำเร็จ" เท่านั้น
+   (กรณีนี้ user ได้ตั้งใจกดเลือกฝั่งไปแล้วตั้งแต่ก่อน login จึงไม่ต้องเด้ง confirm ซ้ำ) */
 async function castVote(topicId, side, btnEl){
   if(btnEl) setBtnLoading(btnEl, true, '');
   const res = await api('vote', {
