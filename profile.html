@@ -643,7 +643,7 @@ document.getElementById('sortToggle').addEventListener('click', (e)=>{
   renderMyTopics();
 });
 
-const STATUS_LABEL = { active:'กำลังโหวต', pending:'รอตรวจสอบ', inactive:'ปิดใช้งาน', expired:'หมดเวลาแล้ว' };
+const STATUS_LABEL = { active:'กำลังเปิดโหวต', pending:'รอตรวจสอบ', inactive:'ปิดใช้งาน', expired:'สิ้นสุดเวลาโหวต' };
 
 function renderMyTopics(){
   const el = document.getElementById('myTopicsList');
