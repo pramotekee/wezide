@@ -229,7 +229,6 @@
 <header class="site-header">
   <a class="logo-wrap" href="index.html">
     <span class="brand">WEZIDE</span>
-    <span class="tagline">Opinion matter!</span>
   </a>
   <div class="header-actions" id="headerActions">
     <a class="btn btn-ghost" href="index.html">← กลับหน้าแรก</a>
@@ -595,7 +594,7 @@ function renderProfileHead(){
     avatarEl.textContent = (u.username||'?').charAt(0).toUpperCase();
   }
   document.getElementById('profileName').textContent = u.username || '—';
-  document.getElementById('profileSub').textContent = u.phone ? `เบอร์: ${u.phone}` : '';
+  document.getElementById('profileSub').textContent = u.phone ? `หมายเลขโทรศัพท์: ${u.phone}` : '';
 }
 
 /* ---------- Dashboard tab ---------- */
