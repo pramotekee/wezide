@@ -287,7 +287,7 @@
   .color-swatch.selected{ box-shadow:0 0 0 2px var(--text); }
   .tag-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .tag-grid input{ padding:9px 12px !important; font-size:13px !important; }
-  .date-row{ display:flex; gap:16px; flex-wrap:wrap; }
+  .date-row{ display:flex; gap:16px; flex-wrap:wrap; margin-bottom:14px; } /* margin อยู่ที่ตัว row เอง ไม่ใช่ field ข้างใน กันซ้อนกับ gap แต่ยังเว้นระยะก่อนเนื้อหาถัดไป */
   .date-row .field{ flex:1 1 140px; min-width:140px; margin-bottom:0; } /* gap ของ flex จัดระยะให้แล้ว ไม่ต้องมี margin-bottom ซ้ำ */
   .date-row.stack-row{ flex-direction:column; gap:14px; } /* บังคับแยกคนละแถวเต็มความกว้าง กันชนกันบนจอแคบ */
   .date-row.stack-row .field{ flex:0 0 auto; min-width:0; } /* สำคัญ: ตอน column, flex-basis:140px จะกลายเป็นความ "สูง" ไม่ใช่ความกว้าง ทำให้แต่ละ field ยืดเต็มพื้นที่แนวตั้งจนช่องว่างถ่างมหาศาล ต้องปิด flex-grow ทิ้งตอน stack */
@@ -317,6 +317,13 @@
     animation:spin .7s linear infinite;
   }
   .btn-ghost .btn-spinner{ border-color:rgba(91,42,158,0.3); border-top-color:var(--primary); }
+  /* spinner กลางพื้นที่ ใช้ตอนกำลังดึงข้อมูล เช่น เปลี่ยน pill หมวดหมู่ / พิมพ์ค้นหา / โหลด feed ครั้งแรก */
+  .area-loading{ text-align:center; padding:50px 20px; color:var(--text-muted); font-size:13.5px; }
+  .area-spinner{
+    width:28px; height:28px; margin:0 auto 12px; border-radius:50%;
+    border:3px solid var(--line); border-top-color:var(--primary);
+    animation:spin .7s linear infinite;
+  }
   .full-btn{ width:100%; padding:13px; border-radius:12px; font-size:15px; font-weight:600; }
   .divider-note{
     text-align:center; margin-top:18px; padding-top:16px; border-top:1px dashed var(--line);
@@ -1150,6 +1157,7 @@ function resetCreateForm(){
 
 /* ---------- Topics / Feed ---------- */
 async function loadTopics(){
+  document.getElementById('feed').innerHTML = `<div class="area-loading"><div class="area-spinner"></div>กำลังโหลดหัวข้อ...</div>`;
   const params = {};
   if(STATE.activeCategory) params.category = STATE.activeCategory;
   if(STATE.searchQuery) params.search = STATE.searchQuery;
