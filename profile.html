@@ -91,6 +91,77 @@
     animation:spin .7s linear infinite; margin-right:6px; vertical-align:-2px;
   }
   @keyframes spin{ to{ transform:rotate(360deg); } }
+  /* spinner กลางพื้นที่ ใช้ตอนกำลังดึงข้อมูล เช่น สลับ tab / เปลี่ยนสถานะหัวข้อ ให้เหมือนกับ index.html */
+  .area-loading{ text-align:center; padding:50px 20px; color:var(--text-muted); font-size:13.5px; }
+  .area-spinner{
+    width:28px; height:28px; margin:0 auto 12px; border-radius:50%;
+    border:3px solid var(--line); border-top-color:var(--primary);
+    animation:spin .7s linear infinite;
+  }
+
+  /* ===== Modal (เหมือน index.html ทุกกระเบียดนิ้ว เพื่อให้ design element ตรงกันทั้งเว็บ) ===== */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(28,19,41,0.55); backdrop-filter:blur(3px);
+    display:none; align-items:flex-end; justify-content:center; z-index:100;
+  }
+  .modal-overlay.open{ display:flex; }
+  @media(min-width:520px){ .modal-overlay{ align-items:center; } }
+  .modal-box{
+    background:var(--surface); width:100%; max-width:420px; border-radius:20px 20px 0 0;
+    padding:24px 22px 28px; max-height:88vh; overflow-y:auto;
+    animation:slideUp .25s ease;
+  }
+  @media(min-width:520px){ .modal-box{ border-radius:20px; } }
+  @keyframes slideUp{ from{ transform:translateY(30px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
+  .modal-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .modal-head h3{ margin:0; font-size:18px; font-weight:600; }
+  .modal-close{ font-size:20px; color:var(--text-muted); width:30px; height:30px; }
+
+  /* ===== แก้ไขหัวข้อ (ฟอร์มชุดเดียวกับตอนสร้าง ใน index.html) ===== */
+  .type-toggle{ display:flex; gap:8px; }
+  .type-toggle button{
+    flex:1; padding:10px; border:1.5px solid var(--line); border-radius:10px;
+    font-size:13.5px; font-weight:600; color:var(--text-muted); background:var(--bg);
+  }
+  .type-toggle button.selected{ border-color:var(--primary); color:var(--primary); background:#fff; }
+  .cover-upload{
+    width:100%; aspect-ratio:9/16; max-height:520px; border:1.5px dashed var(--line); border-radius:12px;
+    display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:13px;
+    background:var(--bg); overflow:hidden; text-align:center; padding:10px;
+  }
+  .cover-upload img{ width:100%; height:100%; object-fit:contain; }
+  .preview-3col{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; align-items:stretch; }
+  .preview-3col .cover-upload{ max-height:none; }
+  .preview-vote-btn{
+    aspect-ratio:9/16; border-radius:12px; background:color-mix(in srgb, var(--card-color, var(--primary)) 10%, white);
+    border:2px solid color-mix(in srgb, var(--card-color, var(--primary)) 30%, white);
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    font-size:12.5px; font-weight:600; color:var(--text-muted); padding:6px 4px; word-break:break-word;
+  }
+  #etCoverField .cover-upload{ background:color-mix(in srgb, var(--card-color, var(--primary)) 10%, white); }
+  .color-swatches{ display:flex; flex-wrap:wrap; gap:10px; }
+  .color-swatch{
+    width:30px; height:30px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 0 1.5px var(--line);
+  }
+  .color-swatch.selected{ box-shadow:0 0 0 2px var(--text); }
+  .tag-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .tag-grid input{ padding:9px 12px !important; font-size:13px !important; }
+  .date-row{ display:flex; gap:16px; flex-wrap:wrap; margin-bottom:14px; }
+  .date-row .field{ flex:1 1 140px; min-width:140px; margin-bottom:0; }
+  .date-row.stack-row{ flex-direction:column; gap:14px; }
+  .date-row.stack-row .field{ flex:0 0 auto; min-width:0; }
+
+  /* ===== ปุ่มจัดการสถานะหัวข้อในการ์ด "หัวข้อของฉัน" ===== */
+  .mt-actions{ display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  .mt-action-btn{
+    flex:1 1 auto; min-width:70px; padding:8px 10px; border-radius:9px; font-size:12.5px; font-weight:600;
+    border:1.5px solid var(--line); background:var(--bg); color:var(--text-muted); text-align:center;
+  }
+  .mt-action-btn.publish{ border-color:#2C8A4B; color:#2C8A4B; background:#E4F5E9; }
+  .mt-action-btn.hide{ border-color:#B8790C; color:#B8790C; background:#FFF3DE; }
+  .mt-action-btn.edit{ border-color:var(--primary); color:var(--primary); background:#fff; }
+  .mt-action-btn.delete{ border-color:var(--danger); color:var(--danger); background:#fff; }
+  .status-badge.scheduled{ background:#E9F0FF; color:#2A5CD6; }
 
   /* ===== Layout ===== */
   .wrap{ max-width:640px; margin:0 auto; padding:24px 16px 70px; }
@@ -156,6 +227,7 @@
     display:block; background:var(--surface); border-radius:14px; box-shadow:var(--shadow);
     padding:14px; margin-bottom:12px; border-top:4px solid var(--card-color, var(--primary));
   }
+  .mt-link{ display:block; }
   .mt-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:6px; }
   .mt-title{ font-size:14.5px; font-weight:600; line-height:1.4; }
   .status-badge{
@@ -277,7 +349,7 @@
       </div>
       <div class="dash-card">
         <h4>ภาพรวมคนที่มาร่วมโหวตหัวข้อของคุณ</h4>
-        <div id="dashboardBreakdown"><div class="dash-empty">กำลังโหลด...</div></div>
+        <div id="dashboardBreakdown"><div class="area-loading"><div class="area-spinner"></div>กำลังโหลด...</div></div>
       </div>
     </div>
 
@@ -289,7 +361,7 @@
           <button data-sort="popular">ยอดนิยม</button>
         </div>
       </div>
-      <div id="myTopicsList"><div class="dash-empty">กำลังโหลด...</div></div>
+      <div id="myTopicsList"><div class="area-loading"><div class="area-spinner"></div>กำลังโหลด...</div></div>
     </div>
 
     <!-- ===== Tab: Edit info ===== -->
@@ -381,6 +453,87 @@
   </div>
 </div>
 
+<!-- ===== Confirm/Info Popup (ใช้ร่วมกันทุกจุด: ลบบัญชี / เผยแพร่-ซ่อน / ลบหัวข้อ ฯลฯ แทน confirm() ของเบราว์เซอร์และ toast เล็กๆ) ===== -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box" style="text-align:center;">
+    <button class="modal-close" data-close="confirmModal" style="margin-left:auto;display:block;">✕</button>
+    <h3 id="confirmModalTitle" style="margin:0 0 10px;">ยืนยันการทำรายการ</h3>
+    <p id="confirmModalText" style="font-size:13.5px;color:var(--text-muted);margin:0 0 22px;line-height:1.6;"></p>
+    <div style="display:flex;gap:10px;" id="confirmModalActions"></div>
+  </div>
+</div>
+
+<!-- ===== Edit Topic Modal (ฟอร์มชุดเดียวกับตอนสร้างหัวข้อใน index.html ทุกฟิลด์ พรีฟิลด้วยข้อมูลเดิม) ===== -->
+<div class="modal-overlay" id="editTopicModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>แก้ไขหัวข้อ</h3>
+      <button class="modal-close" data-close="editTopicModal">✕</button>
+    </div>
+
+    <div class="field">
+      <label>รูปแบบหัวข้อ</label>
+      <div class="type-toggle">
+        <button type="button" id="etTypeTextBtn" class="selected">ข้อความ</button>
+        <button type="button" id="etTypeImageBtn">รูปภาพ</button>
+      </div>
+    </div>
+
+    <div class="field" id="etCoverField" style="display:none;">
+      <label>รูปประกอบ (สัดส่วน 9:16) <span class="field-hint">— พรีวิวนี้คือหน้าตาที่จะแสดงจริงในฟีด</span></label>
+      <div class="preview-3col">
+        <div class="preview-vote-btn" id="etPreviewSideA">ตัวเลือก A</div>
+        <div class="cover-upload" id="etCoverPreview" onclick="document.getElementById('etCoverFile').click()">
+          ＋ แตะเพื่อแนบรูปประกอบหัวข้อ
+        </div>
+        <div class="preview-vote-btn" id="etPreviewSideB">ตัวเลือก B</div>
+      </div>
+      <input type="file" accept="image/*" id="etCoverFile" style="display:none;">
+    </div>
+
+    <div class="field"><label>หัวข้อ</label><input type="text" id="etTitle" placeholder="เช่น กาแฟดำดีต่อสุขภาพจริงไหม?"></div>
+    <div class="field"><label>รายละเอียด <span class="field-hint">(ไม่บังคับ)</span></label><textarea id="etDescription" rows="3" placeholder="อธิบายเพิ่มเติม..."></textarea></div>
+
+    <div class="date-row">
+      <div class="field"><label>ฝั่ง A</label><input type="text" id="etSideA" placeholder="เช่น เห็นด้วย"></div>
+      <div class="field"><label>ฝั่ง B</label><input type="text" id="etSideB" placeholder="เช่น ไม่เห็นด้วย"></div>
+    </div>
+
+    <div class="field">
+      <label>หมวดหมู่</label>
+      <select id="etCategory"><option value="">เลือกหมวดหมู่</option></select>
+    </div>
+
+    <div class="field">
+      <label>Tag <span class="field-hint">(ใส่อย่างน้อย 1 อัน สูงสุด 5 อัน)</span></label>
+      <div class="tag-grid">
+        <input type="text" id="etTag1" placeholder="Tag 1">
+        <input type="text" id="etTag2" placeholder="Tag 2">
+        <input type="text" id="etTag3" placeholder="Tag 3">
+        <input type="text" id="etTag4" placeholder="Tag 4">
+        <input type="text" id="etTag5" placeholder="Tag 5">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>สีการ์ด</label>
+      <div class="color-swatches" id="etColorSwatches"></div>
+    </div>
+
+    <div class="date-row stack-row">
+      <div class="field"><label>วันเริ่มต้นเผยแพร่</label><input type="date" id="etStartDate"></div>
+      <div class="field"><label>วันสิ้นสุดเผยแพร่</label><input type="date" id="etEndDate"></div>
+    </div>
+
+    <p style="font-size:12px;color:var(--text-muted);margin:-4px 0 14px;line-height:1.6;">
+      หมายเหตุ: ถ้ามีการแก้ไขข้อมูลจริง ระบบจะเปลี่ยนสถานะหัวข้อเป็น "รอตรวจสอบ" อัตโนมัติ เพื่อให้ทีมงานตรวจสอบอีกครั้งก่อนเผยแพร่ (ผลโหวตเดิมจะยังอยู่ครบ ไม่ถูกล้าง)
+    </p>
+
+    <div class="field-error" id="etError"></div>
+    <button class="btn btn-primary full-btn" id="etSaveBtn">บันทึกการแก้ไข</button>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -456,6 +609,39 @@ function isLoggedIn(){ return !!(STATE.session && STATE.session.session_token); 
 function logout(){
   STATE.session = null;
   localStorage.removeItem('wz_session');
+}
+
+/* ---------- Modal helpers (เหมือน index.html) ---------- */
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('[data-close]').forEach(btn=>{
+  btn.addEventListener('click', ()=> closeModal(btn.dataset.close));
+});
+document.querySelectorAll('.modal-overlay').forEach(ov=>{
+  ov.addEventListener('click', (e)=>{ if(e.target === ov) ov.classList.remove('open'); });
+});
+
+/* ---------- Confirm/Info popup (แทน confirm() ของเบราว์เซอร์ + toast เล็กๆ ทุกจุดที่เกี่ยวกับหัวข้อ/บัญชี) ---------- */
+function showInfoPopup(message, btnLabel){
+  document.getElementById('confirmModalTitle').textContent = 'แจ้งให้ทราบ';
+  document.getElementById('confirmModalText').textContent = message;
+  document.getElementById('confirmModalActions').innerHTML =
+    `<button class="btn btn-primary full-btn" id="confirmModalOkBtn">${btnLabel || 'ตกลง'}</button>`;
+  document.getElementById('confirmModalOkBtn').addEventListener('click', ()=> closeModal('confirmModal'));
+  openModal('confirmModal');
+}
+
+// title/message/onConfirm ต้องระบุ, confirmLabel/cancelLabel/danger ไม่บังคับ
+function showConfirmPopup({ title, message, confirmLabel, cancelLabel, danger, onConfirm }){
+  document.getElementById('confirmModalTitle').textContent = title || 'ยืนยันการทำรายการ';
+  document.getElementById('confirmModalText').textContent = message || '';
+  document.getElementById('confirmModalActions').innerHTML = `
+    <button class="btn btn-ghost full-btn" id="confirmModalCancelBtn">${cancelLabel || 'ยกเลิก'}</button>
+    <button class="btn ${danger ? 'btn-danger' : 'btn-primary'} full-btn" id="confirmModalConfirmBtn">${confirmLabel || 'ยืนยัน'}</button>
+  `;
+  document.getElementById('confirmModalCancelBtn').addEventListener('click', ()=> closeModal('confirmModal'));
+  document.getElementById('confirmModalConfirmBtn').addEventListener('click', onConfirm);
+  openModal('confirmModal');
 }
 
 /* ---------- Passcode show/hide toggle ---------- */
@@ -643,7 +829,7 @@ document.getElementById('sortToggle').addEventListener('click', (e)=>{
   renderMyTopics();
 });
 
-const STATUS_LABEL = { active:'กำลังเปิดโหวต', pending:'รอตรวจสอบ', inactive:'ปิดใช้งาน', expired:'สิ้นสุดเวลาโหวต' };
+const STATUS_LABEL = { active:'กำลังเปิดโหวต', scheduled:'อนุมัติแล้ว รอถึงวันเริ่ม', pending:'รอตรวจสอบ', inactive:'ซ่อนอยู่', expired:'สิ้นสุดเวลาโหวต' };
 
 function renderMyTopics(){
   const el = document.getElementById('myTopicsList');
@@ -658,23 +844,260 @@ function renderMyTopics(){
   el.innerHTML = sorted.map(t=>{
     const statusClass = STATUS_LABEL[t.status] ? t.status : 'inactive';
     const statusText = STATUS_LABEL[t.status] || t.status;
+    // toggle เผยแพร่/ซ่อน กดได้เฉพาะหัวข้อที่เคยผ่านตรวจแล้วเท่านั้น (active/scheduled/inactive) — pending กับ expired กดเองไม่ได้
+    const canToggle = ['active','scheduled','inactive'].indexOf(t.status) !== -1;
+    const toggleBtn = !canToggle ? '' :
+      (t.status === 'inactive'
+        ? `<button class="mt-action-btn publish" data-action="publish" data-topic="${t.topic_id}">เผยแพร่</button>`
+        : `<button class="mt-action-btn hide" data-action="hide" data-topic="${t.topic_id}">ซ่อน</button>`);
     return `
-      <a class="my-topic-card" style="--card-color:${t.card_color || 'var(--primary)'}" href="index.html?topic=${t.topic_id}">
-        <div class="mt-top">
-          <div class="mt-title">${escapeHtml(t.title)}</div>
-          <span class="status-badge ${statusClass}">${escapeHtml(statusText)}</span>
+      <div class="my-topic-card" style="--card-color:${t.card_color || 'var(--primary)'}">
+        <a class="mt-link" href="index.html?topic=${t.topic_id}">
+          <div class="mt-top">
+            <div class="mt-title">${escapeHtml(t.title)}</div>
+            <span class="status-badge ${statusClass}">${escapeHtml(statusText)}</span>
+          </div>
+          <div class="mt-meta">
+            ${t.category ? `<span class="cat-tag">${escapeHtml(t.category)}</span>` : ''}
+          </div>
+          <div class="mt-bar">
+            <span class="a" style="width:${t.side_a_percent}%"></span>
+            <span class="b" style="width:${t.side_b_percent}%"></span>
+          </div>
+          <div class="mt-votes">${t.total_votes} โหวต · ${escapeHtml(t.side_a_label)} ${t.side_a_percent}% / ${escapeHtml(t.side_b_label)} ${t.side_b_percent}%</div>
+        </a>
+        <div class="mt-actions">
+          ${toggleBtn}
+          <button class="mt-action-btn edit" data-action="edit" data-topic="${t.topic_id}">แก้ไข</button>
+          <button class="mt-action-btn delete" data-action="delete" data-topic="${t.topic_id}">ลบ</button>
         </div>
-        <div class="mt-meta">
-          ${t.category ? `<span class="cat-tag">${escapeHtml(t.category)}</span>` : ''}
-        </div>
-        <div class="mt-bar">
-          <span class="a" style="width:${t.side_a_percent}%"></span>
-          <span class="b" style="width:${t.side_b_percent}%"></span>
-        </div>
-        <div class="mt-votes">${t.total_votes} โหวต · ${escapeHtml(t.side_a_label)} ${t.side_a_percent}% / ${escapeHtml(t.side_b_label)} ${t.side_b_percent}%</div>
-      </a>`;
+      </div>`;
   }).join('');
 }
+
+/* event delegation: ปุ่ม action ในการ์ดถูกสร้างใหม่ทุกครั้งที่ re-render จึงผูก listener ที่ container แม่แทน */
+document.getElementById('myTopicsList').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button[data-action]');
+  if(!btn) return;
+  const topicId = btn.dataset.topic;
+  const topic = STATE.myTopics.find(t=> t.topic_id === topicId);
+  if(!topic) return;
+
+  if(btn.dataset.action === 'publish' || btn.dataset.action === 'hide'){
+    const nextStatus = btn.dataset.action === 'publish' ? 'active' : 'inactive';
+    showConfirmPopup({
+      title: nextStatus === 'active' ? 'ยืนยันเผยแพร่หัวข้อ' : 'ยืนยันซ่อนหัวข้อ',
+      message: nextStatus === 'active'
+        ? `หัวข้อ "${topic.title}" จะกลับมาแสดงในหน้าฟีดให้คนทั่วไปเห็นและโหวตได้ทันที`
+        : `หัวข้อ "${topic.title}" จะถูกดึงออกจากหน้าฟีด คนทั่วไปจะมองไม่เห็น (ไม่ใช่การลบ กดเผยแพร่กลับมาได้ภายหลัง)`,
+      confirmLabel: nextStatus === 'active' ? 'ยืนยันเผยแพร่' : 'ยืนยันซ่อน',
+      onConfirm: ()=> doSetTopicStatus(topicId, nextStatus)
+    });
+  } else if(btn.dataset.action === 'edit'){
+    openEditTopicModal(topic);
+  } else if(btn.dataset.action === 'delete'){
+    showConfirmPopup({
+      title: 'ยืนยันการลบหัวข้อ',
+      message: `หัวข้อ "${topic.title}" และผลโหวตทั้งหมดจะถูกลบออกจากระบบถาวร การกระทำนี้ไม่สามารถย้อนกลับได้`,
+      confirmLabel: 'ยืนยันลบ',
+      danger: true,
+      onConfirm: ()=> doDeleteTopic(topicId)
+    });
+  }
+});
+
+async function doSetTopicStatus(topicId, status){
+  const confirmBtn = document.getElementById('confirmModalConfirmBtn');
+  const cancelBtn = document.getElementById('confirmModalCancelBtn');
+  if(confirmBtn){ confirmBtn.disabled = true; confirmBtn.textContent = 'กำลังบันทึก...'; }
+  if(cancelBtn) cancelBtn.disabled = true;
+
+  const res = await api('setMyTopicStatus', { session_token: STATE.session.session_token, topic_id: topicId, status }, 'POST');
+
+  if(!res.success){
+    showInfoPopup(res.message, 'ปิด');
+    return;
+  }
+  closeModal('confirmModal');
+  showInfoPopup(res.message, 'ตกลง');
+  loadMyTopics();
+}
+
+async function doDeleteTopic(topicId){
+  const confirmBtn = document.getElementById('confirmModalConfirmBtn');
+  const cancelBtn = document.getElementById('confirmModalCancelBtn');
+  if(confirmBtn){ confirmBtn.disabled = true; confirmBtn.textContent = 'กำลังลบ...'; }
+  if(cancelBtn) cancelBtn.disabled = true;
+
+  const res = await api('deleteTopic', { session_token: STATE.session.session_token, topic_id: topicId }, 'POST');
+
+  if(!res.success){
+    showInfoPopup(res.message, 'ปิด');
+    return;
+  }
+  closeModal('confirmModal');
+  showInfoPopup(res.message, 'ตกลง');
+  STATE.myTopics = STATE.myTopics.filter(t=> t.topic_id !== topicId);
+  renderMyTopics();
+  loadDashboard(); // จำนวนหัวข้อ/โหวตรวมในแดชบอร์ดเปลี่ยนไปแล้ว รีเฟรชด้วย
+}
+
+/* ---------- Edit Topic modal (ฟอร์มชุดเดียวกับตอนสร้างหัวข้อ พรีฟิลด้วยข้อมูลเดิม) ---------- */
+let etSelectedColor = '';
+let etCoverUrl = '';
+let etCurrentTopicId = '';
+const ET_DEFAULT_IDX = 8; // ม่วง — ตรงกับ default ฝั่ง backend
+
+async function loadEditFormOptions(){
+  const catRes = await api('getCategories');
+  STATE.categories = catRes.success ? catRes.categories : [];
+  const catSel = document.getElementById('etCategory');
+  STATE.categories.forEach(cat=>{
+    const opt = document.createElement('option');
+    opt.value = cat; opt.textContent = cat;
+    catSel.appendChild(opt);
+  });
+
+  const colorRes = await api('getCardColors');
+  STATE.cardColors = colorRes.success ? colorRes.colors : [];
+  const wrap = document.getElementById('etColorSwatches');
+  STATE.cardColors.forEach((c, i)=>{
+    const sw = document.createElement('button');
+    sw.type = 'button';
+    sw.className = 'color-swatch';
+    sw.style.background = c.hex;
+    sw.title = c.name;
+    sw.dataset.hex = c.hex;
+    sw.addEventListener('click', ()=>{
+      document.querySelectorAll('#etColorSwatches .color-swatch').forEach(s=> s.classList.remove('selected'));
+      sw.classList.add('selected');
+      etSelectedColor = c.hex;
+      document.getElementById('editTopicModal').style.setProperty('--card-color', c.hex);
+    });
+    wrap.appendChild(sw);
+  });
+}
+
+document.getElementById('etTypeTextBtn').addEventListener('click', ()=>{
+  document.getElementById('etTypeTextBtn').classList.add('selected');
+  document.getElementById('etTypeImageBtn').classList.remove('selected');
+  document.getElementById('etCoverField').style.display = 'none';
+});
+document.getElementById('etTypeImageBtn').addEventListener('click', ()=>{
+  document.getElementById('etTypeImageBtn').classList.add('selected');
+  document.getElementById('etTypeTextBtn').classList.remove('selected');
+  document.getElementById('etCoverField').style.display = 'block';
+});
+document.getElementById('etSideA').addEventListener('input', (e)=>{
+  document.getElementById('etPreviewSideA').textContent = e.target.value.trim() || 'ตัวเลือก A';
+});
+document.getElementById('etSideB').addEventListener('input', (e)=>{
+  document.getElementById('etPreviewSideB').textContent = e.target.value.trim() || 'ตัวเลือก B';
+});
+document.getElementById('etCoverFile').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const preview = document.getElementById('etCoverPreview');
+  preview.innerHTML = '<div class="upload-spinner"></div>';
+  try{
+    const url = await uploadImageFile(file);
+    loadImageWithRetry(url,
+      (u)=>{ etCoverUrl = u; preview.innerHTML = `<img src="${u}">`; },
+      ()=>{ etCoverUrl = ''; preview.innerHTML = '＋ แตะเพื่อแนบรูปประกอบหัวข้อ'; showToast('โหลดรูปไม่สำเร็จ กรุณาลองอัพโหลดรูปใหม่อีกครั้ง'); }
+    );
+  }catch(err){
+    showToast('อัพโหลดรูปไม่สำเร็จ: ' + err.message);
+    preview.innerHTML = '＋ แตะเพื่อแนบรูปประกอบหัวข้อ';
+  }
+});
+
+function openEditTopicModal(t){
+  etCurrentTopicId = t.topic_id;
+  document.getElementById('etError').style.display = 'none';
+
+  if(t.topic_type === 'image'){
+    document.getElementById('etTypeImageBtn').click();
+  } else {
+    document.getElementById('etTypeTextBtn').click();
+  }
+
+  document.getElementById('etTitle').value = t.title || '';
+  document.getElementById('etDescription').value = t.description || '';
+  document.getElementById('etSideA').value = t.side_a_label || '';
+  document.getElementById('etSideB').value = t.side_b_label || '';
+  document.getElementById('etPreviewSideA').textContent = t.side_a_label || 'ตัวเลือก A';
+  document.getElementById('etPreviewSideB').textContent = t.side_b_label || 'ตัวเลือก B';
+  document.getElementById('etCategory').value = t.category || '';
+
+  const tags = t.tags || [];
+  ['etTag1','etTag2','etTag3','etTag4','etTag5'].forEach((id, i)=>{
+    document.getElementById(id).value = tags[i] || '';
+  });
+
+  document.getElementById('etStartDate').value = t.start_date ? String(t.start_date).slice(0,10) : '';
+  document.getElementById('etEndDate').value = t.end_date ? String(t.end_date).slice(0,10) : '';
+
+  etCoverUrl = t.image_url || '';
+  const coverPreview = document.getElementById('etCoverPreview');
+  coverPreview.innerHTML = etCoverUrl ? `<img src="${etCoverUrl}">` : '＋ แตะเพื่อแนบรูปประกอบหัวข้อ';
+
+  etSelectedColor = t.card_color || (STATE.cardColors[ET_DEFAULT_IDX] ? STATE.cardColors[ET_DEFAULT_IDX].hex : '');
+  document.getElementById('editTopicModal').style.setProperty('--card-color', etSelectedColor);
+  document.querySelectorAll('#etColorSwatches .color-swatch').forEach(s=>{
+    s.classList.toggle('selected', s.dataset.hex === etSelectedColor);
+  });
+
+  openModal('editTopicModal');
+}
+
+document.getElementById('etSaveBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('etError');
+  errEl.style.display = 'none';
+
+  const topicType = document.getElementById('etTypeImageBtn').classList.contains('selected') ? 'image' : 'text';
+  const title = document.getElementById('etTitle').value.trim();
+  const description = document.getElementById('etDescription').value.trim();
+  const sideA = document.getElementById('etSideA').value.trim();
+  const sideB = document.getElementById('etSideB').value.trim();
+  const category = document.getElementById('etCategory').value;
+  const tags = ['etTag1','etTag2','etTag3','etTag4','etTag5'].map(id => document.getElementById(id).value.trim());
+  const startDate = document.getElementById('etStartDate').value;
+  const endDate = document.getElementById('etEndDate').value;
+
+  if(!title){ errEl.textContent = 'กรุณากรอกหัวข้อ'; errEl.style.display = 'block'; return; }
+  if(!sideA || !sideB){ errEl.textContent = 'กรุณากรอกชื่อทั้ง 2 ฝั่งให้ครบ'; errEl.style.display = 'block'; return; }
+  if(!category){ errEl.textContent = 'กรุณาเลือกหมวดหมู่'; errEl.style.display = 'block'; return; }
+  if(!tags.some(t => t)){ errEl.textContent = 'กรุณาใส่ Tag อย่างน้อย 1 อัน'; errEl.style.display = 'block'; return; }
+  if(!startDate || !endDate){ errEl.textContent = 'กรุณาเลือกวันเริ่มต้นและวันสิ้นสุดเผยแพร่'; errEl.style.display = 'block'; return; }
+  if(new Date(endDate) < new Date(startDate)){ errEl.textContent = 'วันสิ้นสุดเผยแพร่ต้องไม่ก่อนวันเริ่มต้นเผยแพร่'; errEl.style.display = 'block'; return; }
+  if(topicType === 'image' && !etCoverUrl){ errEl.textContent = 'กรุณาแนบรูปประกอบให้เรียบร้อยก่อนบันทึก'; errEl.style.display = 'block'; return; }
+
+  const payload = {
+    session_token: STATE.session.session_token,
+    topic_id: etCurrentTopicId,
+    topic_type: topicType,
+    title, description,
+    side_a_label: sideA, side_b_label: sideB,
+    category,
+    tag_1: tags[0], tag_2: tags[1], tag_3: tags[2], tag_4: tags[3], tag_5: tags[4],
+    card_color: etSelectedColor,
+    start_date: startDate, end_date: endDate,
+    image_url_raw: topicType === 'image' ? etCoverUrl : ''
+  };
+
+  const btn = document.getElementById('etSaveBtn');
+  setBtnLoading(btn, true, 'กำลังบันทึก...');
+  const res = await api('editTopic', payload, 'POST');
+  setBtnLoading(btn, false);
+  if(!res.success){
+    errEl.textContent = res.message;
+    errEl.style.display = 'block';
+    return;
+  }
+  closeModal('editTopicModal');
+  showInfoPopup(res.message, 'ตกลง');
+  loadMyTopics();
+});
 
 /* ---------- Edit info tab ---------- */
 function populateEditForm(){
@@ -780,8 +1203,20 @@ document.getElementById('deleteAccountBtn').addEventListener('click', async ()=>
     errEl.style.display = 'block';
     return;
   }
-  if(!confirm('ยืนยันปิดบัญชีถาวร? คุณจะเข้าสู่ระบบด้วยเบอร์นี้ไม่ได้อีก')) return;
 
+  showConfirmPopup({
+    title: 'ยืนยันปิดบัญชีถาวร',
+    message: 'คุณจะเข้าสู่ระบบด้วยเบอร์นี้ไม่ได้อีก การกระทำนี้ไม่สามารถย้อนกลับได้',
+    confirmLabel: 'ยืนยันปิดบัญชี',
+    danger: true,
+    onConfirm: doDeleteAccount
+  });
+});
+
+async function doDeleteAccount(){
+  closeModal('confirmModal');
+  const errEl = document.getElementById('deleteError');
+  const passcode = document.getElementById('deletePasscode').value.trim();
   const btn = document.getElementById('deleteAccountBtn');
   setBtnLoading(btn, true, 'กำลังปิดบัญชี...');
   const res = await api('deleteAccount', { session_token: STATE.session.session_token, passcode }, 'POST');
@@ -796,7 +1231,7 @@ document.getElementById('deleteAccountBtn').addEventListener('click', async ()=>
   logout();
   showToast('ปิดบัญชีเรียบร้อยแล้ว');
   setTimeout(()=>{ location.href = 'index.html'; }, 1200);
-});
+}
 
 /* ---------- Init ---------- */
 (async function init(){
@@ -828,6 +1263,7 @@ document.getElementById('deleteAccountBtn').addEventListener('click', async ()=>
   populateEditForm();
   loadDashboard();
   loadMyTopics();
+  loadEditFormOptions(); // เติม dropdown/สีของ modal แก้ไขหัวข้อ ไม่ต้อง block หน้าโหลด
 })();
 </script>
 
