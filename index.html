@@ -14,6 +14,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Antonio:wght@100;400;700&family=Lexend:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+<!-- QR code generation ฝั่ง client ล้วนๆ (ไม่พึ่ง API ภายนอกตอน user ใช้งานจริง โหลด lib ครั้งเดียวตอนเปิดเว็บ) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
 <!-- Vercel Analytics + Speed Insights (static site) -->
 <script>
   window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
@@ -142,6 +145,26 @@
 
   .pill-row{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
   .pill-row::-webkit-scrollbar{ display:none; }
+  .result-count{ font-size:12.5px; color:var(--text-muted); padding:10px 2px 0; }
+  .result-count b{ color:var(--text); }
+
+  /* ===== Pagination ===== */
+  .pagination-row{
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px;
+    padding:22px 16px 8px;
+  }
+  .page-size-select{
+    margin-left:auto; padding:8px 10px; border-radius:10px; border:1.5px solid var(--line);
+    background:var(--surface); font-size:12.5px; color:var(--text-muted); outline:none;
+  }
+  .page-btn{
+    min-width:34px; height:34px; padding:0 8px; border-radius:9px; border:1.5px solid var(--line);
+    background:var(--surface); color:var(--text-muted); font-size:13px; font-weight:600;
+  }
+  .page-btn.active{ background:var(--primary); border-color:var(--primary); color:#fff; }
+  .page-btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .page-ellipsis{ color:var(--text-muted); padding:0 2px; font-size:13px; }
+  @media(max-width:480px){ .page-size-select{ margin-left:0; width:100%; order:10; } }
   .category-pill{
     flex-shrink:0; padding:8px 16px; border-radius:100px; font-size:13px;
     background:var(--surface); border:1.5px solid var(--line); color:var(--text-muted);
@@ -174,6 +197,11 @@
     display:flex; align-items:center; justify-content:center; font-size:15px; color:var(--primary);
   }
   .topic-card .share-icon-btn{ color:var(--card-color, var(--primary)); }
+  .qr-code-box{
+    display:flex; align-items:center; justify-content:center; padding:16px;
+    background:#fff; border:1.5px solid var(--line); border-radius:14px; min-height:220px;
+  }
+  .qr-code-box img, .qr-code-box canvas{ display:block; max-width:100%; }
 
   .card-content-block{ padding:12px 14px 4px; }
   .cover-img{ width:100%; height:100%; object-fit:contain; display:block; }
@@ -222,7 +250,9 @@
 
   /* --- mini dashboard --- */
   .mini-dash{ border-top:1px solid var(--line); padding:12px 14px 16px; display:flex; flex-direction:column; gap:10px; }
-  .mini-dash-title{ font-size:11.5px; color:var(--text-muted); font-weight:500; }
+  .mini-dash-title{ font-size:11.5px; color:var(--text-muted); font-weight:500; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
+  .days-left{ white-space:nowrap; }
+  .days-left.urgent{ color:var(--danger); font-weight:600; }
   .dash-row{ display:flex; align-items:center; gap:8px; font-size:11.5px; }
   .dash-label{ width:56px; flex-shrink:0; color:var(--text-muted); }
   .dash-bar-bg{ flex:1; height:8px; border-radius:4px; background:var(--bg); overflow:hidden; display:flex; }
@@ -410,9 +440,11 @@
     </div>
   </div>
   <div class="pill-row" id="categoryPills"></div>
+  <div class="result-count" id="resultCount"></div>
 </div>
 
 <main class="feed" id="feed"></main>
+<div class="pagination-row" id="paginationRow"></div>
 
 <button class="jump-top" id="jumpTop">↑</button>
 
@@ -626,6 +658,35 @@
   <img id="lightboxImg" src="">
 </div>
 
+<!-- ===== Share Menu (เลือกว่าจะแชร์ลิงก์ทันที หรือแสดง QR Code) ===== -->
+<div class="modal-overlay" id="shareMenuModal">
+  <div class="modal-box" style="text-align:center;">
+    <button class="modal-close" data-close="shareMenuModal" style="margin-left:auto;display:block;">✕</button>
+    <h3 style="margin:0 0 18px;">แชร์หัวข้อนี้</h3>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn btn-primary full-btn" id="shareNowBtn">🔗 แชร์ลิงก์ทันที</button>
+      <button class="btn btn-ghost full-btn" id="shareQrBtn">📱 แสดง QR Code</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== QR Code Modal ===== -->
+<div class="modal-overlay" id="qrModal">
+  <div class="modal-box" style="text-align:center;">
+    <button class="modal-close" data-close="qrModal" style="margin-left:auto;display:block;">✕</button>
+    <h3 id="qrModalTitle" style="margin:0 0 6px;font-size:15.5px;"></h3>
+    <p style="font-size:12.5px;color:var(--text-muted);margin:0 0 16px;">สแกนเพื่อไปโหวตหัวข้อนี้ได้ทันที</p>
+    <div id="qrCodeContainer" class="qr-code-box"></div>
+    <div style="display:flex;gap:10px;margin-top:18px;">
+      <button class="btn btn-ghost full-btn" id="qrDownloadBtn">⬇️ ดาวน์โหลดรูป</button>
+      <button class="btn btn-primary full-btn" id="qrShareBtn" style="display:none;">📤 แชร์รูปนี้</button>
+    </div>
+    <p id="qrShareHint" style="font-size:11.5px;color:var(--text-muted);margin:10px 0 0;display:none;">
+      อุปกรณ์นี้ไม่รองรับการแชร์ไฟล์รูปโดยตรง — ดาวน์โหลดแล้วส่งต่อเอง หรือ Capture หน้าจอได้เลย
+    </p>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -647,6 +708,10 @@ let STATE = {
   categories: [],
   activeCategory: '',
   searchQuery: '',
+  page: 1,
+  pageSize: 20,
+  totalCount: 0,
+  totalPages: 1,
   pendingVote: null // {topicId, side} ถ้าโหวตตอนยังไม่ login จะเก็บไว้แล้ว resume หลัง login สำเร็จ
 };
 
@@ -1002,6 +1067,7 @@ async function loadCategories(){
 
 function selectCategory(cat, el){
   STATE.activeCategory = cat;
+  STATE.page = 1;
   document.querySelectorAll('.category-pill').forEach(p=> p.classList.remove('selected'));
   if(el) el.classList.add('selected');
   loadTopics();
@@ -1158,12 +1224,73 @@ function resetCreateForm(){
 /* ---------- Topics / Feed ---------- */
 async function loadTopics(){
   document.getElementById('feed').innerHTML = `<div class="area-loading"><div class="area-spinner"></div>กำลังโหลดหัวข้อ...</div>`;
-  const params = {};
+  const params = { page: STATE.page, page_size: STATE.pageSize };
   if(STATE.activeCategory) params.category = STATE.activeCategory;
   if(STATE.searchQuery) params.search = STATE.searchQuery;
   const res = await api('getTopics', params);
   STATE.topics = res.success ? res.topics : [];
+  STATE.totalCount = res.success ? (res.count || 0) : 0;
+  STATE.totalPages = res.success ? (res.total_pages || 1) : 1;
+  if(res.success && res.page) STATE.page = res.page; // เผื่อ backend ปรับ page ให้ (เช่นขอหน้าที่เกินจริง)
   renderFeed();
+  renderResultCount();
+  renderPagination();
+}
+
+function renderResultCount(){
+  const el = document.getElementById('resultCount');
+  el.innerHTML = STATE.totalCount > 0 ? `พบ <b>${STATE.totalCount}</b> หัวข้อ` : '';
+}
+
+function renderPagination(){
+  const el = document.getElementById('paginationRow');
+  if(STATE.totalCount === 0){ el.innerHTML = ''; return; }
+
+  const cur = STATE.page;
+  const total = STATE.totalPages;
+
+  // เลขหน้า: โชว์หน้าแรก/หน้าสุดท้ายเสมอ + หน้าใกล้ๆ ปัจจุบัน ที่เหลือย่อด้วย ...
+  const pages = [];
+  const addPage = n => pages.push(n);
+  const windowStart = Math.max(2, cur - 1);
+  const windowEnd = Math.min(total - 1, cur + 1);
+  addPage(1);
+  if(windowStart > 2) pages.push('...');
+  for(let n = windowStart; n <= windowEnd; n++) addPage(n);
+  if(windowEnd < total - 1) pages.push('...');
+  if(total > 1) addPage(total);
+
+  const pageBtns = pages.map(n =>
+    n === '...'
+      ? `<span class="page-ellipsis">…</span>`
+      : `<button class="page-btn${n === cur ? ' active' : ''}" data-page="${n}">${n}</button>`
+  ).join('');
+
+  el.innerHTML = `
+    <button class="page-btn" data-page="${cur - 1}" ${cur <= 1 ? 'disabled' : ''}>‹</button>
+    ${pageBtns}
+    <button class="page-btn" data-page="${cur + 1}" ${cur >= total ? 'disabled' : ''}>›</button>
+    <select class="page-size-select" id="pageSizeSelect">
+      <option value="20" ${STATE.pageSize===20?'selected':''}>20 / หน้า</option>
+      <option value="50" ${STATE.pageSize===50?'selected':''}>50 / หน้า</option>
+      <option value="100" ${STATE.pageSize===100?'selected':''}>100 / หน้า</option>
+    </select>
+  `;
+
+  el.querySelectorAll('.page-btn[data-page]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const n = parseInt(btn.dataset.page, 10);
+      if(!n || n < 1 || n > STATE.totalPages || n === STATE.page) return;
+      STATE.page = n;
+      loadTopics();
+      document.getElementById('feed').scrollIntoView({ behavior:'smooth', block:'start' });
+    });
+  });
+  document.getElementById('pageSizeSelect').addEventListener('change', (e)=>{
+    STATE.pageSize = parseInt(e.target.value, 10);
+    STATE.page = 1;
+    loadTopics();
+  });
 }
 
 let searchTimer;
@@ -1171,6 +1298,7 @@ document.getElementById('searchInput').addEventListener('input', (e)=>{
   clearTimeout(searchTimer);
   searchTimer = setTimeout(()=>{
     STATE.searchQuery = e.target.value.trim();
+    STATE.page = 1;
     loadTopics();
   }, 350);
 });
@@ -1186,7 +1314,7 @@ function renderFeed(){
     btn.addEventListener('click', ()=> handleVoteClick(btn.dataset.topic, btn.dataset.side, btn));
   });
   feed.querySelectorAll('.share-icon-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=> shareTopic(btn.dataset.topic));
+    btn.addEventListener('click', ()=> openShareMenu(btn.dataset.topic));
   });
   feed.querySelectorAll('[data-lightbox]').forEach(el=>{
     el.addEventListener('click', ()=> openLightbox(el.dataset.lightbox));
@@ -1252,10 +1380,31 @@ function topicCardHTML(t){
     ${voteRowHTML}
 
     <div class="mini-dash">
-      <div class="mini-dash-title">สรุปผู้ร่วมโหวตทั้งหมด <b style="color:${t.card_color || 'var(--primary)'}">${t.total_votes}</b> คน</div>
+      <div class="mini-dash-title">
+        <span>สรุปผู้ร่วมโหวตทั้งหมด <b style="color:${t.card_color || 'var(--primary)'}">${t.total_votes}</b> คน</span>
+        <span class="days-left${daysLeftUrgentClass(t.end_date)}">${daysLeftText(t.end_date)}</span>
+      </div>
       <div id="dash-${t.topic_id}"></div>
     </div>
   </div>`;
+}
+
+// คำนวณจำนวนวันที่เหลือก่อนปิดโหวตจาก end_date เทียบกับวันนี้
+function daysLeftText(endDate){
+  if(!endDate) return '';
+  const end = new Date(endDate); end.setHours(0,0,0,0);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diffDays = Math.round((end - today) / 86400000);
+  if(diffDays < 0) return 'ปิดโหวตแล้ว';
+  if(diffDays === 0) return 'ปิดโหวตวันนี้';
+  return `เหลืออีก ${diffDays} วัน ปิดโหวต`;
+}
+function daysLeftUrgentClass(endDate){
+  if(!endDate) return '';
+  const end = new Date(endDate); end.setHours(0,0,0,0);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diffDays = Math.round((end - today) / 86400000);
+  return (diffDays <= 2) ? ' urgent' : '';
 }
 
 function escapeHtml(str){
@@ -1386,10 +1535,30 @@ async function castVote(topicId, side, btnEl){
 }
 
 /* ---------- Share ---------- */
+let pendingShareTopicId = '';
+
+function buildShareUrl(topicId){
+  return `${location.origin}${location.pathname}?topic=${topicId}`;
+}
+
+function openShareMenu(topicId){
+  pendingShareTopicId = topicId;
+  openModal('shareMenuModal');
+}
+
+document.getElementById('shareNowBtn').addEventListener('click', ()=>{
+  closeModal('shareMenuModal');
+  shareTopic(pendingShareTopicId);
+});
+document.getElementById('shareQrBtn').addEventListener('click', ()=>{
+  closeModal('shareMenuModal');
+  openQrModal(pendingShareTopicId);
+});
+
 function shareTopic(topicId){
   const t = STATE.topics.find(x=> x.topic_id === topicId);
   if(!t) return;
-  const url = `${location.origin}${location.pathname}?topic=${topicId}`;
+  const url = buildShareUrl(topicId);
   const teaser = `${t.side_a_label} หรือ ${t.side_b_label}? มาโหวตเรื่อง "${t.title}" กับเรากันเถอะ 👀`;
 
   if(navigator.share){
@@ -1399,6 +1568,70 @@ function shareTopic(topicId){
     showToast('คัดลอกลิงก์แล้ว เอาไปวางแชร์ได้เลย');
   }
 }
+
+/* QR generate ฝั่ง client ล้วนๆ ด้วย qrcodejs (โหลดครั้งเดียวตอนเปิดเว็บ ไม่พึ่ง service ภายนอกตอน user ใช้งานจริง) */
+let qrInstance = null;
+let qrCurrentDataUrl = '';
+
+function openQrModal(topicId){
+  const t = STATE.topics.find(x=> x.topic_id === topicId);
+  if(!t) return;
+  const url = buildShareUrl(topicId);
+
+  document.getElementById('qrModalTitle').textContent = t.title;
+  const container = document.getElementById('qrCodeContainer');
+  container.innerHTML = '';
+  qrCurrentDataUrl = '';
+
+  qrInstance = new QRCode(container, {
+    text: url,
+    width: 220,
+    height: 220,
+    colorDark: '#1C1329',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  // qrcodejs วาดเป็น <canvas> ในเบราว์เซอร์ส่วนใหญ่ (บาง browser เก่าจะ fallback เป็น <img>) — ดึง dataURL ไว้ใช้ตอน download/share
+  setTimeout(()=>{
+    const canvas = container.querySelector('canvas');
+    const img = container.querySelector('img');
+    qrCurrentDataUrl = canvas ? canvas.toDataURL('image/png') : (img ? img.src : '');
+
+    const shareBtn = document.getElementById('qrShareBtn');
+    const shareHint = document.getElementById('qrShareHint');
+    const canFileShare = !!(navigator.canShare && window.File);
+    shareBtn.style.display = canFileShare ? 'block' : 'none';
+    shareHint.style.display = canFileShare ? 'none' : 'block';
+  }, 60);
+
+  openModal('qrModal');
+}
+
+document.getElementById('qrDownloadBtn').addEventListener('click', ()=>{
+  if(!qrCurrentDataUrl){ showToast('QR Code ยังโหลดไม่เสร็จ กรุณารอสักครู่'); return; }
+  const a = document.createElement('a');
+  a.href = qrCurrentDataUrl;
+  a.download = `wezide-qr-${pendingShareTopicId}.png`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+});
+
+document.getElementById('qrShareBtn').addEventListener('click', async ()=>{
+  if(!qrCurrentDataUrl){ showToast('QR Code ยังโหลดไม่เสร็จ กรุณารอสักครู่'); return; }
+  try{
+    const blob = await (await fetch(qrCurrentDataUrl)).blob();
+    const file = new File([blob], `wezide-qr-${pendingShareTopicId}.png`, { type: 'image/png' });
+    if(navigator.canShare && navigator.canShare({ files: [file] })){
+      await navigator.share({ files: [file], title: 'WEZIDE', text: 'สแกนเพื่อไปโหวตหัวข้อนี้' });
+    } else {
+      showToast('อุปกรณ์นี้ไม่รองรับการแชร์ไฟล์ กรุณาดาวน์โหลดแทน');
+    }
+  }catch(err){
+    if(err.name !== 'AbortError') showToast('แชร์ไม่สำเร็จ กรุณาลองดาวน์โหลดรูปแทน');
+  }
+});
 
 /* ---------- Lightbox ---------- */
 function openLightbox(src){
