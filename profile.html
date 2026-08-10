@@ -279,6 +279,11 @@
     width:22px; height:22px; border-radius:50%; border:2.5px solid rgba(255,255,255,0.5);
     border-top-color:#fff; animation:spin .7s linear infinite;
   }
+  /* กล่องอัปโหลดรูปหัวข้อ (.cover-upload) พื้นหลังเป็นสีอ่อนเกือบขาว spinner สีขาวเลยมองแทบไม่เห็นตอนหมุน ใช้สีเข้ม/สีธีมแทน */
+  .cover-upload .upload-spinner{
+    border:2.5px solid color-mix(in srgb, var(--card-color, var(--primary)) 25%, white);
+    border-top-color:var(--card-color, var(--primary));
+  }
   .section-divider{ border:none; border-top:1.5px dashed var(--line); margin:18px 0; }
 
   /* ===== Danger zone ===== */
@@ -621,7 +626,10 @@ function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('[data-close]').forEach(btn=>{
   btn.addEventListener('click', ()=> closeModal(btn.dataset.close));
 });
+// modal ที่เป็นฟอร์มยาว กรอกข้อมูลเยอะ ต้องกันพลาด: ปิดได้เฉพาะกดปุ่ม (x) เท่านั้น ห้ามปิดด้วยการแตะนอกกรอบ (เหมือนกับ createModal ใน index.html)
+const STRICT_CLOSE_MODALS = ['editTopicModal'];
 document.querySelectorAll('.modal-overlay').forEach(ov=>{
+  if(STRICT_CLOSE_MODALS.includes(ov.id)) return;
   ov.addEventListener('click', (e)=>{ if(e.target === ov) ov.classList.remove('open'); });
 });
 
