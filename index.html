@@ -352,6 +352,11 @@
     border:3px solid rgba(255,255,255,0.4); border-top-color:#fff;
     animation:spin .7s linear infinite;
   }
+  /* กล่องอัปโหลดรูปหัวข้อ (.cover-upload) พื้นหลังเป็นสีอ่อนเกือบขาว spinner สีขาวเลยมองแทบไม่เห็นตอนหมุน ใช้สีเข้ม/สีธีมแทน */
+  .cover-upload .upload-spinner{
+    border:3px solid color-mix(in srgb, var(--card-color, var(--primary)) 25%, white);
+    border-top-color:var(--card-color, var(--primary));
+  }
   .btn-spinner{
     display:inline-block; width:14px; height:14px; margin-right:7px; vertical-align:-2px;
     border-radius:50%; border:2px solid rgba(255,255,255,0.45); border-top-color:#fff;
@@ -779,7 +784,10 @@ function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('[data-close]').forEach(btn=>{
   btn.addEventListener('click', ()=> closeModal(btn.dataset.close));
 });
+// modal ที่เป็นฟอร์มยาว กรอกข้อมูลเยอะ ต้องกันพลาด: ปิดได้เฉพาะกดปุ่ม (x) เท่านั้น ห้ามปิดด้วยการแตะนอกกรอบ
+const STRICT_CLOSE_MODALS = ['createModal'];
 document.querySelectorAll('.modal-overlay').forEach(ov=>{
+  if(STRICT_CLOSE_MODALS.includes(ov.id)) return;
   ov.addEventListener('click', (e)=>{ if(e.target === ov) ov.classList.remove('open'); });
 });
 
@@ -819,7 +827,7 @@ async function validateSessionOnLoad(){
   const res = await api('validateSession', { session_token: STATE.session.session_token });
   if(!res.success){
     logout();
-    showToast('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
+    showToast(res.message || 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
     return;
   }
   // sync username/avatar เผื่อมีการแก้ไขโปรไฟล์จากที่อื่นแล้วยังไม่อัปเดต
@@ -1630,7 +1638,9 @@ async function castVote(topicId, side, btnEl){
 let pendingShareTopicId = '';
 
 function buildShareUrl(topicId){
-  return `${location.origin}${location.pathname}?topic=${topicId}`;
+  // ใช้ endpoint ?share= ของ Apps Script (renderShareOgPage) เพื่อให้ LINE/Facebook ดึง OG image/title ของหัวข้อนั้นไปทำพรีวิวได้
+  // ฝั่งนั้นจะ redirect ผู้ใช้จริงเข้า Vercel ให้เองทันที (ไม่กระทบ UX ของคนกดลิงก์)
+  return `${CONFIG.API_URL}?share=${topicId}`;
 }
 
 function openShareMenu(topicId){
