@@ -211,7 +211,17 @@
     display:flex; flex-direction:column; justify-content:center; gap:8px;
   }
   .topic-title{ font-size:18px; font-weight:700; line-height:1.4; margin:8px 0 4px; color:var(--text); }
-  .topic-desc{ font-size:13.5px; color:#3A3347; line-height:1.5; }
+  .topic-desc{ font-size:13.5px; color:#3A3347; line-height:1.5; word-break:break-word; }
+  .topic-desc a{ color:var(--primary); text-decoration:underline; word-break:break-all; }
+  /* จำกัดคำอธิบายไว้ 2 บรรทัดในการ์ด ไม่ว่า user จะพิมพ์ยาวแค่ไหน ยาวเกินให้กดปุ่ม "อ่านเพิ่มเติม" แทน */
+  .topic-desc.clamp-2{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .desc-more-btn{
+    display:none; font-size:12.5px; font-weight:600; color:var(--primary); background:none;
+    margin-top:2px; padding:0;
+  }
+  .desc-more-btn.show{ display:inline-block; }
+  #descModalBody{ font-size:14px; line-height:1.65; color:var(--text); white-space:pre-wrap; word-break:break-word; }
+  #descModalBody a{ color:var(--primary); text-decoration:underline; word-break:break-all; }
   /* หัวข้อ+รายละเอียดของการ์ดแบบรูปภาพ: ไม่มีกล่องพื้นหลังแบบ text-topic-box แต่ต้องมี title/desc ให้ user อ่านก่อนโหวตเหมือนกัน */
   .card-content-block > .topic-title{ margin-top:0; }
   .card-content-block > .topic-desc{ margin-top:2px; }
@@ -652,6 +662,17 @@
   </div>
 </div>
 
+<!-- ===== Description Modal (โผล่ตอนกด "อ่านเพิ่มเติม" จากคำอธิบายที่ถูกตัดไว้แค่ 2 บรรทัดในการ์ด) ===== -->
+<div class="modal-overlay" id="descModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="descModalTitle"></h3>
+      <button class="modal-close" data-close="descModal">✕</button>
+    </div>
+    <div id="descModalBody"></div>
+  </div>
+</div>
+
 <!-- ===== Lightbox ===== -->
 <div class="lightbox" id="lightbox">
   <button class="lightbox-close" id="lightboxClose">✕</button>
@@ -784,6 +805,27 @@ function setBtnLoading(btn, loading, loadingLabel){
 
 /* ---------- Auth ---------- */
 function isLoggedIn(){ return !!(STATE.session && STATE.session.session_token); }
+
+/* เช็คกับ server ว่า session_token ที่เก็บไว้ใน localStorage ยังใช้ได้จริงไหม
+   บั๊กเดิม: header เชื่อ localStorage อย่างเดียว (isLoggedIn() เช็คแค่ว่ามี token อยู่ ไม่ได้เช็คว่า token ยังตรงกับฝั่ง server)
+   ถ้า user เคย login เครื่อง/เบราว์เซอร์อื่นทีหลัง (หรือ token หมดอายุ/ถูก rotate) ฝั่ง server จะสร้าง session_token ใหม่ทับของเดิม
+   ทำให้ token เก่าที่ค้างอยู่ในเครื่องนี้ใช้ไม่ได้แล้ว แต่ header ยังโชว์ username เหมือน login ปกติอยู่
+   จนกว่าจะกด action ที่ต้อง auth จริงๆ (เช่นสร้างหัวข้อ) ถึงจะเจอ "กรุณา login ก่อน" งงว่าทำไมเพิ่งโชว์ชื่ออยู่ดีๆ
+   แก้โดยยิงเช็คนี้ทุกครั้งที่เปิดหน้า ถ้า token ใช้ไม่ได้แล้วให้ logout ทันทีเงียบๆ ก่อน user จะเจอ error ตอนพยายามใช้งานจริง */
+async function validateSessionOnLoad(){
+  if(!isLoggedIn()) return;
+  const res = await api('validateSession', { session_token: STATE.session.session_token });
+  if(!res.success){
+    logout();
+    showToast('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
+    return;
+  }
+  // sync username/avatar เผื่อมีการแก้ไขโปรไฟล์จากที่อื่นแล้วยังไม่อัปเดต
+  STATE.session.username = res.username;
+  STATE.session.profile_image_url = res.profile_image_url;
+  localStorage.setItem('wz_session', JSON.stringify(STATE.session));
+  renderHeaderAuth();
+}
 
 function saveSession(data){
   STATE.session = data;
@@ -1188,6 +1230,9 @@ document.getElementById('createSubmitBtn').addEventListener('click', async ()=>{
   }
   closeModal('createModal');
   resetCreateForm();
+  if(STATE.cameFromProfile){
+    document.getElementById('createSuccessHomeBtn').textContent = 'กลับไปหน้าหัวข้อของฉัน';
+  }
   openModal('createSuccessModal');
 });
 
@@ -1197,6 +1242,8 @@ document.getElementById('createSuccessCreateBtn').addEventListener('click', ()=>
 });
 document.getElementById('createSuccessHomeBtn').addEventListener('click', ()=>{
   closeModal('createSuccessModal');
+  // ถ้ามาจากปุ่มสร้างหัวข้อในหน้า "หัวข้อของฉัน" ให้พากลับไปหน้านั้นแทนหน้าแรก จะได้เห็นหัวข้อใหม่ในลิสต์ทันที
+  if(STATE.cameFromProfile){ location.href = 'profile.html'; }
 });
 
 function resetCreateForm(){
@@ -1271,9 +1318,9 @@ function renderPagination(){
     ${pageBtns}
     <button class="page-btn" data-page="${cur + 1}" ${cur >= total ? 'disabled' : ''}>›</button>
     <select class="page-size-select" id="pageSizeSelect">
-      <option value="20" ${STATE.pageSize===20?'selected':''}>20 / หน้า</option>
-      <option value="50" ${STATE.pageSize===50?'selected':''}>50 / หน้า</option>
-      <option value="100" ${STATE.pageSize===100?'selected':''}>100 / หน้า</option>
+      <option value="20" ${STATE.pageSize===20?'selected':''}>แสดง 20 / หน้า</option>
+      <option value="50" ${STATE.pageSize===50?'selected':''}>แสดง 50 / หน้า</option>
+      <option value="100" ${STATE.pageSize===100?'selected':''}>แสดง 100 / หน้า</option>
     </select>
   `;
 
@@ -1319,6 +1366,29 @@ function renderFeed(){
   feed.querySelectorAll('[data-lightbox]').forEach(el=>{
     el.addEventListener('click', ()=> openLightbox(el.dataset.lightbox));
   });
+  setupDescMoreButtons();
+}
+
+/* เช็คทีละคำอธิบายว่าล้น 2 บรรทัดที่ clamp ไว้จริงไหม (ต้องเช็คหลัง DOM วาดเสร็จแล้วเท่านั้นถึงจะรู้ scrollHeight ที่แท้จริง)
+   ถ้าล้นค่อยโชว์ปุ่ม "อ่านเพิ่มเติม" ถ้าไม่ล้น (ข้อความสั้นพอ) ก็ไม่ต้องโชว์ปุ่มให้รกการ์ดเปล่าๆ */
+function setupDescMoreButtons(){
+  document.querySelectorAll('.topic-desc.clamp-2').forEach(el=>{
+    if(el.scrollHeight > el.clientHeight + 1){
+      const btn = document.querySelector(`.desc-more-btn[data-desc-topic="${el.dataset.descTopic}"]`);
+      if(btn) btn.classList.add('show');
+    }
+  });
+  document.querySelectorAll('.desc-more-btn').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      const t = STATE.topics.find(x=> x.topic_id === btn.dataset.descTopic);
+      if(!t) return;
+      document.getElementById('descModalTitle').textContent = t.title;
+      document.getElementById('descModalBody').innerHTML = linkifyText(t.description || '');
+      openModal('descModal');
+    });
+  });
 }
 
 function topicCardHTML(t){
@@ -1327,10 +1397,16 @@ function topicCardHTML(t){
     ? `<img src="${t.creator_profile_image}">`
     : (t.creator_username ? t.creator_username.charAt(0).toUpperCase() : '?');
 
+  // คำอธิบาย: จำกัดไว้ 2 บรรทัดในการ์ด (ไม่ลิมิตความยาวตอนพิมพ์) ยาวเกินให้กดปุ่ม "อ่านเพิ่มเติม" เปิด popup อ่านเต็ม
+  // ลิงก์ http(s):// ในคำอธิบายแปลงเป็น <a> กดชงไปปลายทางได้เลย ไม่ต้อง copy ไปวางเอง
+  const descBlock = t.description
+    ? `<div class="topic-desc clamp-2" data-desc-topic="${t.topic_id}">${linkifyText(t.description)}</div><button type="button" class="desc-more-btn" data-desc-topic="${t.topic_id}">อ่านเพิ่มเติม</button>`
+    : '';
+
   // ประเภทข้อความ: กล่องข้อความเต็มความกว้างด้านบน + ปุ่มโหวต 2 อันแถวล่าง (เหมือนเดิม ไม่เปลี่ยน)
   const textBlock = !hasImg
-    ? `<div class="card-content-block"><div class="text-topic-box"><div class="topic-title">${escapeHtml(t.title)}</div><div class="topic-desc">${escapeHtml(t.description||'')}</div></div></div>`
-    : `<div class="card-content-block"><div class="topic-title">${escapeHtml(t.title)}</div>${t.description ? `<div class="topic-desc">${escapeHtml(t.description)}</div>` : ''}</div>`;
+    ? `<div class="card-content-block"><div class="text-topic-box"><div class="topic-title">${escapeHtml(t.title)}</div>${descBlock}</div></div>`
+    : `<div class="card-content-block"><div class="topic-title">${escapeHtml(t.title)}</div>${descBlock}</div>`;
 
   // ประเภทรูปภาพ: รวมปุ่ม A + รูป + ปุ่ม B เป็นแถวเดียว 3 คอลัมน์สัดส่วนเท่ากันหมด (แนวตั้ง 9:16 ทั้ง 3 แท่ง)
   const voteRowHTML = hasImg
@@ -1411,6 +1487,20 @@ function escapeHtml(str){
   const div = document.createElement('div');
   div.textContent = str || '';
   return div.innerHTML;
+}
+
+/* escape ข้อความให้ปลอดภัยก่อน แล้วค่อยแปลงเฉพาะ URL ที่ขึ้นต้นด้วย http:// หรือ https:// ให้เป็นลิงก์กดได้
+   (ไม่จับโดเมนเปล่าๆ อย่าง "google.com" กันเผื่อ false-positive กับข้อความทั่วไปที่มีจุด เช่น ตัวเลขทศนิยม) */
+function linkifyText(str){
+  const escaped = escapeHtml(str || '');
+  return escaped.replace(/(https?:\/\/[^\s<]+)/g, (url)=>{
+    // ตัดวรรคตอนท้าย URL ที่มักหลุดติดมาจากประโยค เช่น จุด/จุลภาค/วงเล็บปิด ออกก่อน ไม่งั้นลิงก์จะพาไปผิดที่
+    let trail = '';
+    const m = url.match(/[.,;:!?)\]]+$/);
+    if(m){ trail = m[0]; url = url.slice(0, -trail.length); }
+    if(!url) return trail;
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${url}</a>${trail}`;
+  });
 }
 
 /* โหลด dashboard breakdown แยกทีหลัง (lazy) เพื่อลด payload ตอน list */
@@ -1620,11 +1710,16 @@ document.getElementById('qrDownloadBtn').addEventListener('click', ()=>{
 
 document.getElementById('qrShareBtn').addEventListener('click', async ()=>{
   if(!qrCurrentDataUrl){ showToast('QR Code ยังโหลดไม่เสร็จ กรุณารอสักครู่'); return; }
+  // ใส่บริบทหัวข้อไปพร้อม QR เหมือนตอนแชร์เป็นลิงก์ ผู้รับปลายทางจะได้ไม่งงว่าสแกนไปทำไม โหวตเรื่องอะไร
+  const t = STATE.topics.find(x=> x.topic_id === pendingShareTopicId);
+  const teaser = t
+    ? `${t.side_a_label} หรือ ${t.side_b_label}? มาโหวตเรื่อง "${t.title}" กับเรากันเถอะ สแกนเพื่อไปโหวตหัวข้อนี้กันเลย`
+    : 'สแกนเพื่อไปโหวตหัวข้อนี้';
   try{
     const blob = await (await fetch(qrCurrentDataUrl)).blob();
     const file = new File([blob], `wezide-qr-${pendingShareTopicId}.png`, { type: 'image/png' });
     if(navigator.canShare && navigator.canShare({ files: [file] })){
-      await navigator.share({ files: [file], title: 'WEZIDE', text: 'สแกนเพื่อไปโหวตหัวข้อนี้' });
+      await navigator.share({ files: [file], title: t ? t.title : 'WEZIDE', text: teaser });
     } else {
       showToast('อุปกรณ์นี้ไม่รองรับการแชร์ไฟล์ กรุณาดาวน์โหลดแทน');
     }
@@ -1770,6 +1865,7 @@ document.getElementById('footerLoginLink').addEventListener('click', (e)=>{
   renderHeaderAuth();
   loadProvinces();
   loadBirthdaySelects();
+  const sessionCheckPromise = validateSessionOnLoad(); // เช็คความถูกต้องของ session กับ server แบบไม่ block การโหลดหน้าอื่น
 
   // เดิม: 3 await เรียงคิว (categories -> card colors -> topics) แล้ว hero banner ค่อยเริ่มโหลดทีหลังสุด
   // ทำให้ต้องรอ 3 round-trip ไป Apps Script ก่อน hero banner จะเริ่มขยับ
@@ -1792,6 +1888,15 @@ document.getElementById('footerLoginLink').addEventListener('click', (e)=>{
       const el = document.querySelector(`[data-topic="${focusId}"]`);
       if(el) el.closest('.topic-card').scrollIntoView({behavior:'smooth', block:'center'});
     }, 500);
+  }
+
+  // มาจากปุ่ม "+ สร้างหัวข้อ" ในหน้า "หัวข้อของฉัน" (profile.html) — เปิด modal สร้างหัวข้อให้อัตโนมัติ
+  // จะได้ไม่ต้องมาเจอหน้าแรกเฉยๆ แล้วต้องกดสร้างหัวข้อเองซ้ำอีกที
+  if(params.get('create') === '1'){
+    STATE.cameFromProfile = true;
+    history.replaceState(null, '', location.pathname); // ล้าง query ทิ้งกันเปิด modal ซ้ำตอน refresh
+    await sessionCheckPromise; // รอให้แน่ใจก่อนว่า session ยัง valid จริง จะได้ไม่เปิด modal แล้วเจอ error กรุณา login ทันที
+    setTimeout(()=> handleCreateClick(), 100);
   }
 })();
 </script>
