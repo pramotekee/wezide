@@ -580,10 +580,8 @@ async function api(action, params = {}, method = 'GET'){
       return await res.json();
     }
   }catch(err){
-    if(err.name === 'AbortError'){
-      return { success:false, message:'เซิร์ฟเวอร์ตอบสนองช้าเกินไป (เกิน 20 วินาที) กรุณาลองใหม่อีกครั้ง' };
-    }
-    throw err;
+    // กันทุกกรณี error ไม่ให้หลุดเป็น unhandled exception ที่ทำให้หน้าจอค้างเป็น spinner ตลอดกาล
+    return { success:false, message:'โอ๊ะ! มีบางอย่างขัดข้อง ทำให้ระบบสะดุดครับ ลองรีเฟรชใหม่อีกครั้งนะครับ' };
   }finally{
     clearTimeout(timeoutId);
   }
@@ -810,10 +808,10 @@ function renderDashboardBreakdown(dash){
     el.innerHTML = '<div class="dash-empty">ยังไม่มีคนมาร่วมโหวตหัวข้อของคุณ</div>';
     return;
   }
+  // ตัดจังหวัดออกจากการแสดงผล (backend ยังคำนวณ/ส่ง province_percent มาเหมือนเดิม เผื่อใช้ในอนาคต)
   const rows = [
     {label:'เพศ', data: dash.gender_percent},
-    {label:'ช่วงอายุ', data: dash.age_group_percent},
-    {label:'จังหวัด', data: dash.province_percent}
+    {label:'ช่วงอายุ', data: dash.age_group_percent}
   ];
   el.innerHTML = rows.map(r=>{
     const entries = Object.entries(r.data || {});
