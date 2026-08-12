@@ -34,7 +34,7 @@
     --text-muted: #6E6680;
     --line: #E6E2EF;
     --side-a: #4B2C82;
-    --side-b: #7A56C4;
+    --side-b: #FFC93C;
     --danger: #D64545;
     --radius: 16px;
     --shadow: 0 4px 20px rgba(59, 27, 102, 0.08);
@@ -120,10 +120,11 @@
   .hc-bar span{ height:100%; transition:width .5s ease; }
   .hc-bar .a{ background:var(--side-a); }
   .hc-bar .b{ background:var(--side-b); }
-  .hc-result{ display:flex; justify-content:space-between; gap:8px; font-size:12px; color:var(--text-muted); }
-  .hc-result span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .hc-result{ display:flex; flex-direction:column; gap:3px; font-size:12px; color:var(--text-muted); }
+  .hc-result .hr-total{ font-weight:600; color:var(--text); margin-bottom:1px; }
+  .hc-result .hr-row{ display:flex; align-items:center; gap:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .hc-result .hr-dot{ width:8px; height:8px; border-radius:2px; flex-shrink:0; display:inline-block; }
   .hc-result .win{ color:var(--primary); font-weight:700; }
-  .hc-votes{ font-size:11px; color:var(--text-muted); margin-top:5px; }
 
   /* ===== Pagination (เหมือน index.html) ===== */
   .pagination-row{
@@ -332,10 +333,10 @@ function historyCardHTML(t){
         <span class="b" style="width:${bPct}%"></span>
       </div>
       <div class="hc-result">
-        <span class="${aWin ? 'win' : ''}">${aWin ? '🏆 ' : ''}${escapeHtml(t.side_a_label)} ${aPct}%</span>
-        <span class="${bWin ? 'win' : ''}">${bWin ? '🏆 ' : ''}${escapeHtml(t.side_b_label)} ${bPct}%</span>
+        <span class="hr-total">${total} โหวต (100%)</span>
+        <span class="hr-row${aWin ? ' win' : ''}"><i class="hr-dot" style="background:var(--side-a)"></i>${aWin ? '🏆 ' : ''}${escapeHtml(t.side_a_label)} (${aPct}%)</span>
+        <span class="hr-row${bWin ? ' win' : ''}"><i class="hr-dot" style="background:var(--side-b)"></i>${bWin ? '🏆 ' : ''}${escapeHtml(t.side_b_label)} (${bPct}%)</span>
       </div>
-      <div class="hc-votes">${total} โหวตทั้งหมด</div>
     </div>`;
 }
 
