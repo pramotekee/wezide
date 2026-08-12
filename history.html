@@ -69,16 +69,15 @@
   .btn:active{ transform:scale(0.96); }
   .btn-ghost{ background:var(--surface); color:var(--primary); border:1.5px solid var(--line); }
 
-  /* ===== Page head ===== */
-  .page-head{ max-width:640px; margin:0 auto; padding:22px 16px 4px; }
+  /* ===== Page head (เต็มความกว้างเหมือน index.html ไม่ centered ให้ลอยกลางจอ) ===== */
+  .page-head{ padding:22px 20px 4px; }
   .page-head h1{ font-size:20px; margin:0 0 4px; }
   .page-head p{ font-size:13px; color:var(--text-muted); margin:0; }
 
-  /* ===== Filter bar (เหมือน index.html) ===== */
+  /* ===== Filter bar (เต็มความกว้างเหมือน index.html) ===== */
   .filter-bar{
     position:sticky; top:63px; z-index:40; background:var(--bg);
-    padding:14px 16px 10px; border-bottom:1px solid var(--line);
-    max-width:640px; margin:0 auto;
+    padding:14px 20px 10px; border-bottom:1px solid var(--line);
   }
   .sort-row{ display:flex; justify-content:flex-start; margin-bottom:10px; }
   .view-toggle{ display:flex; background:var(--surface); border:1.5px solid var(--line); border-radius:100px; padding:3px; }
@@ -129,7 +128,7 @@
   /* ===== Pagination (เหมือน index.html) ===== */
   .pagination-row{
     display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px;
-    padding:6px 16px 30px; max-width:640px; margin:0 auto;
+    padding:6px 20px 30px;
   }
   .page-size-select{
     margin-left:auto; padding:8px 10px; border-radius:10px; border:1.5px solid var(--line);
@@ -219,10 +218,8 @@ async function api(action, params = {}, method = 'GET'){
       return await res.json();
     }
   }catch(err){
-    if(err.name === 'AbortError'){
-      return { success:false, message:'เซิร์ฟเวอร์ตอบสนองช้าเกินไป (เกิน 20 วินาที) กรุณาลองใหม่อีกครั้ง' };
-    }
-    throw err;
+    // กันทุกกรณี error ไม่ให้หลุดเป็น unhandled exception ที่ทำให้หน้าจอค้างเป็น spinner ตลอดกาล
+    return { success:false, message:'โอ๊ะ! มีบางอย่างขัดข้อง ทำให้ระบบสะดุดครับ ลองรีเฟรชใหม่อีกครั้งนะครับ' };
   }finally{
     clearTimeout(timeoutId);
   }
