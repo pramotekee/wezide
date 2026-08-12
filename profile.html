@@ -173,7 +173,7 @@
   .profile-head{ display:flex; align-items:center; gap:14px; margin-bottom:22px; }
   .profile-avatar{
     width:64px; height:64px; border-radius:50%; overflow:hidden; flex-shrink:0;
-    background:var(--primary-light); border:2px solid var(--primary);
+    background:var(--primary-light);
     display:flex; align-items:center; justify-content:center; color:#fff; font-size:22px; font-weight:600;
   }
   .profile-avatar img{ width:100%; height:100%; object-fit:cover; }
@@ -276,7 +276,7 @@
   .field-avatar-row{ text-align:center; margin-bottom:18px; }
   .edit-avatar{
     width:76px; height:76px; border-radius:50%; overflow:hidden; margin:0 auto;
-    background:var(--primary-light); border:2px solid var(--primary); cursor:pointer;
+    background:var(--primary-light); cursor:pointer;
     display:flex; align-items:center; justify-content:center; color:#fff; font-size:24px;
   }
   .edit-avatar img{ width:100%; height:100%; object-fit:cover; }
@@ -343,9 +343,9 @@
 
     <div class="tab-row">
       <button class="tab-btn active" data-tab="dashboard">My Dashboard</button>
-      <button class="tab-btn" data-tab="mytopics">หัวข้อของฉัน</button>
-      <button class="tab-btn" data-tab="editinfo">แก้ไขข้อมูล</button>
-      <button class="tab-btn" data-tab="deleteaccount">ลบบัญชี</button>
+      <button class="tab-btn" data-tab="mytopics">My Topics</button>
+      <button class="tab-btn" data-tab="editinfo">My Profile</button>
+      <button class="tab-btn" data-tab="deleteaccount">Account Deletion</button>
     </div>
 
     <!-- ===== Tab: My Dashboard ===== -->
@@ -353,7 +353,7 @@
       <div class="stat-grid">
         <div class="stat-card">
           <div class="stat-num" id="statTopics">0</div>
-          <div class="stat-label">หัวข้อที่สร้าง</div>
+          <div class="stat-label">หัวข้อที่สร้างทั้งหมด</div>
         </div>
         <div class="stat-card">
           <div class="stat-num" id="statVoters">0</div>
@@ -412,7 +412,7 @@
 
         <hr class="section-divider">
 
-        <h4>เปลี่ยน Passcode <span class="field-hint">(ไม่บังคับ — เว้นว่างถ้าไม่ต้องการเปลี่ยน)</span></h4>
+        <h4>เปลี่ยน Passcode <span class="field-hint">(เว้นว่างไว้ถ้าไม่ต้องการเปลี่ยน)</span></h4>
         <div class="field">
           <label>Passcode เดิม</label>
           <div class="passcode-wrap">
@@ -794,7 +794,7 @@ function renderProfileHead(){
     avatarEl.textContent = (u.username||'?').charAt(0).toUpperCase();
   }
   document.getElementById('profileName').textContent = u.username || '—';
-  document.getElementById('profileSub').textContent = u.phone ? `หมายเลขโทรศัพท์: ${u.phone}` : '';
+  document.getElementById('profileSub').textContent = u.phone ? `Phone: ${u.phone}` : '';
 }
 
 /* ---------- Dashboard tab ---------- */
