@@ -208,13 +208,15 @@
     padding:18px 16px; margin-bottom:14px;
   }
   .dash-card h4{ margin:0 0 14px; font-size:14px; }
-  .dash-row{ display:flex; align-items:center; gap:8px; font-size:11.5px; margin-bottom:6px; }
-  .dash-label{ width:56px; flex-shrink:0; color:var(--text-muted); }
-  .dash-bar-bg{ flex:1; height:9px; border-radius:5px; background:var(--bg); overflow:hidden; display:flex; }
-  .dash-bar-seg{ height:100%; }
-  .dash-legend{ display:flex; flex-wrap:wrap; gap:6px 12px; font-size:11px; color:var(--text-muted); margin-bottom:14px; }
-  .dash-legend span{ display:inline-flex; align-items:center; gap:4px; }
-  .dash-legend i{ width:8px; height:8px; border-radius:2px; display:inline-block; }
+  .dash-group{ display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+  .dash-group:last-child{ margin-bottom:0; }
+  .dash-group-title{ font-size:13px; font-weight:700; color:var(--text); }
+  .dash-item-row{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-muted); }
+  .dash-item-label{ width:52px; flex-shrink:0; }
+  .dash-item-bg{ flex:1; height:8px; border-radius:4px; background:var(--bg); overflow:hidden; }
+  .dash-item-fill{ display:block; height:100%; border-radius:4px; transition:width .5s ease; }
+  .dash-item-fill.zero{ background:var(--line) !important; }
+  .dash-item-pct{ width:34px; flex-shrink:0; text-align:right; font-weight:600; color:var(--text); }
   .dash-empty{ text-align:center; color:var(--text-muted); font-size:13px; padding:16px 0; }
 
   /* ===== My Topics ===== */
@@ -552,7 +554,6 @@ const CONFIG = {
 
 const PROVINCES = ['กรุงเทพมหานคร','กระบี่','กาญจนบุรี','กาฬสินธุ์','กำแพงเพชร','ขอนแก่น','จันทบุรี','ฉะเชิงเทรา','ชลบุรี','ชัยนาท','ชัยภูมิ','ชุมพร','เชียงราย','เชียงใหม่','ตรัง','ตราด','ตาก','นครนายก','นครปฐม','นครพนม','นครราชสีมา','นครศรีธรรมราช','นครสวรรค์','นนทบุรี','นราธิวาส','น่าน','บึงกาฬ','บุรีรัมย์','ปทุมธานี','ประจวบคีรีขันธ์','ปราจีนบุรี','ปัตตานี','พระนครศรีอยุธยา','พังงา','พัทลุง','พิจิตร','พิษณุโลก','เพชรบุรี','เพชรบูรณ์','แพร่','ภูเก็ต','มหาสารคาม','มุกดาหาร','แม่ฮ่องสอน','ยโสธร','ยะลา','ร้อยเอ็ด','ระนอง','ระยอง','ราชบุรี','ลพบุรี','ลำปาง','ลำพูน','เลย','ศรีสะเกษ','สกลนคร','สงขลา','สตูล','สมุทรปราการ','สมุทรสงคราม','สมุทรสาคร','สระแก้ว','สระบุรี','สิงห์บุรี','สุโขทัย','สุพรรณบุรี','สุราษฎร์ธานี','สุรินทร์','หนองคาย','หนองบัวลำภู','อ่างทอง','อำนาจเจริญ','อุดรธานี','อุตรดิตถ์','อุทัยธานี','อุบลราชธานี'];
 const THAI_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-const DASH_COLORS = ['#5B2A9E','#FFC93C','#8B5FD1','#D64545','#4B2C82','#7A56C4'];
 
 let STATE = {
   session: JSON.parse(localStorage.getItem('wz_session') || 'null'),
@@ -802,24 +803,40 @@ async function loadDashboard(){
   renderDashboardBreakdown(res);
 }
 
+// สีเพศตายตัวเสมอ เหมือนกับที่ใช้ในการ์ดหัวข้อหน้าแรก (index.html) เพื่อให้ design alignment ตรงกันทั้งระบบ
+const GENDER_BAR_DEFS = [
+  { key:'ชาย', color:'#76A5AF' },
+  { key:'หญิง', color:'#C27BA0' },
+  { key:'อื่นๆ', color:'#8E7CC3' }
+];
+const AGE_BAR_ORDER = ['18-24','25-34','35-44','45-54','55+'];
+
+function dashBarRowHTML(label, pct, color){
+  const isZero = !pct;
+  const fillWidth = isZero ? 100 : pct;
+  return `<div class="dash-item-row">
+    <span class="dash-item-label">${escapeHtml(label)}</span>
+    <div class="dash-item-bg"><span class="dash-item-fill${isZero ? ' zero' : ''}" style="width:${fillWidth}%;${isZero ? '' : `background:${color}`}"></span></div>
+    <span class="dash-item-pct">${pct || 0}%</span>
+  </div>`;
+}
+
 function renderDashboardBreakdown(dash){
   const el = document.getElementById('dashboardBreakdown');
-  if(!dash.total_voters){
-    el.innerHTML = '<div class="dash-empty">ยังไม่มีคนมาร่วมโหวตหัวข้อของคุณ</div>';
-    return;
-  }
   // ตัดจังหวัดออกจากการแสดงผล (backend ยังคำนวณ/ส่ง province_percent มาเหมือนเดิม เผื่อใช้ในอนาคต)
-  const rows = [
-    {label:'เพศ', data: dash.gender_percent},
-    {label:'ช่วงอายุ', data: dash.age_group_percent}
-  ];
-  el.innerHTML = rows.map(r=>{
-    const entries = Object.entries(r.data || {});
-    if(entries.length === 0) return '';
-    const bars = entries.map(([k,v],i)=> `<span class="dash-bar-seg" style="width:${v}%;background:${DASH_COLORS[i % DASH_COLORS.length]}"></span>`).join('');
-    const legend = entries.map(([k,v],i)=> `<span><i style="background:${DASH_COLORS[i % DASH_COLORS.length]}"></i>${escapeHtml(k)} ${v}%</span>`).join('');
-    return `<div class="dash-row"><span class="dash-label">${r.label}</span><div class="dash-bar-bg">${bars}</div></div><div class="dash-legend">${legend}</div>`;
-  }).join('');
+  // แสดงครบ 3 แท่งเพศ + 5 แท่งอายุเสมอ แม้ยังไม่มีใครโหวตเลย (แท่งเทา 0%) ให้ตรงกับการ์ดหัวข้อหน้าแรก
+  const genderRows = GENDER_BAR_DEFS.map(g => dashBarRowHTML(g.key, (dash.gender_percent || {})[g.key] || 0, g.color)).join('');
+  const ageRows = AGE_BAR_ORDER.map(a => dashBarRowHTML(a, (dash.age_group_percent || {})[a] || 0, 'var(--primary)')).join('');
+
+  el.innerHTML = `
+    <div class="dash-group">
+      <div class="dash-group-title">เพศ</div>
+      ${genderRows}
+    </div>
+    <div class="dash-group">
+      <div class="dash-group-title">ช่วงอายุ</div>
+      ${ageRows}
+    </div>`;
 }
 
 /* ---------- My Topics tab ---------- */
