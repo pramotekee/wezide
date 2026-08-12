@@ -260,17 +260,39 @@
   }
 
   /* --- mini dashboard --- */
-  .mini-dash{ border-top:1px solid var(--line); padding:12px 14px 16px; display:flex; flex-direction:column; gap:10px; }
+  .mini-dash{ border-top:1px solid var(--line); padding:12px 14px 16px; display:flex; flex-direction:column; gap:8px; }
   .mini-dash-title{ font-size:11.5px; color:var(--text-muted); font-weight:500; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
+  .mini-dash-summary{ display:inline-flex; align-items:center; gap:4px; }
   .days-left{ white-space:nowrap; }
   .days-left.urgent{ color:var(--danger); font-weight:600; }
-  .dash-row{ display:flex; align-items:center; gap:8px; font-size:11.5px; }
-  .dash-label{ width:56px; flex-shrink:0; color:var(--text-muted); }
-  .dash-bar-bg{ flex:1; height:8px; border-radius:4px; background:var(--bg); overflow:hidden; display:flex; }
-  .dash-bar-seg{ height:100%; }
-  .dash-legend{ display:flex; flex-wrap:wrap; gap:6px 12px; font-size:11px; color:var(--text-muted); }
-  .dash-legend span{ display:inline-flex; align-items:center; gap:4px; }
-  .dash-legend i{ width:8px; height:8px; border-radius:2px; display:inline-block; }
+
+  /* ปุ่มลูกศรเปิด/ปิด voter summary — หมุน 180deg ตอนเปิดแทนการสลับตัวอักษร */
+  .dash-toggle-btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:18px; height:18px; border-radius:50%; background:var(--bg);
+    color:var(--text-muted); font-size:10px; line-height:1; flex-shrink:0;
+    transition:transform .2s ease, background .15s ease;
+  }
+  .dash-toggle-btn:active{ background:var(--line); }
+  .dash-toggle-btn.open{ transform:rotate(180deg); }
+
+  /* mini-dash-body ยุบ/ขยายด้วย max-height กันไม่ต้องคำนวณความสูงจริงด้วย JS */
+  .mini-dash-body{
+    max-height:0; opacity:0; overflow:hidden;
+    transition:max-height .3s ease, opacity .25s ease;
+    display:flex; flex-direction:column; gap:12px;
+  }
+  .mini-dash-body.open{ max-height:600px; opacity:1; }
+
+  .dash-group{ display:flex; flex-direction:column; gap:6px; }
+  .dash-group-title{ font-size:13px; font-weight:700; color:var(--text); }
+  .dash-item-row{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-muted); }
+  .dash-item-label{ width:52px; flex-shrink:0; }
+  .dash-item-bg{ flex:1; height:8px; border-radius:4px; background:var(--bg); overflow:hidden; }
+  .dash-item-fill{ height:100%; border-radius:4px; transition:width .5s ease; }
+  .dash-item-fill.zero{ background:var(--line) !important; }
+  .dash-item-pct{ width:34px; flex-shrink:0; text-align:right; font-weight:600; color:var(--text); }
+  .dash-empty-hint{ font-size:12px; color:var(--text-muted); text-align:center; padding:4px 0; }
 
   /* ===== Modals ===== */
   .modal-overlay{
@@ -728,8 +750,6 @@ const CONFIG = {
 
 const PROVINCES = ['กรุงเทพมหานคร','กระบี่','กาญจนบุรี','กาฬสินธุ์','กำแพงเพชร','ขอนแก่น','จันทบุรี','ฉะเชิงเทรา','ชลบุรี','ชัยนาท','ชัยภูมิ','ชุมพร','เชียงราย','เชียงใหม่','ตรัง','ตราด','ตาก','นครนายก','นครปฐม','นครพนม','นครราชสีมา','นครศรีธรรมราช','นครสวรรค์','นนทบุรี','นราธิวาส','น่าน','บึงกาฬ','บุรีรัมย์','ปทุมธานี','ประจวบคีรีขันธ์','ปราจีนบุรี','ปัตตานี','พระนครศรีอยุธยา','พังงา','พัทลุง','พิจิตร','พิษณุโลก','เพชรบุรี','เพชรบูรณ์','แพร่','ภูเก็ต','มหาสารคาม','มุกดาหาร','แม่ฮ่องสอน','ยโสธร','ยะลา','ร้อยเอ็ด','ระนอง','ระยอง','ราชบุรี','ลพบุรี','ลำปาง','ลำพูน','เลย','ศรีสะเกษ','สกลนคร','สงขลา','สตูล','สมุทรปราการ','สมุทรสงคราม','สมุทรสาคร','สระแก้ว','สระบุรี','สิงห์บุรี','สุโขทัย','สุพรรณบุรี','สุราษฎร์ธานี','สุรินทร์','หนองคาย','หนองบัวลำภู','อ่างทอง','อำนาจเจริญ','อุดรธานี','อุตรดิตถ์','อุทัยธานี','อุบลราชธานี'];
 
-const DASH_COLORS = ['#5B2A9E','#FFC93C','#8B5FD1','#D64545','#4B2C82','#7A56C4'];
-
 let STATE = {
   session: JSON.parse(localStorage.getItem('wz_session') || 'null'),
   topics: [],
@@ -763,10 +783,9 @@ async function api(action, params = {}, method = 'GET'){
       return await res.json();
     }
   }catch(err){
-    if(err.name === 'AbortError'){
-      return { success:false, message:'เซิร์ฟเวอร์ตอบสนองช้าเกินไป (เกิน 20 วินาที) กรุณาลองใหม่อีกครั้ง หรือรอสักครู่แล้วลอง login ดูก่อนว่าข้อมูลอาจบันทึกไปแล้ว' };
-    }
-    throw err;
+    // กันทุกกรณี error (timeout / เน็ตหลุด / response ไม่ใช่ JSON ฯลฯ) ไม่ให้หลุดไปเป็น unhandled exception
+    // ที่ทำให้หน้าจอค้างเป็น spinner ตลอดกาลโดยไม่มีข้อความอะไรบอก user เลย — ต้อง fail แบบมี message เสมอ
+    return { success:false, message:'โอ๊ะ! มีบางอย่างขัดข้อง ทำให้ระบบสะดุดครับ ลองรีเฟรชใหม่อีกครั้งนะครับ' };
   }finally{
     clearTimeout(timeoutId);
   }
@@ -934,6 +953,11 @@ document.getElementById('signupSubmitBtn').addEventListener('click', async ()=>{
     profile_image_url: signupAvatarUrl || ''
   };
 
+  if(!payload.email){
+    errEl.textContent = 'โปรดใส่อีเมล เพื่อไม่เสียสิทธิ์ในการร่วมสนุก ลุ้นรับรางวัลต่างๆ และใช้เป็นช่องทางในการติดต่อจากทีมงานถึงคุณ';
+    errEl.style.display = 'block';
+    return;
+  }
   if(payload.email.indexOf('@') === -1){
     errEl.textContent = 'อีเมลไม่ถูกต้อง กรุณาใส่ @ ด้วย';
     errEl.style.display = 'block';
@@ -1285,6 +1309,10 @@ async function loadTopics(){
   if(STATE.activeCategory) params.category = STATE.activeCategory;
   if(STATE.searchQuery) params.search = STATE.searchQuery;
   const res = await api('getTopics', params);
+
+  // แยกเคส "ยิง API ไม่สำเร็จ" ออกจากเคส "ยิงสำเร็จแต่ไม่มีหัวข้อจริงๆ" ให้ชัดเจน
+  // กันไม่ให้ user เห็นข้อความ "ยังไม่มีหัวข้อ" ทั้งที่จริงๆ แล้วระบบแค่โหลดพัง/ช้าเกินไป
+  STATE.feedLoadError = res.success ? '' : (res.message || 'โอ๊ะ! มีบางอย่างขัดข้อง ทำให้ระบบสะดุดครับ ลองรีเฟรชใหม่อีกครั้งนะครับ');
   STATE.topics = res.success ? res.topics : [];
   STATE.totalCount = res.success ? (res.count || 0) : 0;
   STATE.totalPages = res.success ? (res.total_pages || 1) : 1;
@@ -1292,6 +1320,10 @@ async function loadTopics(){
   renderFeed();
   renderResultCount();
   renderPagination();
+
+  // เติม voter summary ให้ทุกครั้งที่โหลดหัวข้อใหม่ (ไม่ใช่แค่ตอน init ครั้งแรก) กันการ์ดที่มาจาก
+  // pagination / เปลี่ยนหมวด / ค้นหา ไม่มี voter summary ให้เห็นเพราะไม่มีใครไปเรียกโหลดซ้ำให้
+  if(res.success) loadDashboards();
 }
 
 function renderResultCount(){
@@ -1362,6 +1394,13 @@ document.getElementById('searchInput').addEventListener('input', (e)=>{
 
 function renderFeed(){
   const feed = document.getElementById('feed');
+  if(STATE.feedLoadError){
+    feed.innerHTML = `<div class="empty-state"><div class="emoji">⚠️</div>${escapeHtml(STATE.feedLoadError)}<br>
+      <button class="btn btn-primary" id="feedRetryBtn" style="margin-top:14px;">ลองใหม่อีกครั้ง</button></div>`;
+    const retryBtn = document.getElementById('feedRetryBtn');
+    if(retryBtn) retryBtn.addEventListener('click', loadTopics);
+    return;
+  }
   if(STATE.topics.length === 0){
     feed.innerHTML = `<div class="empty-state"><div class="emoji">🌫️</div>ยังไม่มีหัวข้อในตอนนี้<br>ลองเปลี่ยนหมวดหรือคำค้นหาดูครับ</div>`;
     return;
@@ -1376,7 +1415,21 @@ function renderFeed(){
   feed.querySelectorAll('[data-lightbox]').forEach(el=>{
     el.addEventListener('click', ()=> openLightbox(el.dataset.lightbox));
   });
+  feed.querySelectorAll('[data-dash-toggle]').forEach(btn=>{
+    btn.addEventListener('click', ()=> toggleDashSummary(btn.dataset.dashToggle));
+  });
   setupDescMoreButtons();
+}
+
+// เปิด/ปิด voter summary ของการ์ดนั้นๆ — ปิดไว้เป็นค่าเริ่มต้นเสมอ (ดู topicCardHTML) เพื่อไม่ให้กินพื้นที่จอโดยไม่จำเป็น
+function toggleDashSummary(topicId){
+  const body = document.getElementById(`dashBody-${topicId}`);
+  const btn = document.querySelector(`.dash-toggle-btn[data-dash-toggle="${topicId}"]`);
+  if(!body || !btn) return;
+  const willOpen = !body.classList.contains('open');
+  body.classList.toggle('open', willOpen);
+  btn.classList.toggle('open', willOpen);
+  btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
 }
 
 /* เช็คทีละคำอธิบายว่าล้น 2 บรรทัดที่ clamp ไว้จริงไหม (ต้องเช็คหลัง DOM วาดเสร็จแล้วเท่านั้นถึงจะรู้ scrollHeight ที่แท้จริง)
@@ -1467,10 +1520,15 @@ function topicCardHTML(t){
 
     <div class="mini-dash">
       <div class="mini-dash-title">
-        <span>สรุปผู้ร่วมโหวตทั้งหมด <b style="color:${t.card_color || 'var(--primary)'}">${t.total_votes}</b> คน</span>
+        <span class="mini-dash-summary">
+          สรุปผู้ร่วมโหวตทั้งหมด <b style="color:${t.card_color || 'var(--primary)'}">${t.total_votes}</b> คน
+          <button class="dash-toggle-btn" data-dash-toggle="${t.topic_id}" aria-expanded="false" aria-label="แสดง/ซ่อนสรุปผู้ร่วมโหวต">▾</button>
+        </span>
         <span class="days-left${daysLeftUrgentClass(t.end_date)}">${daysLeftText(t.end_date)}</span>
       </div>
-      <div id="dash-${t.topic_id}"></div>
+      <div class="mini-dash-body" id="dashBody-${t.topic_id}">
+        <div id="dash-${t.topic_id}"></div>
+      </div>
     </div>
   </div>`;
 }
@@ -1513,30 +1571,52 @@ function linkifyText(str){
   });
 }
 
-/* โหลด dashboard breakdown แยกทีหลัง (lazy) เพื่อลด payload ตอน list */
+/* โหลด dashboard breakdown แยกทีหลัง (lazy) เพื่อลด payload ตอน list — เรียกซ้ำได้ทุกครั้งที่ topics เปลี่ยน (ดู loadTopics) */
 async function loadDashboards(){
   for(const t of STATE.topics){
     const res = await api('getTopicDetail', {topic_id: t.topic_id});
     if(!res.success) continue;
-    renderDashboard(t.topic_id, res.dashboard);
+    renderDashboard(t.topic_id, res.dashboard, t.card_color);
   }
 }
 
-function renderDashboard(topicId, dash){
+// สีเพศตายตัวเสมอ ไม่ผูกกับ card_color ของหัวข้อ (ใช้โทนเดียวกับ palette การ์ดสี ฟ้า/ชมพู/ม่วง ที่มีอยู่แล้วในระบบ)
+const GENDER_BAR_DEFS = [
+  { key:'ชาย', color:'#76A5AF' },
+  { key:'หญิง', color:'#C27BA0' },
+  { key:'อื่นๆ', color:'#8E7CC3' }
+];
+const AGE_BAR_ORDER = ['18-24','25-34','35-44','45-54','55+'];
+
+// สร้าง 1 แถวบาร์ (label ซ้าย + บาร์ + % ขวา) ช่วงที่ไม่มีคนโหวตเลย (0%) แสดงเป็นบาร์เทาเต็มเส้นบางๆ แทนที่จะว่างเปล่าไปเลย
+// กันสับสนว่า "ไม่มีข้อมูล" กับ "มีข้อมูลแต่เป็น 0%"
+function dashBarRowHTML(label, pct, color){
+  const isZero = !pct;
+  const fillWidth = isZero ? 100 : pct;
+  return `<div class="dash-item-row">
+    <span class="dash-item-label">${escapeHtml(label)}</span>
+    <div class="dash-item-bg"><span class="dash-item-fill${isZero ? ' zero' : ''}" style="width:${fillWidth}%;${isZero ? '' : `background:${color}`}"></span></div>
+    <span class="dash-item-pct">${pct || 0}%</span>
+  </div>`;
+}
+
+function renderDashboard(topicId, dash, cardColor){
   const el = document.getElementById(`dash-${topicId}`);
   if(!el) return;
-  const rows = [
-    {label:'เพศ', data: dash.gender_percent},
-    {label:'อายุ', data: dash.age_group_percent},
-    {label:'จังหวัด', data: dash.province_percent}
-  ];
-  el.innerHTML = rows.map(r=>{
-    const entries = Object.entries(r.data || {});
-    if(entries.length === 0) return '';
-    const bars = entries.map(([k,v],i)=> `<span class="dash-bar-seg" style="width:${v}%;background:${DASH_COLORS[i % DASH_COLORS.length]}"></span>`).join('');
-    const legend = entries.map(([k,v],i)=> `<span><i style="background:${DASH_COLORS[i % DASH_COLORS.length]}"></i>${escapeHtml(k)} ${v}%</span>`).join('');
-    return `<div class="dash-row"><span class="dash-label">${r.label}</span><div class="dash-bar-bg">${bars}</div></div><div class="dash-legend">${legend}</div>`;
-  }).join('');
+  const ageColor = cardColor || '#5B2A9E';
+
+  const genderRows = GENDER_BAR_DEFS.map(g => dashBarRowHTML(g.key, (dash.gender_percent || {})[g.key] || 0, g.color)).join('');
+  const ageRows = AGE_BAR_ORDER.map(a => dashBarRowHTML(a, (dash.age_group_percent || {})[a] || 0, ageColor)).join('');
+
+  el.innerHTML = `
+    <div class="dash-group">
+      <div class="dash-group-title">เพศ</div>
+      ${genderRows}
+    </div>
+    <div class="dash-group">
+      <div class="dash-group-title">อายุ</div>
+      ${ageRows}
+    </div>`;
 }
 
 /* ---------- Voting ---------- */
@@ -1890,7 +1970,6 @@ document.getElementById('footerLoginLink').addEventListener('click', (e)=>{
   loadCreateFormOptions(); // เติม dropdown ของ modal สร้างหัวข้อเท่านั้น ไม่ใช่สิ่งที่เห็นตอนเปิดหน้าแรก ไม่ต้อง block
 
   await topicsPromise;
-  loadDashboards();
 
   // ถ้าเปิดมาจากลิงก์แชร์ ?topic=ID ให้เลื่อนไปหาการ์ดนั้น
   const params = new URLSearchParams(location.search);
