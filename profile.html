@@ -412,12 +412,19 @@
 
         <hr class="section-divider">
 
-        <h4>เปลี่ยนเบอร์โทรศัพท์ <span class="field-hint">(เว้นว่างไว้ถ้าไม่ต้องการเปลี่ยน)</span></h4>
+        <h4>เปลี่ยนหมายเลขโทรศัพท์ <span class="field-hint">(เว้นว่างไว้ถ้าไม่ต้องการเปลี่ยน)</span></h4>
         <div class="field">
-          <label>เบอร์โทรใหม่</label>
+          <label>หมายเลขโทรศัพท์ใหม่</label>
           <input type="tel" id="editPhone" maxlength="10" placeholder="0812345678">
         </div>
-        <p class="field-hint" style="margin:-6px 0 14px;">ต้องกรอก Passcode เดิมด้านล่างเพื่อยืนยันก่อนเปลี่ยนเบอร์ และไม่สามารถเปลี่ยนเบอร์พร้อมกับ Passcode ในรอบเดียวกันได้</p>
+        <div class="field">
+          <label>Passcode</label>
+          <div class="passcode-wrap">
+            <input type="password" id="editPhonePasscode">
+            <button type="button" class="passcode-toggle" data-target="editPhonePasscode">👁️</button>
+          </div>
+        </div>
+        <p class="field-hint" style="margin:-6px 0 14px;">ไม่สามารถเปลี่ยนหมายเลขโทรศัพท์พร้อมกับ Passcode ในรอบเดียวกันได้ กรุณาเลือกเปลี่ยนอย่างใดอย่างหนึ่งต่อครั้ง</p>
 
         <hr class="section-divider">
 
@@ -1161,6 +1168,7 @@ function populateEditForm(){
   document.getElementById('editGender').value = u.gender || '';
   document.getElementById('editProvince').value = u.province || '';
   document.getElementById('editPhone').value = '';
+  document.getElementById('editPhonePasscode').value = '';
   STATE.editAvatarUrl = u.profile_image_url || '';
   renderAvatarPreview();
 
@@ -1187,6 +1195,7 @@ document.getElementById('editSaveBtn').addEventListener('click', async ()=>{
   const province = document.getElementById('editProvince').value;
 
   const phone = document.getElementById('editPhone').value.trim();
+  const phonePasscode = document.getElementById('editPhonePasscode').value.trim();
   const oldPasscode = document.getElementById('editOldPasscode').value.trim();
   const newPasscode = document.getElementById('editNewPasscode').value.trim();
   const newPasscode2 = document.getElementById('editNewPasscode2').value.trim();
@@ -1205,21 +1214,21 @@ document.getElementById('editSaveBtn').addEventListener('click', async ()=>{
   const wantsPhoneChange = !!phone;
   const wantsPasscodeChange = !!(newPasscode || newPasscode2);
 
-  // เปลี่ยนเบอร์กับเปลี่ยน Passcode ห้ามทำพร้อมกัน เพราะ Passcode เดิม ใช้ยืนยันตัวตนร่วมกันทั้งคู่
+  // เปลี่ยนเบอร์กับเปลี่ยน Passcode ห้ามทำพร้อมกัน (นโยบายความปลอดภัย: บังคับเลือกทีละอย่างต่อรอบ)
   if(wantsPhoneChange && wantsPasscodeChange){
-    errEl.textContent = 'ไม่สามารถเปลี่ยนเบอร์โทรและ Passcode พร้อมกันได้ กรุณาเลือกเปลี่ยนอย่างใดอย่างหนึ่งต่อครั้ง';
+    errEl.textContent = 'ไม่สามารถเปลี่ยนหมายเลขโทรศัพท์และ Passcode พร้อมกันได้ กรุณาเลือกเปลี่ยนอย่างใดอย่างหนึ่งต่อครั้ง';
     errEl.style.display = 'block';
     return;
   }
 
   if(wantsPhoneChange){
     if(!/^0[0-9]{9}$/.test(phone)){
-      errEl.textContent = 'เบอร์โทรไม่ถูกต้อง กรุณากรอกเบอร์ 10 หลัก ขึ้นต้นด้วย 0';
+      errEl.textContent = 'หมายเลขโทรศัพท์ไม่ถูกต้อง กรุณากรอกให้ครบ 10 หลัก ขึ้นต้นด้วย 0';
       errEl.style.display = 'block';
       return;
     }
-    if(!oldPasscode){
-      errEl.textContent = 'กรุณากรอก Passcode เดิมเพื่อยืนยันก่อนเปลี่ยนเบอร์โทร';
+    if(!phonePasscode){
+      errEl.textContent = 'กรุณากรอก Passcode เพื่อยืนยันก่อนเปลี่ยนหมายเลขโทรศัพท์';
       errEl.style.display = 'block';
       return;
     }
@@ -1251,7 +1260,7 @@ document.getElementById('editSaveBtn').addEventListener('click', async ()=>{
   };
   if(wantsPhoneChange){
     params.phone = phone;
-    params.old_passcode = oldPasscode;
+    params.old_passcode = phonePasscode;
   }
   if(wantsPasscodeChange){
     params.old_passcode = oldPasscode;
@@ -1270,6 +1279,7 @@ document.getElementById('editSaveBtn').addEventListener('click', async ()=>{
   }
 
   document.getElementById('editPhone').value = '';
+  document.getElementById('editPhonePasscode').value = '';
   document.getElementById('editOldPasscode').value = '';
   document.getElementById('editNewPasscode').value = '';
   document.getElementById('editNewPasscode2').value = '';
