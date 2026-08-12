@@ -412,6 +412,15 @@
 
         <hr class="section-divider">
 
+        <h4>เปลี่ยนเบอร์โทรศัพท์ <span class="field-hint">(เว้นว่างไว้ถ้าไม่ต้องการเปลี่ยน)</span></h4>
+        <div class="field">
+          <label>เบอร์โทรใหม่</label>
+          <input type="tel" id="editPhone" maxlength="10" placeholder="0812345678">
+        </div>
+        <p class="field-hint" style="margin:-6px 0 14px;">ต้องกรอก Passcode เดิมด้านล่างเพื่อยืนยันก่อนเปลี่ยนเบอร์ และไม่สามารถเปลี่ยนเบอร์พร้อมกับ Passcode ในรอบเดียวกันได้</p>
+
+        <hr class="section-divider">
+
         <h4>เปลี่ยน Passcode <span class="field-hint">(เว้นว่างไว้ถ้าไม่ต้องการเปลี่ยน)</span></h4>
         <div class="field">
           <label>Passcode เดิม</label>
@@ -1151,6 +1160,7 @@ function populateEditForm(){
   document.getElementById('editEmail').value = u.email || '';
   document.getElementById('editGender').value = u.gender || '';
   document.getElementById('editProvince').value = u.province || '';
+  document.getElementById('editPhone').value = '';
   STATE.editAvatarUrl = u.profile_image_url || '';
   renderAvatarPreview();
 
@@ -1176,6 +1186,7 @@ document.getElementById('editSaveBtn').addEventListener('click', async ()=>{
   const gender = document.getElementById('editGender').value;
   const province = document.getElementById('editProvince').value;
 
+  const phone = document.getElementById('editPhone').value.trim();
   const oldPasscode = document.getElementById('editOldPasscode').value.trim();
   const newPasscode = document.getElementById('editNewPasscode').value.trim();
   const newPasscode2 = document.getElementById('editNewPasscode2').value.trim();
@@ -1190,7 +1201,31 @@ document.getElementById('editSaveBtn').addEventListener('click', async ()=>{
     errEl.style.display = 'block';
     return;
   }
-  if(newPasscode || newPasscode2 || oldPasscode){
+
+  const wantsPhoneChange = !!phone;
+  const wantsPasscodeChange = !!(newPasscode || newPasscode2);
+
+  // เปลี่ยนเบอร์กับเปลี่ยน Passcode ห้ามทำพร้อมกัน เพราะ Passcode เดิม ใช้ยืนยันตัวตนร่วมกันทั้งคู่
+  if(wantsPhoneChange && wantsPasscodeChange){
+    errEl.textContent = 'ไม่สามารถเปลี่ยนเบอร์โทรและ Passcode พร้อมกันได้ กรุณาเลือกเปลี่ยนอย่างใดอย่างหนึ่งต่อครั้ง';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  if(wantsPhoneChange){
+    if(!/^0[0-9]{9}$/.test(phone)){
+      errEl.textContent = 'เบอร์โทรไม่ถูกต้อง กรุณากรอกเบอร์ 10 หลัก ขึ้นต้นด้วย 0';
+      errEl.style.display = 'block';
+      return;
+    }
+    if(!oldPasscode){
+      errEl.textContent = 'กรุณากรอก Passcode เดิมเพื่อยืนยันก่อนเปลี่ยนเบอร์โทร';
+      errEl.style.display = 'block';
+      return;
+    }
+  }
+
+  if(wantsPasscodeChange){
     if(!oldPasscode){
       errEl.textContent = 'กรุณากรอก Passcode เดิมเพื่อยืนยันก่อนเปลี่ยน';
       errEl.style.display = 'block';
@@ -1214,7 +1249,11 @@ document.getElementById('editSaveBtn').addEventListener('click', async ()=>{
     birthday: `${bYear}-${bMonth}-${bDay}`,
     profile_image_url: STATE.editAvatarUrl || ''
   };
-  if(newPasscode){
+  if(wantsPhoneChange){
+    params.phone = phone;
+    params.old_passcode = oldPasscode;
+  }
+  if(wantsPasscodeChange){
     params.old_passcode = oldPasscode;
     params.new_passcode = newPasscode;
   }
@@ -1230,11 +1269,27 @@ document.getElementById('editSaveBtn').addEventListener('click', async ()=>{
     return;
   }
 
-  STATE.profile = Object.assign(STATE.profile, res.user);
-  renderProfileHead();
+  document.getElementById('editPhone').value = '';
   document.getElementById('editOldPasscode').value = '';
   document.getElementById('editNewPasscode').value = '';
   document.getElementById('editNewPasscode2').value = '';
+
+  // เปลี่ยนเบอร์สำเร็จ: backend revoke session เดิมทิ้งแล้ว ต้องบังคับ logout ให้ user login ใหม่ด้วยเบอร์ใหม่
+  if(res.force_logout){
+    document.getElementById('confirmModalTitle').textContent = 'แจ้งให้ทราบ';
+    document.getElementById('confirmModalText').textContent = res.message;
+    document.getElementById('confirmModalActions').innerHTML =
+      `<button class="btn btn-primary full-btn" id="confirmModalOkBtn">เข้าสู่ระบบใหม่</button>`;
+    document.getElementById('confirmModalOkBtn').addEventListener('click', ()=>{
+      logout();
+      location.href = 'index.html';
+    });
+    openModal('confirmModal');
+    return;
+  }
+
+  STATE.profile = Object.assign(STATE.profile, res.user);
+  renderProfileHead();
   showToast('บันทึกข้อมูลสำเร็จ');
 });
 
