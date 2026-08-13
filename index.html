@@ -174,21 +174,24 @@
   .category-pill.selected{ background:var(--primary); border-color:var(--primary); color:#fff; font-weight:500; }
 
   /* ===== Voter targeting checklist (สร้าง/แก้ไขหัวข้อ) ===== */
+  /* หมายเหตุ: ต้อง prefix ด้วย .target-checklist เสมอ เพราะ .field label (specificity class+element)
+     สูงกว่า .check-row เดี่ยวๆ (specificity class อย่างเดียว) จะไปทับ display:flex กลายเป็น display:block
+     ทำให้ span.check-box (เป็น inline โดย default) ไม่ยอมรับ width/height ที่ตั้งไว้ ยุบเหลือเป็นเส้นบางๆ */
   .target-checklist{ display:flex; flex-direction:column; }
-  .check-row{
+  .target-checklist .check-row{
     display:flex; align-items:center; gap:12px; padding:11px 4px;
     font-size:14px; color:var(--text); cursor:pointer; user-select:none;
-    border-bottom:1px solid var(--line); position:relative;
+    border-bottom:1px solid var(--line); position:relative; margin-bottom:0;
   }
-  .check-row:last-child{ border-bottom:none; }
-  .check-row input{ position:absolute; opacity:0; width:0; height:0; pointer-events:none; }
-  .check-box{
+  .target-checklist .check-row:last-child{ border-bottom:none; }
+  .target-checklist .check-row input{ position:absolute; opacity:0; width:0; height:0; pointer-events:none; }
+  .target-checklist .check-box{
     flex-shrink:0; width:20px; height:20px; border-radius:6px;
     border:1.5px solid var(--line); background:var(--surface);
     position:relative; transition:all .15s ease;
   }
-  .check-row input:checked + .check-box{ background:var(--primary); border-color:var(--primary); }
-  .check-row input:checked + .check-box::after{
+  .target-checklist .check-row input:checked + .check-box{ background:var(--primary); border-color:var(--primary); }
+  .target-checklist .check-row input:checked + .check-box::after{
     content:''; position:absolute; left:6px; top:2px; width:5px; height:10px;
     border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg);
   }
@@ -675,16 +678,16 @@
     </div>
 
     <div class="field">
-      <label>เลือกกลุ่มเป้าหมาย <span class="field-hint">(หากเปิดให้ทุกคนโหวตได้ ไม่ต้องเลือกใดๆ ข้ามไปได้เลย)</span></label>
+      <label>ระบุกลุ่มผู้ร่วมโหวต <span class="field-hint">(หากเปิดให้ทุกคนโหวต ไม่ต้องแก้ไข ข้ามไปได้เลย)</span></label>
       <div class="target-checklist" id="ctTargetChecklist">
-        <label class="check-row"><input type="checkbox" value="ชาย"><span class="check-box"></span>ชาย</label>
-        <label class="check-row"><input type="checkbox" value="หญิง"><span class="check-box"></span>หญิง</label>
-        <label class="check-row"><input type="checkbox" value="อื่นๆ"><span class="check-box"></span>อื่นๆ</label>
-        <label class="check-row"><input type="checkbox" value="18-24"><span class="check-box"></span>18-24</label>
-        <label class="check-row"><input type="checkbox" value="25-34"><span class="check-box"></span>25-34</label>
-        <label class="check-row"><input type="checkbox" value="35-44"><span class="check-box"></span>35-44</label>
-        <label class="check-row"><input type="checkbox" value="45-54"><span class="check-box"></span>45-54</label>
-        <label class="check-row"><input type="checkbox" value="55+"><span class="check-box"></span>55+</label>
+        <label class="check-row"><input type="checkbox" value="ชาย" checked><span class="check-box"></span>ชาย</label>
+        <label class="check-row"><input type="checkbox" value="หญิง" checked><span class="check-box"></span>หญิง</label>
+        <label class="check-row"><input type="checkbox" value="อื่นๆ" checked><span class="check-box"></span>อื่นๆ</label>
+        <label class="check-row"><input type="checkbox" value="18-24" checked><span class="check-box"></span>อายุ 18-24 ปี</label>
+        <label class="check-row"><input type="checkbox" value="25-34" checked><span class="check-box"></span>อายุ 25-34 ปี</label>
+        <label class="check-row"><input type="checkbox" value="35-44" checked><span class="check-box"></span>อายุ 35-44 ปี</label>
+        <label class="check-row"><input type="checkbox" value="45-54" checked><span class="check-box"></span>อายุ 45-54 ปี</label>
+        <label class="check-row"><input type="checkbox" value="55+" checked><span class="check-box"></span>อายุ 55+</label>
       </div>
     </div>
 
@@ -1261,6 +1264,12 @@ function getCheckedTargetValues(containerId, allowedValues){
     .map(i=>i.value)
     .filter(v=> allowedValues.indexOf(v) !== -1);
 }
+// ติ๊กครบทุกช่องในกลุ่ม = ตั้งใจ "ไม่จำกัด" ต้องบันทึกเป็นค่าว่าง ไม่ใช่ list ครบทุกตัว
+// (ค่าว่างเท่านั้นที่ตรงความหมาย unrestricted จริงๆ ครอบคลุมถึงเคสข้อมูลที่ไม่มีช่องติ๊กให้เลือก เช่น อายุต่ำกว่า 18)
+function getTargetSelectionForSave(containerId, allowedValues){
+  const checked = getCheckedTargetValues(containerId, allowedValues);
+  return checked.length === allowedValues.length ? '' : checked.join(',');
+}
 function setCheckedTargetValues(containerId, csvValue){
   const selected = String(csvValue || '').split(',').map(v=>v.trim()).filter(v=>v);
   document.querySelectorAll(`#${containerId} input`).forEach(input=>{
@@ -1268,7 +1277,8 @@ function setCheckedTargetValues(containerId, csvValue){
   });
 }
 function resetTargetChecklist(containerId){
-  document.querySelectorAll(`#${containerId} input`).forEach(input=> input.checked = false);
+  // reset กลับสู่ default = ติ๊กครบทุกช่อง (แปลว่าไม่จำกัดใครเลย)
+  document.querySelectorAll(`#${containerId} input`).forEach(input=> input.checked = true);
 }
 
 document.getElementById('createSubmitBtn').addEventListener('click', async ()=>{
@@ -1303,8 +1313,8 @@ document.getElementById('createSubmitBtn').addEventListener('click', async ()=>{
     card_color: ctSelectedColor,
     start_date: startDate, end_date: endDate,
     image_url_raw: topicType === 'image' ? ctCoverUrl : '',
-    target_gender: getCheckedTargetValues('ctTargetChecklist', TARGET_GENDER_VALUES).join(','),
-    target_age_groups: getCheckedTargetValues('ctTargetChecklist', TARGET_AGE_GROUP_VALUES).join(',')
+    target_gender: getTargetSelectionForSave('ctTargetChecklist', TARGET_GENDER_VALUES),
+    target_age_groups: getTargetSelectionForSave('ctTargetChecklist', TARGET_AGE_GROUP_VALUES)
   };
 
   const btn = document.getElementById('createSubmitBtn');
