@@ -241,6 +241,16 @@
   }
   .status-badge.active{ background:#E4F5E9; color:#2C8A4B; }
   .status-badge.pending{ background:#FFF3DE; color:#B8790C; }
+
+  /* ===== Voter targeting chips (แก้ไขหัวข้อ) — เหมือนกับ index.html ทุกประการ ===== */
+  .target-chip-group{ display:flex; flex-wrap:wrap; gap:8px; }
+  .toggle-chip{
+    display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:100px;
+    font-size:13px; background:var(--surface); border:1.5px solid var(--line); color:var(--text-muted);
+    cursor:pointer; user-select:none; transition:all .15s ease;
+  }
+  .toggle-chip input{ accent-color:var(--primary); margin:0; }
+  .toggle-chip.checked{ background:var(--primary); border-color:var(--primary); color:#fff; font-weight:500; }
   .status-badge.inactive{ background:#EFECF5; color:var(--text-muted); }
   .status-badge.expired{ background:#FBE7E7; color:var(--danger); }
   .mt-meta{ display:flex; flex-wrap:wrap; gap:6px; font-size:11px; color:var(--text-muted); margin-bottom:10px; }
@@ -550,13 +560,29 @@
       <div class="color-swatches" id="etColorSwatches"></div>
     </div>
 
+    <div class="field">
+      <label>กลุ่มเป้าหมาย <span class="field-hint">(ไม่บังคับ — ไม่เลือกเลย = เปิดให้ทุกคนโหวตได้)</span></label>
+      <div class="target-chip-group" id="etGenderChips">
+        <label class="toggle-chip"><input type="checkbox" value="ชาย"> ชาย</label>
+        <label class="toggle-chip"><input type="checkbox" value="หญิง"> หญิง</label>
+        <label class="toggle-chip"><input type="checkbox" value="อื่นๆ"> อื่นๆ</label>
+      </div>
+      <div class="target-chip-group" id="etAgeChips" style="margin-top:8px;">
+        <label class="toggle-chip"><input type="checkbox" value="18-24"> 18-24</label>
+        <label class="toggle-chip"><input type="checkbox" value="25-34"> 25-34</label>
+        <label class="toggle-chip"><input type="checkbox" value="35-44"> 35-44</label>
+        <label class="toggle-chip"><input type="checkbox" value="45-54"> 45-54</label>
+        <label class="toggle-chip"><input type="checkbox" value="55+"> 55+</label>
+      </div>
+    </div>
+
     <div class="date-row stack-row">
       <div class="field"><label>วันเริ่มต้นเผยแพร่</label><input type="date" id="etStartDate"></div>
       <div class="field"><label>วันสิ้นสุดเผยแพร่</label><input type="date" id="etEndDate"></div>
     </div>
 
     <p style="font-size:12px;color:var(--text-muted);margin:-4px 0 14px;line-height:1.6;">
-      หมายเหตุ: ถ้ามีการแก้ไขข้อมูลจริง ระบบจะเปลี่ยนสถานะหัวข้อเป็น "รอตรวจสอบ" อัตโนมัติ เพื่อให้ทีมงานตรวจสอบอีกครั้งก่อนเผยแพร่ (ผลโหวตเดิมจะยังอยู่ครบ ไม่ถูกล้าง)
+      หมายเหตุ: แก้ไขแล้วบันทึกได้ทันที หัวข้อจะยังคงสถานะเดิม (เผยแพร่/ซ่อน) เหมือนก่อนแก้ไข ไม่ต้องรอตรวจสอบใหม่ (ผลโหวตเดิมจะยังอยู่ครบ ไม่ถูกล้าง)
     </p>
 
     <div class="field-error" id="etError"></div>
@@ -1072,6 +1098,27 @@ document.getElementById('etCoverFile').addEventListener('change', async (e)=>{
   }
 });
 
+// Voter targeting chips: toggle .checked class ด้วยมือแทนพึ่ง CSS :has() กัน webview เก่าบางตัวไม่รองรับ
+function wireToggleChips(containerId){
+  document.querySelectorAll(`#${containerId} .toggle-chip`).forEach(label=>{
+    const input = label.querySelector('input');
+    input.addEventListener('change', ()=> label.classList.toggle('checked', input.checked));
+  });
+}
+function getCheckedChipValues(containerId){
+  return Array.from(document.querySelectorAll(`#${containerId} input:checked`)).map(i=>i.value);
+}
+function setCheckedChipValues(containerId, csvValue){
+  const selected = String(csvValue || '').split(',').map(v=>v.trim()).filter(v=>v);
+  document.querySelectorAll(`#${containerId} .toggle-chip`).forEach(label=>{
+    const input = label.querySelector('input');
+    input.checked = selected.indexOf(input.value) !== -1;
+    label.classList.toggle('checked', input.checked);
+  });
+}
+wireToggleChips('etGenderChips');
+wireToggleChips('etAgeChips');
+
 function openEditTopicModal(t){
   etCurrentTopicId = t.topic_id;
   document.getElementById('etError').style.display = 'none';
@@ -1108,6 +1155,9 @@ function openEditTopicModal(t){
     s.classList.toggle('selected', s.dataset.hex === etSelectedColor);
   });
 
+  setCheckedChipValues('etGenderChips', t.target_gender);
+  setCheckedChipValues('etAgeChips', t.target_age_groups);
+
   openModal('editTopicModal');
 }
 
@@ -1143,7 +1193,9 @@ document.getElementById('etSaveBtn').addEventListener('click', async ()=>{
     tag_1: tags[0], tag_2: tags[1], tag_3: tags[2], tag_4: tags[3], tag_5: tags[4],
     card_color: etSelectedColor,
     start_date: startDate, end_date: endDate,
-    image_url_raw: topicType === 'image' ? etCoverUrl : ''
+    image_url_raw: topicType === 'image' ? etCoverUrl : '',
+    target_gender: getCheckedChipValues('etGenderChips').join(','),
+    target_age_groups: getCheckedChipValues('etAgeChips').join(',')
   };
 
   const btn = document.getElementById('etSaveBtn');
