@@ -173,6 +173,16 @@
   }
   .category-pill.selected{ background:var(--primary); border-color:var(--primary); color:#fff; font-weight:500; }
 
+  /* ===== Voter targeting chips (สร้าง/แก้ไขหัวข้อ) ===== */
+  .target-chip-group{ display:flex; flex-wrap:wrap; gap:8px; }
+  .toggle-chip{
+    display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:100px;
+    font-size:13px; background:var(--surface); border:1.5px solid var(--line); color:var(--text-muted);
+    cursor:pointer; user-select:none; transition:all .15s ease;
+  }
+  .toggle-chip input{ accent-color:var(--primary); margin:0; }
+  .toggle-chip.checked{ background:var(--primary); border-color:var(--primary); color:#fff; font-weight:500; }
+
   /* ===== Feed ===== */
   .feed{ max-width:640px; margin:0 auto; padding:20px 16px 60px; display:flex; flex-direction:column; gap:20px; }
   .empty-state{ text-align:center; padding:60px 20px; color:var(--text-muted); }
@@ -652,6 +662,22 @@
     <div class="field">
       <label>สีการ์ด</label>
       <div class="color-swatches" id="colorSwatches"></div>
+    </div>
+
+    <div class="field">
+      <label>กลุ่มเป้าหมาย <span class="field-hint">(ไม่บังคับ — ไม่เลือกเลย = เปิดให้ทุกคนโหวตได้)</span></label>
+      <div class="target-chip-group" id="ctGenderChips">
+        <label class="toggle-chip"><input type="checkbox" value="ชาย"> ชาย</label>
+        <label class="toggle-chip"><input type="checkbox" value="หญิง"> หญิง</label>
+        <label class="toggle-chip"><input type="checkbox" value="อื่นๆ"> อื่นๆ</label>
+      </div>
+      <div class="target-chip-group" id="ctAgeChips" style="margin-top:8px;">
+        <label class="toggle-chip"><input type="checkbox" value="18-24"> 18-24</label>
+        <label class="toggle-chip"><input type="checkbox" value="25-34"> 25-34</label>
+        <label class="toggle-chip"><input type="checkbox" value="35-44"> 35-44</label>
+        <label class="toggle-chip"><input type="checkbox" value="45-54"> 45-54</label>
+        <label class="toggle-chip"><input type="checkbox" value="55+"> 55+</label>
+      </div>
     </div>
 
     <div class="date-row stack-row">
@@ -1219,6 +1245,25 @@ document.getElementById('coverFile').addEventListener('change', async (e)=>{
   }
 });
 
+// Voter targeting chips: toggle .checked class ด้วยมือแทนพึ่ง CSS :has() กัน webview เก่าบางตัวไม่รองรับ
+function wireToggleChips(containerId){
+  document.querySelectorAll(`#${containerId} .toggle-chip`).forEach(label=>{
+    const input = label.querySelector('input');
+    input.addEventListener('change', ()=> label.classList.toggle('checked', input.checked));
+  });
+}
+function getCheckedChipValues(containerId){
+  return Array.from(document.querySelectorAll(`#${containerId} input:checked`)).map(i=>i.value);
+}
+function resetChipGroup(containerId){
+  document.querySelectorAll(`#${containerId} .toggle-chip`).forEach(label=>{
+    label.querySelector('input').checked = false;
+    label.classList.remove('checked');
+  });
+}
+wireToggleChips('ctGenderChips');
+wireToggleChips('ctAgeChips');
+
 document.getElementById('createSubmitBtn').addEventListener('click', async ()=>{
   const errEl = document.getElementById('createError');
   errEl.style.display = 'none';
@@ -1250,7 +1295,9 @@ document.getElementById('createSubmitBtn').addEventListener('click', async ()=>{
     tag_1: tags[0], tag_2: tags[1], tag_3: tags[2], tag_4: tags[3], tag_5: tags[4],
     card_color: ctSelectedColor,
     start_date: startDate, end_date: endDate,
-    image_url_raw: topicType === 'image' ? ctCoverUrl : ''
+    image_url_raw: topicType === 'image' ? ctCoverUrl : '',
+    target_gender: getCheckedChipValues('ctGenderChips').join(','),
+    target_age_groups: getCheckedChipValues('ctAgeChips').join(',')
   };
 
   const btn = document.getElementById('createSubmitBtn');
@@ -1290,6 +1337,8 @@ function resetCreateForm(){
   ['ctTag1','ctTag2','ctTag3','ctTag4','ctTag5'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('ctStartDate').value = '';
   document.getElementById('ctEndDate').value = '';
+  resetChipGroup('ctGenderChips');
+  resetChipGroup('ctAgeChips');
   document.getElementById('createError').style.display = 'none';
   ctCoverUrl = '';
   document.getElementById('coverPreview').innerHTML = '＋ แตะเพื่อแนบรูปประกอบหัวข้อ';
@@ -1680,7 +1729,7 @@ async function confirmVote(){
 
   if(!res.success){
     // เออเรอร์ก็ต้องเป็น pop up เหมือนกัน ไม่ใช่ toast
-    showInfoPopup(res.message, 'ปิด');
+    showInfoPopup(res.message, 'เข้าใจแล้ว');
     return;
   }
 
@@ -1704,7 +1753,7 @@ async function castVote(topicId, side, btnEl){
   }, 'POST');
   if(btnEl) setBtnLoading(btnEl, false);
   if(!res.success){
-    showInfoPopup(res.message, 'ปิด');
+    showInfoPopup(res.message, 'เข้าใจแล้ว');
     return;
   }
   showInfoPopup(
