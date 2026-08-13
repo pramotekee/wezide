@@ -173,15 +173,25 @@
   }
   .category-pill.selected{ background:var(--primary); border-color:var(--primary); color:#fff; font-weight:500; }
 
-  /* ===== Voter targeting chips (สร้าง/แก้ไขหัวข้อ) ===== */
-  .target-chip-group{ display:flex; flex-wrap:wrap; gap:8px; }
-  .toggle-chip{
-    display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:100px;
-    font-size:13px; background:var(--surface); border:1.5px solid var(--line); color:var(--text-muted);
-    cursor:pointer; user-select:none; transition:all .15s ease;
+  /* ===== Voter targeting checklist (สร้าง/แก้ไขหัวข้อ) ===== */
+  .target-checklist{ display:flex; flex-direction:column; }
+  .check-row{
+    display:flex; align-items:center; gap:12px; padding:11px 4px;
+    font-size:14px; color:var(--text); cursor:pointer; user-select:none;
+    border-bottom:1px solid var(--line); position:relative;
   }
-  .toggle-chip input{ accent-color:var(--primary); margin:0; }
-  .toggle-chip.checked{ background:var(--primary); border-color:var(--primary); color:#fff; font-weight:500; }
+  .check-row:last-child{ border-bottom:none; }
+  .check-row input{ position:absolute; opacity:0; width:0; height:0; pointer-events:none; }
+  .check-box{
+    flex-shrink:0; width:20px; height:20px; border-radius:6px;
+    border:1.5px solid var(--line); background:var(--surface);
+    position:relative; transition:all .15s ease;
+  }
+  .check-row input:checked + .check-box{ background:var(--primary); border-color:var(--primary); }
+  .check-row input:checked + .check-box::after{
+    content:''; position:absolute; left:6px; top:2px; width:5px; height:10px;
+    border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg);
+  }
 
   /* ===== Feed ===== */
   .feed{ max-width:640px; margin:0 auto; padding:20px 16px 60px; display:flex; flex-direction:column; gap:20px; }
@@ -665,18 +675,16 @@
     </div>
 
     <div class="field">
-      <label>กลุ่มเป้าหมาย <span class="field-hint">(ไม่บังคับ — ไม่เลือกเลย = เปิดให้ทุกคนโหวตได้)</span></label>
-      <div class="target-chip-group" id="ctGenderChips">
-        <label class="toggle-chip"><input type="checkbox" value="ชาย"> ชาย</label>
-        <label class="toggle-chip"><input type="checkbox" value="หญิง"> หญิง</label>
-        <label class="toggle-chip"><input type="checkbox" value="อื่นๆ"> อื่นๆ</label>
-      </div>
-      <div class="target-chip-group" id="ctAgeChips" style="margin-top:8px;">
-        <label class="toggle-chip"><input type="checkbox" value="18-24"> 18-24</label>
-        <label class="toggle-chip"><input type="checkbox" value="25-34"> 25-34</label>
-        <label class="toggle-chip"><input type="checkbox" value="35-44"> 35-44</label>
-        <label class="toggle-chip"><input type="checkbox" value="45-54"> 45-54</label>
-        <label class="toggle-chip"><input type="checkbox" value="55+"> 55+</label>
+      <label>เลือกกลุ่มเป้าหมาย <span class="field-hint">(หากเปิดให้ทุกคนโหวตได้ ไม่ต้องเลือกใดๆ ข้ามไปได้เลย)</span></label>
+      <div class="target-checklist" id="ctTargetChecklist">
+        <label class="check-row"><input type="checkbox" value="ชาย"><span class="check-box"></span>ชาย</label>
+        <label class="check-row"><input type="checkbox" value="หญิง"><span class="check-box"></span>หญิง</label>
+        <label class="check-row"><input type="checkbox" value="อื่นๆ"><span class="check-box"></span>อื่นๆ</label>
+        <label class="check-row"><input type="checkbox" value="18-24"><span class="check-box"></span>18-24</label>
+        <label class="check-row"><input type="checkbox" value="25-34"><span class="check-box"></span>25-34</label>
+        <label class="check-row"><input type="checkbox" value="35-44"><span class="check-box"></span>35-44</label>
+        <label class="check-row"><input type="checkbox" value="45-54"><span class="check-box"></span>45-54</label>
+        <label class="check-row"><input type="checkbox" value="55+"><span class="check-box"></span>55+</label>
       </div>
     </div>
 
@@ -1245,24 +1253,23 @@ document.getElementById('coverFile').addEventListener('change', async (e)=>{
   }
 });
 
-// Voter targeting chips: toggle .checked class ด้วยมือแทนพึ่ง CSS :has() กัน webview เก่าบางตัวไม่รองรับ
-function wireToggleChips(containerId){
-  document.querySelectorAll(`#${containerId} .toggle-chip`).forEach(label=>{
-    const input = label.querySelector('input');
-    input.addEventListener('change', ()=> label.classList.toggle('checked', input.checked));
+// Voter targeting checklist: input:checked สไตล์ผ่าน CSS sibling selector ล้วนๆ ไม่ต้องมี JS toggle class
+const TARGET_GENDER_VALUES = ['ชาย','หญิง','อื่นๆ'];
+const TARGET_AGE_GROUP_VALUES = ['18-24','25-34','35-44','45-54','55+'];
+function getCheckedTargetValues(containerId, allowedValues){
+  return Array.from(document.querySelectorAll(`#${containerId} input:checked`))
+    .map(i=>i.value)
+    .filter(v=> allowedValues.indexOf(v) !== -1);
+}
+function setCheckedTargetValues(containerId, csvValue){
+  const selected = String(csvValue || '').split(',').map(v=>v.trim()).filter(v=>v);
+  document.querySelectorAll(`#${containerId} input`).forEach(input=>{
+    input.checked = selected.indexOf(input.value) !== -1;
   });
 }
-function getCheckedChipValues(containerId){
-  return Array.from(document.querySelectorAll(`#${containerId} input:checked`)).map(i=>i.value);
+function resetTargetChecklist(containerId){
+  document.querySelectorAll(`#${containerId} input`).forEach(input=> input.checked = false);
 }
-function resetChipGroup(containerId){
-  document.querySelectorAll(`#${containerId} .toggle-chip`).forEach(label=>{
-    label.querySelector('input').checked = false;
-    label.classList.remove('checked');
-  });
-}
-wireToggleChips('ctGenderChips');
-wireToggleChips('ctAgeChips');
 
 document.getElementById('createSubmitBtn').addEventListener('click', async ()=>{
   const errEl = document.getElementById('createError');
@@ -1296,8 +1303,8 @@ document.getElementById('createSubmitBtn').addEventListener('click', async ()=>{
     card_color: ctSelectedColor,
     start_date: startDate, end_date: endDate,
     image_url_raw: topicType === 'image' ? ctCoverUrl : '',
-    target_gender: getCheckedChipValues('ctGenderChips').join(','),
-    target_age_groups: getCheckedChipValues('ctAgeChips').join(',')
+    target_gender: getCheckedTargetValues('ctTargetChecklist', TARGET_GENDER_VALUES).join(','),
+    target_age_groups: getCheckedTargetValues('ctTargetChecklist', TARGET_AGE_GROUP_VALUES).join(',')
   };
 
   const btn = document.getElementById('createSubmitBtn');
@@ -1337,8 +1344,7 @@ function resetCreateForm(){
   ['ctTag1','ctTag2','ctTag3','ctTag4','ctTag5'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('ctStartDate').value = '';
   document.getElementById('ctEndDate').value = '';
-  resetChipGroup('ctGenderChips');
-  resetChipGroup('ctAgeChips');
+  resetTargetChecklist('ctTargetChecklist');
   document.getElementById('createError').style.display = 'none';
   ctCoverUrl = '';
   document.getElementById('coverPreview').innerHTML = '＋ แตะเพื่อแนบรูปประกอบหัวข้อ';
