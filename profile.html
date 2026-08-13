@@ -242,15 +242,25 @@
   .status-badge.active{ background:#E4F5E9; color:#2C8A4B; }
   .status-badge.pending{ background:#FFF3DE; color:#B8790C; }
 
-  /* ===== Voter targeting chips (แก้ไขหัวข้อ) — เหมือนกับ index.html ทุกประการ ===== */
-  .target-chip-group{ display:flex; flex-wrap:wrap; gap:8px; }
-  .toggle-chip{
-    display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:100px;
-    font-size:13px; background:var(--surface); border:1.5px solid var(--line); color:var(--text-muted);
-    cursor:pointer; user-select:none; transition:all .15s ease;
+  /* ===== Voter targeting checklist (แก้ไขหัวข้อ) — เหมือนกับ index.html ทุกประการ ===== */
+  .target-checklist{ display:flex; flex-direction:column; }
+  .check-row{
+    display:flex; align-items:center; gap:12px; padding:11px 4px;
+    font-size:14px; color:var(--text); cursor:pointer; user-select:none;
+    border-bottom:1px solid var(--line); position:relative;
   }
-  .toggle-chip input{ accent-color:var(--primary); margin:0; }
-  .toggle-chip.checked{ background:var(--primary); border-color:var(--primary); color:#fff; font-weight:500; }
+  .check-row:last-child{ border-bottom:none; }
+  .check-row input{ position:absolute; opacity:0; width:0; height:0; pointer-events:none; }
+  .check-box{
+    flex-shrink:0; width:20px; height:20px; border-radius:6px;
+    border:1.5px solid var(--line); background:var(--surface);
+    position:relative; transition:all .15s ease;
+  }
+  .check-row input:checked + .check-box{ background:var(--primary); border-color:var(--primary); }
+  .check-row input:checked + .check-box::after{
+    content:''; position:absolute; left:6px; top:2px; width:5px; height:10px;
+    border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg);
+  }
   .status-badge.inactive{ background:#EFECF5; color:var(--text-muted); }
   .status-badge.expired{ background:#FBE7E7; color:var(--danger); }
   .mt-meta{ display:flex; flex-wrap:wrap; gap:6px; font-size:11px; color:var(--text-muted); margin-bottom:10px; }
@@ -561,18 +571,16 @@
     </div>
 
     <div class="field">
-      <label>กลุ่มเป้าหมาย <span class="field-hint">(ไม่บังคับ — ไม่เลือกเลย = เปิดให้ทุกคนโหวตได้)</span></label>
-      <div class="target-chip-group" id="etGenderChips">
-        <label class="toggle-chip"><input type="checkbox" value="ชาย"> ชาย</label>
-        <label class="toggle-chip"><input type="checkbox" value="หญิง"> หญิง</label>
-        <label class="toggle-chip"><input type="checkbox" value="อื่นๆ"> อื่นๆ</label>
-      </div>
-      <div class="target-chip-group" id="etAgeChips" style="margin-top:8px;">
-        <label class="toggle-chip"><input type="checkbox" value="18-24"> 18-24</label>
-        <label class="toggle-chip"><input type="checkbox" value="25-34"> 25-34</label>
-        <label class="toggle-chip"><input type="checkbox" value="35-44"> 35-44</label>
-        <label class="toggle-chip"><input type="checkbox" value="45-54"> 45-54</label>
-        <label class="toggle-chip"><input type="checkbox" value="55+"> 55+</label>
+      <label>เลือกกลุ่มเป้าหมาย <span class="field-hint">(หากเปิดให้ทุกคนโหวตได้ ไม่ต้องเลือกใดๆ ข้ามไปได้เลย)</span></label>
+      <div class="target-checklist" id="etTargetChecklist">
+        <label class="check-row"><input type="checkbox" value="ชาย"><span class="check-box"></span>ชาย</label>
+        <label class="check-row"><input type="checkbox" value="หญิง"><span class="check-box"></span>หญิง</label>
+        <label class="check-row"><input type="checkbox" value="อื่นๆ"><span class="check-box"></span>อื่นๆ</label>
+        <label class="check-row"><input type="checkbox" value="18-24"><span class="check-box"></span>18-24</label>
+        <label class="check-row"><input type="checkbox" value="25-34"><span class="check-box"></span>25-34</label>
+        <label class="check-row"><input type="checkbox" value="35-44"><span class="check-box"></span>35-44</label>
+        <label class="check-row"><input type="checkbox" value="45-54"><span class="check-box"></span>45-54</label>
+        <label class="check-row"><input type="checkbox" value="55+"><span class="check-box"></span>55+</label>
       </div>
     </div>
 
@@ -1098,26 +1106,20 @@ document.getElementById('etCoverFile').addEventListener('change', async (e)=>{
   }
 });
 
-// Voter targeting chips: toggle .checked class ด้วยมือแทนพึ่ง CSS :has() กัน webview เก่าบางตัวไม่รองรับ
-function wireToggleChips(containerId){
-  document.querySelectorAll(`#${containerId} .toggle-chip`).forEach(label=>{
-    const input = label.querySelector('input');
-    input.addEventListener('change', ()=> label.classList.toggle('checked', input.checked));
-  });
+// Voter targeting checklist: input:checked สไตล์ผ่าน CSS sibling selector ล้วนๆ ไม่ต้องมี JS toggle class
+const TARGET_GENDER_VALUES = ['ชาย','หญิง','อื่นๆ'];
+const TARGET_AGE_GROUP_VALUES = ['18-24','25-34','35-44','45-54','55+'];
+function getCheckedTargetValues(containerId, allowedValues){
+  return Array.from(document.querySelectorAll(`#${containerId} input:checked`))
+    .map(i=>i.value)
+    .filter(v=> allowedValues.indexOf(v) !== -1);
 }
-function getCheckedChipValues(containerId){
-  return Array.from(document.querySelectorAll(`#${containerId} input:checked`)).map(i=>i.value);
-}
-function setCheckedChipValues(containerId, csvValue){
+function setCheckedTargetValues(containerId, csvValue){
   const selected = String(csvValue || '').split(',').map(v=>v.trim()).filter(v=>v);
-  document.querySelectorAll(`#${containerId} .toggle-chip`).forEach(label=>{
-    const input = label.querySelector('input');
+  document.querySelectorAll(`#${containerId} input`).forEach(input=>{
     input.checked = selected.indexOf(input.value) !== -1;
-    label.classList.toggle('checked', input.checked);
   });
 }
-wireToggleChips('etGenderChips');
-wireToggleChips('etAgeChips');
 
 function openEditTopicModal(t){
   etCurrentTopicId = t.topic_id;
@@ -1155,8 +1157,7 @@ function openEditTopicModal(t){
     s.classList.toggle('selected', s.dataset.hex === etSelectedColor);
   });
 
-  setCheckedChipValues('etGenderChips', t.target_gender);
-  setCheckedChipValues('etAgeChips', t.target_age_groups);
+  setCheckedTargetValues('etTargetChecklist', [t.target_gender, t.target_age_groups].filter(v=>v).join(','));
 
   openModal('editTopicModal');
 }
@@ -1194,8 +1195,8 @@ document.getElementById('etSaveBtn').addEventListener('click', async ()=>{
     card_color: etSelectedColor,
     start_date: startDate, end_date: endDate,
     image_url_raw: topicType === 'image' ? etCoverUrl : '',
-    target_gender: getCheckedChipValues('etGenderChips').join(','),
-    target_age_groups: getCheckedChipValues('etAgeChips').join(',')
+    target_gender: getCheckedTargetValues('etTargetChecklist', TARGET_GENDER_VALUES).join(','),
+    target_age_groups: getCheckedTargetValues('etTargetChecklist', TARGET_AGE_GROUP_VALUES).join(',')
   };
 
   const btn = document.getElementById('etSaveBtn');
