@@ -317,6 +317,19 @@
   .dash-item-pct{ width:34px; flex-shrink:0; text-align:right; font-weight:600; color:var(--text); }
   .dash-empty-hint{ font-size:12px; color:var(--text-muted); text-align:center; padding:4px 0; }
 
+  /* --- translate button (อยู่ใต้ปุ่มตัวเลือก เหนือเส้นแบ่ง mini-dash) --- */
+  .translate-row{ padding:0 14px 12px; margin-top:-6px; display:flex; align-items:center; flex-wrap:wrap; gap:10px; }
+  .translate-btn{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; color:var(--primary); padding:4px 2px; }
+  .translate-btn .tr-icon{ font-size:13px; }
+  .translate-btn.loading{ opacity:.55; pointer-events:none; }
+  .tr-translated-note{ font-size:12px; color:var(--text-muted); display:inline-flex; align-items:center; gap:4px; }
+  .translate-original-link, .translate-change-link{ font-size:12px; color:var(--primary); text-decoration:underline; font-weight:500; }
+
+  /* --- language picker modal --- */
+  .lang-pick-grid{ display:flex; flex-direction:column; gap:6px; max-height:56vh; overflow-y:auto; }
+  .lang-pick-btn{ text-align:left; padding:12px 14px; border-radius:10px; border:1.5px solid var(--line); font-size:14px; font-weight:500; color:var(--text); background:var(--bg); }
+  .lang-pick-btn:active{ background:var(--surface); border-color:var(--primary); }
+
   /* ===== Modals ===== */
   .modal-overlay{
     position:fixed; inset:0; background:rgba(28,19,41,0.55); backdrop-filter:blur(3px);
@@ -736,6 +749,28 @@
       <button class="modal-close" data-close="descModal">✕</button>
     </div>
     <div id="descModalBody"></div>
+  </div>
+</div>
+
+<!-- ===== Translate Language Picker Modal (โผล่ตอนกดปุ่ม "แปล" ครั้งแรกในเซสชัน — เลือกครั้งเดียวจำไว้ใช้กับการ์ดถัดไป) ===== -->
+<div class="modal-overlay" id="translateLangModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>Translate to</h3>
+      <button class="modal-close" data-close="translateLangModal">✕</button>
+    </div>
+    <div class="lang-pick-grid" id="langPickGrid"></div>
+  </div>
+</div>
+
+<!-- ===== Translate Error Modal (ข้อความคงที่เป็น EN เสมอ ตามที่ตกลงกัน ไม่ว่า error จริงจะเป็นอะไร) ===== -->
+<div class="modal-overlay" id="translateErrorModal">
+  <div class="modal-box" style="text-align:center;">
+    <button class="modal-close" data-close="translateErrorModal" style="margin-left:auto;display:block;">✕</button>
+    <div style="font-size:32px;margin-bottom:8px;">😕</div>
+    <h3 style="margin:0 0 6px;">Oops! Something went wrong.</h3>
+    <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 22px;">Please try again.</p>
+    <button class="btn btn-primary full-btn" id="translateRetryBtn">Try Again</button>
   </div>
 </div>
 
@@ -1471,19 +1506,36 @@ function renderFeed(){
     return;
   }
   feed.innerHTML = STATE.topics.map(topicCardHTML).join('');
-  feed.querySelectorAll('.vote-btn').forEach(btn=>{
+  bindCardEvents(feed);
+  setupDescMoreButtons();
+}
+
+// ผูก event listener ให้การ์ดหัวข้อ — แยกออกมาเป็นฟังก์ชันกลาง เรียกซ้ำได้ทั้งตอน render feed ทั้งก้อน
+// (scope = #feed) และตอน re-render การ์ดเดี่ยวๆ หลังกดแปลภาษา/ดูต้นฉบับ (scope = การ์ดใบนั้นใบเดียว)
+// ทำแบบนี้เพื่อไม่ต้อง render feed ทั้งหน้าใหม่ทุกครั้งที่แปล ซึ่งจะเสีย scroll position และปิด
+// mini-dash ที่การ์ดอื่นๆ เปิดค้างอยู่ไปด้วยโดยไม่จำเป็น
+function bindCardEvents(scopeEl){
+  scopeEl.querySelectorAll('.vote-btn').forEach(btn=>{
     btn.addEventListener('click', ()=> handleVoteClick(btn.dataset.topic, btn.dataset.side, btn));
   });
-  feed.querySelectorAll('.share-icon-btn').forEach(btn=>{
+  scopeEl.querySelectorAll('.share-icon-btn').forEach(btn=>{
     btn.addEventListener('click', ()=> openShareMenu(btn.dataset.topic));
   });
-  feed.querySelectorAll('[data-lightbox]').forEach(el=>{
+  scopeEl.querySelectorAll('[data-lightbox]').forEach(el=>{
     el.addEventListener('click', ()=> openLightbox(el.dataset.lightbox));
   });
-  feed.querySelectorAll('[data-dash-toggle]').forEach(btn=>{
+  scopeEl.querySelectorAll('[data-dash-toggle]').forEach(btn=>{
     btn.addEventListener('click', ()=> toggleDashSummary(btn.dataset.dashToggle));
   });
-  setupDescMoreButtons();
+  scopeEl.querySelectorAll('[data-tr-topic]').forEach(btn=>{
+    btn.addEventListener('click', ()=> handleTranslateClick(btn.dataset.trTopic));
+  });
+  scopeEl.querySelectorAll('[data-tr-original]').forEach(btn=>{
+    btn.addEventListener('click', ()=> revertTranslation(btn.dataset.trOriginal));
+  });
+  scopeEl.querySelectorAll('[data-tr-change]').forEach(btn=>{
+    btn.addEventListener('click', ()=> openLangPickerFor(btn.dataset.trChange));
+  });
 }
 
 // เปิด/ปิด voter summary ของการ์ดนั้นๆ — ปิดไว้เป็นค่าเริ่มต้นเสมอ (ดู topicCardHTML) เพื่อไม่ให้กินพื้นที่จอโดยไม่จำเป็น
@@ -1565,7 +1617,7 @@ function topicCardHTML(t){
   const tagsHTML = (t.tags||[]).map(tag=>`<span class="tag-chip">#${escapeHtml(tag)}</span>`).join('');
 
   return `
-  <div class="topic-card" style="--card-color:${t.card_color || 'var(--primary)'}">
+  <div class="topic-card" data-card-id="${t.topic_id}" style="--card-color:${t.card_color || 'var(--primary)'}">
     <div class="card-top">
       <div class="creator">
         <div class="creator-avatar" ${t.creator_profile_image ? `data-lightbox="${t.creator_profile_image}"` : ''}>${avatarInner}</div>
@@ -1583,6 +1635,8 @@ function topicCardHTML(t){
 
     ${voteRowHTML}
 
+    ${translateRowHTML(t)}
+
     <div class="mini-dash">
       <div class="mini-dash-title">
         <span class="mini-dash-summary">
@@ -1595,6 +1649,24 @@ function topicCardHTML(t){
         <div id="dash-${t.topic_id}"></div>
       </div>
     </div>
+  </div>`;
+}
+
+// แถวปุ่มแปลภาษา — โชว์ทุกการ์ดเสมอ ไม่เดาภาษาผู้ชม (ตามที่ตกลงกัน เพื่อความง่าย/เร็ว/ชัวร์ 100%)
+// ถ้าการ์ดนี้ถูกแปลอยู่แล้ว (t._translated) โชว์ label ภาษาที่แปลไป + ลิงก์สลับกลับต้นฉบับ + ลิงก์เปลี่ยนภาษา
+function translateRowHTML(t){
+  if(t._translated){
+    const langLabel = (TRANSLATE_LANGS.find(l=>l.code===t._translatedLang)||{}).label || t._translatedLang;
+    return `<div class="translate-row" data-tr-wrap="${t.topic_id}">
+      <span class="tr-translated-note">🌐 Translated · ${escapeHtml(langLabel)}</span>
+      <button type="button" class="translate-original-link" data-tr-original="${t.topic_id}">See original</button>
+      <button type="button" class="translate-change-link" data-tr-change="${t.topic_id}">Change language</button>
+    </div>`;
+  }
+  return `<div class="translate-row" data-tr-wrap="${t.topic_id}">
+    <button type="button" class="translate-btn" data-tr-topic="${t.topic_id}">
+      <span class="tr-icon">🌐</span><span class="tr-label">Translate</span>
+    </button>
   </div>`;
 }
 
@@ -1639,10 +1711,17 @@ function linkifyText(str){
 /* โหลด dashboard breakdown แยกทีหลัง (lazy) เพื่อลด payload ตอน list — เรียกซ้ำได้ทุกครั้งที่ topics เปลี่ยน (ดู loadTopics) */
 async function loadDashboards(){
   for(const t of STATE.topics){
-    const res = await api('getTopicDetail', {topic_id: t.topic_id});
-    if(!res.success) continue;
-    renderDashboard(t.topic_id, res.dashboard, t.card_color);
+    await loadDashboardFor(t.topic_id);
   }
+}
+// โหลด dashboard breakdown ของหัวข้อเดียว — แยกออกมาจาก loadDashboards() เพื่อเรียกซ้ำได้หลัง
+// re-render การ์ดเดี่ยวๆ (เช่นหลังกดแปลภาษา) โดยไม่ต้องวนโหลดใหม่ทั้งฟีด
+async function loadDashboardFor(topicId){
+  const t = STATE.topics.find(x=> x.topic_id === topicId);
+  if(!t) return;
+  const res = await api('getTopicDetail', {topic_id: topicId});
+  if(!res.success) return;
+  renderDashboard(topicId, res.dashboard, t.card_color);
 }
 
 // สีเพศตายตัวเสมอ ไม่ผูกกับ card_color ของหัวข้อ (ใช้โทนเดียวกับ palette การ์ดสี ฟ้า/ชมพู/ม่วง ที่มีอยู่แล้วในระบบ)
@@ -1683,6 +1762,141 @@ function renderDashboard(topicId, dash, cardColor){
       ${ageRows}
     </div>`;
 }
+
+// re-render เฉพาะการ์ดเดียวหลังแปล/ย้อนกลับต้นฉบับ — ไม่แตะการ์ดอื่นในฟีด กัน scroll กระโดด/
+// mini-dash การ์ดอื่นๆ ที่เปิดค้างอยู่ถูกปิดไปด้วยโดยไม่จำเป็น
+function rerenderSingleCard(topicId){
+  const t = STATE.topics.find(x=> x.topic_id === topicId);
+  if(!t) return;
+  const oldEl = document.querySelector(`.topic-card[data-card-id="${topicId}"]`);
+  if(!oldEl) return;
+
+  const wasDashOpen = oldEl.querySelector('.mini-dash-body')?.classList.contains('open') || false;
+
+  const wrap = document.createElement('div');
+  wrap.innerHTML = topicCardHTML(t).trim();
+  const newEl = wrap.firstElementChild;
+  oldEl.replaceWith(newEl);
+  bindCardEvents(newEl);
+  setupDescMoreButtons();
+
+  // mini-dash โดน re-render ทิ้งไปพร้อมการ์ด ต้องโหลด breakdown ใหม่ใส่การ์ดที่เพิ่ง replace เสมอ
+  // (เหมือน behavior เดิมตอน list โหลดครั้งแรกที่ preload ทุกการ์ด) แล้วค่อยเปิดค้างไว้ต่อถ้าเปิดอยู่ก่อนแปล
+  if(wasDashOpen){
+    const body = newEl.querySelector('.mini-dash-body');
+    const toggleBtn = newEl.querySelector('.dash-toggle-btn');
+    if(body) body.classList.add('open');
+    if(toggleBtn){ toggleBtn.classList.add('open'); toggleBtn.setAttribute('aria-expanded','true'); }
+  }
+  loadDashboardFor(topicId);
+}
+
+/* ================= Translate (ปุ่ม "แปล" บนการ์ดหัวข้อ) =================
+ * ปุ่มแปลอยู่ทุกการ์ดเสมอ ไม่เดาภาษาผู้ชม (ตามที่ตกลง เพื่อความง่าย/เร็ว/ชัวร์ 100%) เลือกภาษาครั้งแรก
+ * ในเซสชันนี้ครั้งเดียวผ่าน modal แล้วจำไว้ กดแปลการ์ดถัดไปใช้ภาษาเดิมได้ทันที (มีปุ่ม "Change language"
+ * ต่อการ์ดให้เปลี่ยนได้เสมอ) รายชื่อภาษาต้อง sync กับ TRANSLATE_LANGS ฝั่ง appscript.txt ทุกครั้งที่แก้ */
+const TRANSLATE_LANGS = [
+  {code:'en',    label:'English'},
+  {code:'zh-CN', label:'中文 (简体)'},
+  {code:'es',    label:'Español'},
+  {code:'hi',    label:'हिन्दी'},
+  {code:'ar',    label:'العربية'},
+  {code:'pt',    label:'Português'},
+  {code:'bn',    label:'বাংলা'},
+  {code:'ru',    label:'Русский'},
+  {code:'ja',    label:'日本語'},
+  {code:'de',    label:'Deutsch'},
+  {code:'fr',    label:'Français'},
+  {code:'ko',    label:'한국어'},
+  {code:'vi',    label:'Tiếng Việt'},
+  {code:'id',    label:'Bahasa Indonesia'},
+  {code:'th',    label:'ภาษาไทย'}
+];
+
+let TR_SESSION_LANG = null;   // ภาษาที่จำไว้ในเซสชันนี้ (รีเฟรชหน้าใหม่ค่อยรีเซ็ต ไม่ persist ข้าม session)
+let TR_PENDING_TOPIC = null;  // topic_id ที่กำลังรอเลือกภาษาจาก modal
+let TR_PENDING_RETRY = null;  // {topicId, lang} เก็บไว้ให้ปุ่ม "Try Again" เรียกซ้ำได้โดยไม่ต้องกดปุ่มแปลใหม่
+const TR_CACHE = {};          // key: `${topicId}_${lang}` -> {title,description,side_a_label,side_b_label} กันยิงแปลซ้ำถ้า toggle ไปมาในเซสชันเดียว
+
+function buildLangPickGrid(){
+  const grid = document.getElementById('langPickGrid');
+  if(!grid) return;
+  grid.innerHTML = TRANSLATE_LANGS.map(l => `<button type="button" class="lang-pick-btn" data-lang="${l.code}">${escapeHtml(l.label)}</button>`).join('');
+  grid.querySelectorAll('.lang-pick-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const lang = btn.dataset.lang;
+      closeModal('translateLangModal');
+      if(!TR_PENDING_TOPIC) return;
+      TR_SESSION_LANG = lang;
+      const topicId = TR_PENDING_TOPIC;
+      TR_PENDING_TOPIC = null;
+      runTranslate(topicId, lang);
+    });
+  });
+}
+buildLangPickGrid();
+
+function handleTranslateClick(topicId){
+  if(TR_SESSION_LANG){ runTranslate(topicId, TR_SESSION_LANG); return; }
+  openLangPickerFor(topicId);
+}
+function openLangPickerFor(topicId){
+  TR_PENDING_TOPIC = topicId;
+  openModal('translateLangModal');
+}
+
+async function runTranslate(topicId, lang){
+  const btn = document.querySelector(`.translate-btn[data-tr-topic="${topicId}"]`);
+  if(btn){ btn.classList.add('loading'); const lbl = btn.querySelector('.tr-label'); if(lbl) lbl.textContent = 'Translating...'; }
+
+  const cacheKey = topicId + '_' + lang;
+  const cached = TR_CACHE[cacheKey];
+  if(cached){ applyTranslation(topicId, cached, lang); return; }
+
+  const res = await api('translateTopic', { topic_id: topicId, target_lang: lang });
+  if(!res.success){
+    if(btn){ btn.classList.remove('loading'); const lbl = btn.querySelector('.tr-label'); if(lbl) lbl.textContent = 'Translate'; }
+    TR_PENDING_RETRY = { topicId, lang };
+    openModal('translateErrorModal');
+    return;
+  }
+  TR_CACHE[cacheKey] = res.translated;
+  applyTranslation(topicId, res.translated, lang);
+}
+
+function applyTranslation(topicId, translated, lang){
+  const t = STATE.topics.find(x=> x.topic_id === topicId);
+  if(!t) return;
+  // เก็บต้นฉบับไว้ครั้งแรกที่แปลเท่านั้น เผื่อ toggle "See original" กลับไปกลับมาหลายรอบ
+  if(!t._original){
+    t._original = { title:t.title, description:t.description, side_a_label:t.side_a_label, side_b_label:t.side_b_label };
+  }
+  t.title = translated.title;
+  t.description = translated.description;
+  t.side_a_label = translated.side_a_label;
+  t.side_b_label = translated.side_b_label;
+  t._translated = true;
+  t._translatedLang = lang;
+  rerenderSingleCard(topicId);
+}
+
+function revertTranslation(topicId){
+  const t = STATE.topics.find(x=> x.topic_id === topicId);
+  if(!t || !t._original) return;
+  Object.assign(t, t._original);
+  t._translated = false;
+  t._translatedLang = null;
+  rerenderSingleCard(topicId);
+}
+
+document.getElementById('translateRetryBtn').addEventListener('click', ()=>{
+  closeModal('translateErrorModal');
+  if(TR_PENDING_RETRY){
+    const { topicId, lang } = TR_PENDING_RETRY;
+    TR_PENDING_RETRY = null;
+    runTranslate(topicId, lang);
+  }
+});
 
 /* ---------- Voting ---------- */
 let pendingVoteConfirm = null; // {topicId, side, btnEl} รอ user กดยืนยันใน voteConfirmModal
