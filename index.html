@@ -78,6 +78,9 @@
     background:var(--primary-dark); padding:2px 8px; border-radius:6px;
   }
   .header-actions{ display:flex; align-items:center; gap:10px; }
+  .lang-toggle{ display:flex; align-items:center; background:var(--bg); border:1.5px solid var(--line); border-radius:100px; padding:3px; gap:2px; flex-shrink:0; }
+  .lang-toggle button{ padding:5px 12px; border-radius:100px; font-size:12px; font-weight:700; font-family:'Lexend', sans-serif; color:var(--text-muted); transition:all .15s ease; }
+  .lang-toggle button.active{ background:var(--primary); color:#fff; }
   .btn{
     padding:9px 18px; border-radius:100px; font-size:14px; font-weight:500;
     transition:transform .15s ease, box-shadow .15s ease;
@@ -494,13 +497,17 @@
     <span class="brand">WEZIDE</span>
   </div>
   <div class="header-actions" id="headerActions">
-    <button class="btn btn-accent" id="createBtn">＋ สร้างหัวข้อ</button>
-    <button class="btn btn-ghost" id="loginBtn">เข้าสู่ระบบ</button>
+    <div class="lang-toggle" id="langToggle">
+      <button type="button" data-lang="th">TH</button>
+      <button type="button" data-lang="en">EN</button>
+    </div>
+    <button class="btn btn-accent" id="createBtn" data-i18n="createBtn">＋ สร้างหัวข้อ</button>
+    <button class="btn btn-ghost" id="loginBtn" data-i18n="loginBtn">เข้าสู่ระบบ</button>
   </div>
 </header>
 
 <section class="hero">
-  <p class="hero-title">มาดูกันว่าตอนนี้ <b>คนส่วนใหญ่</b> คิดเห็นยังไงกับประเด็นร้อนๆ</p>
+  <p class="hero-title" data-i18n="heroTitle">มาดูกันว่าตอนนี้ <b>คนส่วนใหญ่</b> คิดเห็นยังไงกับประเด็นร้อนๆ</p>
   <div class="hero-track-wrap" id="heroWrap">
     <div class="hero-track" id="heroTrack"></div>
   </div>
@@ -510,9 +517,9 @@
   <div class="search-row">
     <div class="search-box">
       <span>🔍</span>
-      <input type="text" id="searchInput" placeholder="ค้นหาหัวข้อ, tag...">
+      <input type="text" id="searchInput" placeholder="ค้นหาหัวข้อ, tag..." data-i18n-ph="searchPlaceholder">
     </div>
-    <a class="btn btn-ghost history-btn" href="history.html">🕓 ประวัติ</a>
+    <a class="btn btn-ghost history-btn" href="history.html" data-i18n="historyLink">🕓 ประวัติ</a>
   </div>
   <div class="pill-row" id="categoryPills"></div>
   <div class="result-count" id="resultCount"></div>
@@ -527,13 +534,13 @@
   <div class="footer-inner">
     <div class="footer-col footer-brand-col">
       <div class="f-brand">WEZIDE</div>
-      <p class="f-desc">เวทีความเห็น เลือกข้างที่ใช่ของคุณ<br>สร้างหัวข้อ แชร์มุมมอง แล้วดูว่าคนอื่นคิดเห็นยังไง</p>
+      <p class="f-desc" data-i18n="footerDesc">เวทีความเห็น เลือกข้างที่ใช่ของคุณ<br>สร้างหัวข้อ แชร์มุมมอง แล้วดูว่าคนอื่นคิดเห็นยังไง</p>
     </div>
     <div class="footer-col">
-      <div class="f-heading">เมนู</div>
-      <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">หน้าแรก</a>
-      <a href="#" id="footerCreateLink">สร้างหัวข้อ</a>
-      <a href="#" id="footerLoginLink">เข้าสู่ระบบ / สมัครสมาชิก</a>
+      <div class="f-heading" data-i18n="footerMenuHeading">เมนู</div>
+      <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" data-i18n="footerHome">หน้าแรก</a>
+      <a href="#" id="footerCreateLink" data-i18n="createBtn2">สร้างหัวข้อ</a>
+      <a href="#" id="footerLoginLink" data-i18n="footerLoginLink">เข้าสู่ระบบ / สมัครสมาชิก</a>
       <a href="#">About</a>
       <a href="#">Terms</a>
       <a href="#">Privacy</a>
@@ -546,12 +553,12 @@
 <div class="modal-overlay" id="loginModal">
   <div class="modal-box">
     <div class="modal-head">
-      <h3>อ่ะ! คุณลืม login</h3>
+      <h3 data-i18n="loginTitle">อ่ะ! คุณลืม login</h3>
       <button class="modal-close" data-close="loginModal">✕</button>
     </div>
-    <p style="font-size:13.5px;color:var(--text-muted);margin-top:-8px;margin-bottom:16px;">กรอก 2 ช่องนี้แล้วกด login มาเลือกความคิดเห็นกันเลย</p>
+    <p style="font-size:13.5px;color:var(--text-muted);margin-top:-8px;margin-bottom:16px;" data-i18n="loginHint">กรอก 2 ช่องนี้แล้วกด login มาเลือกความคิดเห็นกันเลย</p>
     <div class="field">
-      <label>เบอร์โทรศัพท์</label>
+      <label data-i18n="phoneLabel">เบอร์โทรศัพท์</label>
       <input type="tel" id="loginPhone" placeholder="08xxxxxxxx">
     </div>
     <div class="field">
@@ -562,11 +569,11 @@
       </div>
     </div>
     <div class="field-error" id="loginError"></div>
-    <button class="btn btn-primary full-btn" id="loginSubmitBtn">เข้าสู่ระบบ</button>
+    <button class="btn btn-primary full-btn" id="loginSubmitBtn" data-i18n="loginBtn">เข้าสู่ระบบ</button>
 
     <div class="divider-note">
-      หากคุณยังไม่ได้เป็นสมาชิก สมัครเพียง <b>30 วินาที</b> ก็เข้าร่วมสนุกกับพวกเราได้แล้ว
-      <button class="btn btn-accent full-btn signup-cta-btn" id="openSignupBtn">สมัครเลย</button>
+      <span data-i18n="signupCta">หากคุณยังไม่ได้เป็นสมาชิก สมัครเพียง <b>30 วินาที</b> ก็เข้าร่วมสนุกกับพวกเราได้แล้ว</span>
+      <button class="btn btn-accent full-btn signup-cta-btn" id="openSignupBtn" data-i18n="signupBtn">สมัครเลย</button>
     </div>
   </div>
 </div>
@@ -575,48 +582,48 @@
 <div class="modal-overlay" id="signupModal">
   <div class="modal-box">
     <div class="modal-head">
-      <h3>สร้างโปรไฟล์ WEZIDE</h3>
+      <h3 data-i18n="signupTitle">สร้างโปรไฟล์ WEZIDE</h3>
       <button class="modal-close" data-close="signupModal">✕</button>
     </div>
 
     <div class="field" style="text-align:center;">
-      <label>รูปโปรไฟล์</label>
+      <label data-i18n="avatarLabel">รูปโปรไฟล์</label>
       <div class="creator-avatar" id="signupAvatarPreview" style="width:72px;height:72px;margin:0 auto;font-size:24px;" onclick="document.getElementById('signupAvatarFile').click()">＋</div>
       <input type="file" accept="image/*" id="signupAvatarFile" style="display:none;">
     </div>
     <div class="field"><label>Username</label><input type="text" id="suUsername"></div>
     <div class="field"><label>Email</label><input type="email" id="suEmail" placeholder="you@email.com"></div>
-    <div class="field"><label>เบอร์โทรศัพท์</label><input type="tel" id="suPhone" placeholder="08xxxxxxxx"></div>
+    <div class="field"><label data-i18n="phoneLabel">เบอร์โทรศัพท์</label><input type="tel" id="suPhone" placeholder="08xxxxxxxx"></div>
     <div class="field">
-      <label>ตั้ง Passcode <span class="field-hint">(อย่างน้อย 6 หลัก)</span></label>
+      <label><span data-i18n="setPasscodeLabel">ตั้ง Passcode</span> <span class="field-hint" data-i18n="passcodeHint">(อย่างน้อย 6 หลัก)</span></label>
       <div class="passcode-wrap">
         <input type="password" id="suPasscode" minlength="6">
         <button type="button" class="passcode-toggle" data-target="suPasscode" aria-label="แสดง/ซ่อน Passcode">👁️</button>
       </div>
     </div>
     <div class="field">
-      <label>วันเกิด <span class="field-hint">(ค.ศ.)</span></label>
+      <label><span data-i18n="birthdayLabel">วันเกิด</span> <span class="field-hint">(ค.ศ.)</span></label>
       <div class="dob-row">
-        <select id="suBirthDay"><option value="">วัน</option></select>
-        <select id="suBirthMonth"><option value="">เดือน</option></select>
-        <select id="suBirthYear"><option value="">ปี</option></select>
+        <select id="suBirthDay"><option value="" data-i18n="dayOpt">วัน</option></select>
+        <select id="suBirthMonth"><option value="" data-i18n="monthOpt">เดือน</option></select>
+        <select id="suBirthYear"><option value="" data-i18n="yearOpt">ปี</option></select>
       </div>
     </div>
     <div class="field">
-      <label>เพศ</label>
+      <label data-i18n="genderLabel">เพศ</label>
       <select id="suGender">
-        <option value="">เลือกเพศ</option>
-        <option value="ชาย">ชาย</option>
-        <option value="หญิง">หญิง</option>
-        <option value="อื่นๆ">อื่นๆ</option>
+        <option value="" data-i18n="genderChoose">เลือกเพศ</option>
+        <option value="ชาย" data-i18n="genderMale">ชาย</option>
+        <option value="หญิง" data-i18n="genderFemale">หญิง</option>
+        <option value="อื่นๆ" data-i18n="genderOther">อื่นๆ</option>
       </select>
     </div>
     <div class="field">
-      <label>จังหวัด</label>
-      <select id="suProvince"><option value="">เลือกจังหวัด</option></select>
+      <label data-i18n="provinceLabel">จังหวัด</label>
+      <select id="suProvince"><option value="" data-i18n="provinceChoose">เลือกจังหวัด</option></select>
     </div>
     <div class="field-error" id="signupError"></div>
-    <button class="btn btn-primary full-btn" id="signupSubmitBtn">สมัครสมาชิก</button>
+    <button class="btn btn-primary full-btn" id="signupSubmitBtn" data-i18n="signupSubmitBtn">สมัครสมาชิก</button>
   </div>
 </div>
 
@@ -624,11 +631,11 @@
 <div class="modal-overlay" id="welcomeModal">
   <div class="modal-box" style="text-align:center;">
     <button class="modal-close" data-close="welcomeModal" style="margin-left:auto;display:block;">✕</button>
-    <h3 style="margin:0 0 10px;">ยินดีต้อนรับคุณ <span id="welcomeUsername" style="color:var(--primary)"></span> เข้าสู่ WEZIDE</h3>
-    <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 22px;line-height:1.6;">การตั้งคำถามและความขี้สงสัย คือทักษะที่สำคัญของคนยุคใหม่</p>
+    <h3 style="margin:0 0 10px;"><span data-i18n="welcomeTitlePre">ยินดีต้อนรับคุณ</span> <span id="welcomeUsername" style="color:var(--primary)"></span> <span data-i18n="welcomeTitlePost">เข้าสู่ WEZIDE</span></h3>
+    <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 22px;line-height:1.6;" data-i18n="welcomeDesc">การตั้งคำถามและความขี้สงสัย คือทักษะที่สำคัญของคนยุคใหม่</p>
     <div style="display:flex;gap:10px;">
-      <button class="btn btn-primary full-btn" id="welcomeCreateBtn">สร้างคำถาม</button>
-      <button class="btn btn-ghost full-btn" id="welcomeHomeBtn">กลับหน้าแรก</button>
+      <button class="btn btn-primary full-btn" id="welcomeCreateBtn" data-i18n="welcomeCreateBtn">สร้างคำถาม</button>
+      <button class="btn btn-ghost full-btn" id="welcomeHomeBtn" data-i18n="homeBtn">กลับหน้าแรก</button>
     </div>
   </div>
 </div>
@@ -719,11 +726,11 @@
 <div class="modal-overlay" id="createSuccessModal">
   <div class="modal-box" style="text-align:center;">
     <button class="modal-close" data-close="createSuccessModal" style="margin-left:auto;display:block;">✕</button>
-    <h3 style="margin:0 0 10px;">หัวข้อของคุณสร้างสำเร็จแล้ว</h3>
-    <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 22px;line-height:1.6;">โปรดรอทีมงานตรวจสอบ เมื่อผ่านแล้วหัวข้อของคุณจะถูกเผยแพร่สู่สังคม</p>
+    <h3 style="margin:0 0 10px;" data-i18n="createSuccessTitle">หัวข้อของคุณสร้างสำเร็จ และเผยแพร่แล้ว</h3>
+    <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 22px;line-height:1.6;" data-i18n="createSuccessDesc">หัวข้อของคุณถูกเผยแพร่ขึ้นหน้าแรกเรียบร้อยแล้ว ไปดูกันเลย!</p>
     <div style="display:flex;gap:10px;">
-      <button class="btn btn-primary full-btn" id="createSuccessCreateBtn">สร้างหัวข้อต่อ</button>
-      <button class="btn btn-ghost full-btn" id="createSuccessHomeBtn">กลับหน้าแรก</button>
+      <button class="btn btn-primary full-btn" id="createSuccessCreateBtn" data-i18n="createSuccessCreateBtn">สร้างหัวข้อต่อ</button>
+      <button class="btn btn-ghost full-btn" id="createSuccessHomeBtn" data-i18n="homeBtn">กลับหน้าแรก</button>
     </div>
   </div>
 </div>
@@ -819,6 +826,81 @@
 const CONFIG = {
   API_URL: 'https://script.google.com/macros/s/AKfycbwUBBRSKVfEkr-FmanTnQ1pHDD_-gNQ53pWkzHLvm3kvDWSTu-ARtV70yXiuN8hep8Gmg/exec'
 };
+
+/* ================= I18N (TH ⇄ EN toggle สำหรับข้อความระบบ/static UI) =================
+   นี่คือคนละระบบกับปุ่ม "แปล" บนการ์ดหัวข้อ (ที่แปลเนื้อหาที่ user สร้างผ่าน LanguageApp)
+   ระบบนี้แปลเฉพาะข้อความคงที่ของ UI ด้วย dictionary มือ ไม่ยิง API แปล runtime
+   Key ตรวจสอบแล้วว่าไม่ชนกับ localStorage key เดิม ('wz_session') ที่ใช้เก็บ session อยู่แล้ว */
+const LANG_KEY = 'wz_lang';
+const I18N = {
+  th: {
+    createBtn: '＋ สร้างหัวข้อ', createBtn2: 'สร้างหัวข้อ', loginBtn: 'เข้าสู่ระบบ',
+    heroTitle: 'มาดูกันว่าตอนนี้ <b>คนส่วนใหญ่</b> คิดเห็นยังไงกับประเด็นร้อนๆ',
+    searchPlaceholder: 'ค้นหาหัวข้อ, tag...', historyLink: '🕓 ประวัติ',
+    loginTitle: 'อ่ะ! คุณลืม login', loginHint: 'กรอก 2 ช่องนี้แล้วกด login มาเลือกความคิดเห็นกันเลย',
+    phoneLabel: 'เบอร์โทรศัพท์',
+    signupCta: 'หากคุณยังไม่ได้เป็นสมาชิก สมัครเพียง <b>30 วินาที</b> ก็เข้าร่วมสนุกกับพวกเราได้แล้ว',
+    signupBtn: 'สมัครเลย', signupTitle: 'สร้างโปรไฟล์ WEZIDE', avatarLabel: 'รูปโปรไฟล์',
+    setPasscodeLabel: 'ตั้ง Passcode', passcodeHint: '(อย่างน้อย 6 หลัก)', birthdayLabel: 'วันเกิด',
+    dayOpt: 'วัน', monthOpt: 'เดือน', yearOpt: 'ปี', genderLabel: 'เพศ',
+    genderChoose: 'เลือกเพศ', genderMale: 'ชาย', genderFemale: 'หญิง', genderOther: 'อื่นๆ',
+    provinceLabel: 'จังหวัด', provinceChoose: 'เลือกจังหวัด', signupSubmitBtn: 'สมัครสมาชิก',
+    welcomeTitlePre: 'ยินดีต้อนรับคุณ', welcomeTitlePost: 'เข้าสู่ WEZIDE',
+    welcomeDesc: 'การตั้งคำถามและความขี้สงสัย คือทักษะที่สำคัญของคนยุคใหม่',
+    welcomeCreateBtn: 'สร้างคำถาม', homeBtn: 'กลับหน้าแรก',
+    createSuccessTitle: 'หัวข้อของคุณสร้างสำเร็จ และเผยแพร่แล้ว',
+    createSuccessDesc: 'หัวข้อของคุณถูกเผยแพร่ขึ้นหน้าแรกเรียบร้อยแล้ว ไปดูกันเลย!',
+    createSuccessCreateBtn: 'สร้างหัวข้อต่อ', homeToMyTopicsBtn: 'กลับไปหน้าหัวข้อของฉัน',
+    footerDesc: 'เวทีความเห็น เลือกข้างที่ใช่ของคุณ<br>สร้างหัวข้อ แชร์มุมมอง แล้วดูว่าคนอื่นคิดเห็นยังไง',
+    footerMenuHeading: 'เมนู', footerHome: 'หน้าแรก', footerLoginLink: 'เข้าสู่ระบบ / สมัครสมาชิก'
+  },
+  en: {
+    createBtn: '＋ Create Topic', createBtn2: 'Create Topic', loginBtn: 'Log In',
+    heroTitle: 'See what <b>most people</b> think about hot topics right now',
+    searchPlaceholder: 'Search topics, tags...', historyLink: '🕓 History',
+    loginTitle: 'Oops! You forgot to log in', loginHint: 'Fill in these 2 fields and log in to start voting',
+    phoneLabel: 'Phone Number',
+    signupCta: 'Not a member yet? Sign up in <b>30 seconds</b> and join the fun',
+    signupBtn: 'Sign Up', signupTitle: 'Create your WEZIDE profile', avatarLabel: 'Profile Photo',
+    setPasscodeLabel: 'Set Passcode', passcodeHint: '(at least 6 digits)', birthdayLabel: 'Birthday',
+    dayOpt: 'Day', monthOpt: 'Month', yearOpt: 'Year', genderLabel: 'Gender',
+    genderChoose: 'Select Gender', genderMale: 'Male', genderFemale: 'Female', genderOther: 'Other',
+    provinceLabel: 'Province', provinceChoose: 'Select Province', signupSubmitBtn: 'Sign Up',
+    welcomeTitlePre: 'Welcome', welcomeTitlePost: 'to WEZIDE',
+    welcomeDesc: 'Asking questions and staying curious is a key skill for the modern world',
+    welcomeCreateBtn: 'Create a Topic', homeBtn: 'Back to Home',
+    createSuccessTitle: 'Your topic was created and published',
+    createSuccessDesc: 'Your topic is now live on the homepage. Go check it out!',
+    createSuccessCreateBtn: 'Create Another', homeToMyTopicsBtn: 'Back to My Topics',
+    footerDesc: 'A stage for opinions. Pick the side that\'s right for you.<br>Create topics, share views, and see what others think.',
+    footerMenuHeading: 'Menu', footerHome: 'Home', footerLoginLink: 'Log In / Sign Up'
+  }
+};
+function getLang(){ return localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'th'; }
+function t(key){ const lang = getLang(); return (I18N[lang] && I18N[lang][key] !== undefined) ? I18N[lang][key] : (I18N.th[key] || ''); }
+function applyLang(lang){
+  const dict = I18N[lang] || I18N.th;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.getAttribute('data-i18n');
+    if(dict[key] !== undefined) el.innerHTML = dict[key];
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+    const key = el.getAttribute('data-i18n-ph');
+    if(dict[key] !== undefined) el.placeholder = dict[key];
+  });
+  document.querySelectorAll('.lang-toggle button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.lang === lang);
+  });
+  document.documentElement.lang = lang;
+}
+function setLang(lang){
+  localStorage.setItem(LANG_KEY, lang);
+  applyLang(lang);
+}
+document.querySelectorAll('.lang-toggle button').forEach(b=>{
+  b.addEventListener('click', ()=> setLang(b.dataset.lang));
+});
+applyLang(getLang());
 
 const PROVINCES = ['กรุงเทพมหานคร','กระบี่','กาญจนบุรี','กาฬสินธุ์','กำแพงเพชร','ขอนแก่น','จันทบุรี','ฉะเชิงเทรา','ชลบุรี','ชัยนาท','ชัยภูมิ','ชุมพร','เชียงราย','เชียงใหม่','ตรัง','ตราด','ตาก','นครนายก','นครปฐม','นครพนม','นครราชสีมา','นครศรีธรรมราช','นครสวรรค์','นนทบุรี','นราธิวาส','น่าน','บึงกาฬ','บุรีรัมย์','ปทุมธานี','ประจวบคีรีขันธ์','ปราจีนบุรี','ปัตตานี','พระนครศรีอยุธยา','พังงา','พัทลุง','พิจิตร','พิษณุโลก','เพชรบุรี','เพชรบูรณ์','แพร่','ภูเก็ต','มหาสารคาม','มุกดาหาร','แม่ฮ่องสอน','ยโสธร','ยะลา','ร้อยเอ็ด','ระนอง','ระยอง','ราชบุรี','ลพบุรี','ลำปาง','ลำพูน','เลย','ศรีสะเกษ','สกลนคร','สงขลา','สตูล','สมุทรปราการ','สมุทรสงคราม','สมุทรสาคร','สระแก้ว','สระบุรี','สิงห์บุรี','สุโขทัย','สุพรรณบุรี','สุราษฎร์ธานี','สุรินทร์','หนองคาย','หนองบัวลำภู','อ่างทอง','อำนาจเจริญ','อุดรธานี','อุตรดิตถ์','อุทัยธานี','อุบลราชธานี'];
 
@@ -1364,7 +1446,9 @@ document.getElementById('createSubmitBtn').addEventListener('click', async ()=>{
   closeModal('createModal');
   resetCreateForm();
   if(STATE.cameFromProfile){
-    document.getElementById('createSuccessHomeBtn').textContent = 'กลับไปหน้าหัวข้อของฉัน';
+    const homeBtnEl = document.getElementById('createSuccessHomeBtn');
+    homeBtnEl.removeAttribute('data-i18n');
+    homeBtnEl.textContent = t('homeToMyTopicsBtn');
   }
   openModal('createSuccessModal');
 });
