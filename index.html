@@ -739,7 +739,7 @@
 <div class="modal-overlay" id="voteConfirmModal">
   <div class="modal-box" style="text-align:center;">
     <button class="modal-close" data-close="voteConfirmModal" style="margin-left:auto;display:block;">✕</button>
-    <h3 style="margin:0 0 10px;">ยืนยันการเลือก</h3>
+    <h3 style="margin:0 0 10px;" data-i18n="voteConfirmTitle">ยืนยันการเลือก</h3>
     <p id="voteConfirmText" style="font-size:13.5px;color:var(--text-muted);margin:0 0 22px;line-height:1.6;"></p>
     <div style="display:flex;gap:10px;" id="voteConfirmActions">
       <button class="btn btn-ghost full-btn" id="voteCancelBtn">ยกเลิก</button>
@@ -870,7 +870,14 @@ const I18N = {
     errDatesRequired: 'กรุณาเลือกวันเริ่มต้นและวันสิ้นสุดเผยแพร่', errEndBeforeStart: 'วันสิ้นสุดเผยแพร่ต้องไม่ก่อนวันเริ่มต้นเผยแพร่',
     errCoverRequired: 'กรุณาแนบรูปประกอบให้เรียบร้อยก่อนสร้างหัวข้อ',
     imageLoadFailToast: 'โหลดรูปไม่สำเร็จ กรุณาลองอัพโหลดรูปใหม่อีกครั้ง', imageUploadFailToast: 'อัพโหลดรูปไม่สำเร็จ',
-    loggingInText: 'กำลังเข้าสู่ระบบ...', signingUpText: 'กำลังสมัครสมาชิก...', submittingTopicText: 'กำลังส่งหัวข้อ...'
+    loggingInText: 'กำลังเข้าสู่ระบบ...', signingUpText: 'กำลังสมัครสมาชิก...', submittingTopicText: 'กำลังส่งหัวข้อ...',
+    voteConfirmTitle: 'ยืนยันการเลือก', cancelBtn: 'ยกเลิก', voteConfirmBtnLabel: 'ยืนยันเลือก',
+    okBtn: 'ตกลง', understandBtn: 'เข้าใจแล้ว', savingText: 'กำลังบันทึก...',
+    voteOwnTopicMsg: 'ไม่สามารถโหวตหัวข้อของตัวเองได้ เนื่องจากคุณเป็นผู้สร้างหัวข้อนี้', sideLabelPrefix: 'ฝั่ง',
+    voteConfirmMsg: 'คุณกำลังเลือก "{side}" เมื่อยืนยันแล้วคำตอบของคุณจะถูกบันทึกทันที และสามารถเปลี่ยนใจภายหลังได้ในจำนวนจำกัด',
+    remainingChangesText: ' คุณสามารถเปลี่ยนใจได้อีก {n} ครั้ง',
+    apiErrorMsg: 'โอ๊ะ! มีบางอย่างขัดข้อง ทำให้ระบบสะดุดครับ ลองรีเฟรชใหม่อีกครั้งนะครับ',
+    dashGenderTitle: 'เพศ', dashAgeGroupTitle: 'ช่วงอายุ'
   },
   en: {
     createBtn: '＋ Create Topic', createBtn2: 'Create Topic', loginBtn: 'Log In',
@@ -909,11 +916,21 @@ const I18N = {
     errDatesRequired: 'Please select a start and end date', errEndBeforeStart: 'The end date must not be before the start date',
     errCoverRequired: 'Please attach a cover image before creating the topic',
     imageLoadFailToast: 'Failed to load image, please try uploading again', imageUploadFailToast: 'Image upload failed',
-    loggingInText: 'Logging in...', signingUpText: 'Signing up...', submittingTopicText: 'Submitting topic...'
+    loggingInText: 'Logging in...', signingUpText: 'Signing up...', submittingTopicText: 'Submitting topic...',
+    voteConfirmTitle: 'Confirm your choice', cancelBtn: 'Cancel', voteConfirmBtnLabel: 'Confirm',
+    okBtn: 'OK', understandBtn: 'Got it', savingText: 'Saving...',
+    voteOwnTopicMsg: 'You can\'t vote on your own topic since you created it', sideLabelPrefix: 'Side',
+    voteConfirmMsg: 'You are choosing "{side}". Once confirmed, your answer is saved immediately, and you can change your mind a limited number of times afterward.',
+    remainingChangesText: ' You can change your mind {n} more time(s)',
+    apiErrorMsg: 'Oops! Something went wrong. Please try refreshing and try again.',
+    dashGenderTitle: 'Gender', dashAgeGroupTitle: 'Age Group'
   }
 };
 function getLang(){ return localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'th'; }
 function t(key){ const lang = getLang(); return (I18N[lang] && I18N[lang][key] !== undefined) ? I18N[lang][key] : (I18N.th[key] || ''); }
+// alias ของ t() ไว้ใช้ในจุดที่มีตัวแปร local ชื่อ t ทับอยู่แล้ว (เช่น "const t = STATE.topics.find(...)"
+// ในฟังก์ชันเกี่ยวกับโหวต) กันเรียก t('key') แล้วดันไปชนกับ topic object แทนฟังก์ชันแปลภาษา
+const t18n = t;
 function applyLang(lang){
   const dict = I18N[lang] || I18N.th;
   document.querySelectorAll('[data-i18n]').forEach(el=>{
@@ -932,6 +949,9 @@ function applyLang(lang){
 function setLang(lang){
   localStorage.setItem(LANG_KEY, lang);
   applyLang(lang);
+  // label ในการ์ด mini-dash (เพศ/ช่วงอายุ) เป็น dynamic HTML ที่ generate ผ่าน t() ตอน render
+  // ไม่ผ่าน [data-i18n] loop ของ applyLang() จึงต้อง re-render ใหม่ทุกครั้งที่สลับภาษา
+  if(STATE.topics.length) loadDashboards();
 }
 document.querySelectorAll('.lang-toggle button').forEach(b=>{
   b.addEventListener('click', ()=> setLang(b.dataset.lang));
@@ -975,7 +995,7 @@ async function api(action, params = {}, method = 'GET'){
   }catch(err){
     // กันทุกกรณี error (timeout / เน็ตหลุด / response ไม่ใช่ JSON ฯลฯ) ไม่ให้หลุดไปเป็น unhandled exception
     // ที่ทำให้หน้าจอค้างเป็น spinner ตลอดกาลโดยไม่มีข้อความอะไรบอก user เลย — ต้อง fail แบบมี message เสมอ
-    return { success:false, message:'โอ๊ะ! มีบางอย่างขัดข้อง ทำให้ระบบสะดุดครับ ลองรีเฟรชใหม่อีกครั้งนะครับ' };
+    return { success:false, message: t('apiErrorMsg') };
   }finally{
     clearTimeout(timeoutId);
   }
@@ -1846,9 +1866,9 @@ async function loadDashboardFor(topicId){
 
 // สีเพศตายตัวเสมอ ไม่ผูกกับ card_color ของหัวข้อ (ใช้โทนเดียวกับ palette การ์ดสี ฟ้า/ชมพู/ม่วง ที่มีอยู่แล้วในระบบ)
 const GENDER_BAR_DEFS = [
-  { key:'ชาย', color:'#76A5AF' },
-  { key:'หญิง', color:'#C27BA0' },
-  { key:'อื่นๆ', color:'#8E7CC3' }
+  { key:'ชาย', color:'#76A5AF', labelKey:'genderMale' },
+  { key:'หญิง', color:'#C27BA0', labelKey:'genderFemale' },
+  { key:'อื่นๆ', color:'#8E7CC3', labelKey:'genderOther' }
 ];
 const AGE_BAR_ORDER = ['18-24','25-34','35-44','45-54','55+'];
 
@@ -1869,16 +1889,16 @@ function renderDashboard(topicId, dash, cardColor){
   if(!el) return;
   const ageColor = cardColor || '#5B2A9E';
 
-  const genderRows = GENDER_BAR_DEFS.map(g => dashBarRowHTML(g.key, (dash.gender_percent || {})[g.key] || 0, g.color)).join('');
+  const genderRows = GENDER_BAR_DEFS.map(g => dashBarRowHTML(t(g.labelKey), (dash.gender_percent || {})[g.key] || 0, g.color)).join('');
   const ageRows = AGE_BAR_ORDER.map(a => dashBarRowHTML(a, (dash.age_group_percent || {})[a] || 0, ageColor)).join('');
 
   el.innerHTML = `
     <div class="dash-group">
-      <div class="dash-group-title">เพศ</div>
+      <div class="dash-group-title">${t('dashGenderTitle')}</div>
       ${genderRows}
     </div>
     <div class="dash-group">
-      <div class="dash-group-title">อายุ</div>
+      <div class="dash-group-title">${t('dashAgeGroupTitle')}</div>
       ${ageRows}
     </div>`;
 }
@@ -2021,11 +2041,19 @@ document.getElementById('translateRetryBtn').addEventListener('click', ()=>{
 /* ---------- Voting ---------- */
 let pendingVoteConfirm = null; // {topicId, side, btnEl} รอ user กดยืนยันใน voteConfirmModal
 
+// backend ส่งข้อความบางจุดมาเป็น "ไทย / English" คู่กัน (ตาม pattern เดิมของ fail message ส่วนใหญ่ในระบบ)
+// ฟังก์ชันนี้เลือกฝั่งที่ตรงกับภาษาปัจจุบันของ user ให้ ถ้าไม่มี " / " ก็ส่งข้อความเดิมกลับไปเฉยๆ (กันเคส message เก่าที่ยังไม่ bilingual)
+function pickLang(msg){
+  if(!msg || msg.indexOf(' / ') === -1) return msg;
+  const [th, en] = msg.split(' / ');
+  return getLang() === 'en' ? (en || msg) : th;
+}
+
 /* popup ข้อความเดียวปุ่มเดียว ใช้แทน toast ทุกจุดที่เกี่ยวกับการโหวต (สำเร็จ/error/ห้ามโหวตหัวข้อตัวเอง ฯลฯ) */
 function showInfoPopup(message, btnLabel){
   document.getElementById('voteConfirmText').textContent = message;
   document.getElementById('voteConfirmActions').innerHTML =
-    `<button class="btn btn-primary full-btn" id="voteOkBtn">${btnLabel || 'ตกลง'}</button>`;
+    `<button class="btn btn-primary full-btn" id="voteOkBtn">${btnLabel || t('okBtn')}</button>`;
   document.getElementById('voteOkBtn').addEventListener('click', ()=> closeModal('voteConfirmModal'));
   openModal('voteConfirmModal');
 }
@@ -2040,18 +2068,17 @@ function handleVoteClick(topicId, side, btnEl){
 
   // เจ้าของหัวข้อห้ามโหวตหัวข้อตัวเอง — เช็คฝั่ง client ก่อนเลย ไม่ต้องยิง API แล้วเด้งเป็น pop up ทันที
   if(t && STATE.session.username && t.creator_username === STATE.session.username){
-    showInfoPopup('ไม่สามารถโหวตหัวข้อของตัวเองได้ เนื่องจากคุณเป็นผู้สร้างหัวข้อนี้', 'เข้าใจแล้ว');
+    showInfoPopup(t18n('voteOwnTopicMsg'), t18n('understandBtn'));
     return;
   }
 
-  const sideLabel = (side === 'A' ? t?.side_a_label : t?.side_b_label) || `ฝั่ง ${side}`;
+  const sideLabel = (side === 'A' ? t?.side_a_label : t?.side_b_label) || `${t18n('sideLabelPrefix')} ${side}`;
   pendingVoteConfirm = { topicId, side, btnEl };
 
-  document.getElementById('voteConfirmText').textContent =
-    `คุณกำลังเลือก "${sideLabel}" เมื่อยืนยันแล้วคำตอบของคุณจะถูกบันทึกทันที และสามารถเปลี่ยนใจภายหลังได้ในจำนวนจำกัด`;
+  document.getElementById('voteConfirmText').textContent = t18n('voteConfirmMsg').replace('{side}', sideLabel);
   document.getElementById('voteConfirmActions').innerHTML =
-    `<button class="btn btn-ghost full-btn" id="voteCancelBtn">ยกเลิก</button>
-     <button class="btn btn-primary full-btn" id="voteConfirmBtn">ยืนยันเลือก</button>`;
+    `<button class="btn btn-ghost full-btn" id="voteCancelBtn">${t18n('cancelBtn')}</button>
+     <button class="btn btn-primary full-btn" id="voteConfirmBtn">${t18n('voteConfirmBtnLabel')}</button>`;
   document.getElementById('voteCancelBtn').addEventListener('click', ()=>{
     pendingVoteConfirm = null;
     closeModal('voteConfirmModal');
@@ -2067,7 +2094,7 @@ async function confirmVote(){
   const confirmBtn = document.getElementById('voteConfirmBtn');
   const cancelBtn = document.getElementById('voteCancelBtn');
   confirmBtn.disabled = true; if(cancelBtn) cancelBtn.disabled = true;
-  confirmBtn.textContent = 'กำลังบันทึก...';
+  confirmBtn.textContent = t18n('savingText');
 
   const res = await api('vote', {
     session_token: STATE.session.session_token,
@@ -2079,14 +2106,14 @@ async function confirmVote(){
 
   if(!res.success){
     // เออเรอร์ก็ต้องเป็น pop up เหมือนกัน ไม่ใช่ toast
-    showInfoPopup(res.message, 'เข้าใจแล้ว');
+    showInfoPopup(pickLang(res.message), t18n('understandBtn'));
     return;
   }
 
   // แสดงผลลัพธ์เป็น popup แทน toast เล็กๆ ที่อ่านไม่ทัน พร้อมจำนวนครั้งที่เปลี่ยนใจได้จริงของ user คนนี้
   showInfoPopup(
-    res.message + (res.remaining_changes !== undefined ? ` คุณสามารถเปลี่ยนใจได้อีก ${res.remaining_changes} ครั้ง` : ''),
-    'ตกลง'
+    pickLang(res.message) + (res.remaining_changes !== undefined ? t18n('remainingChangesText').replace('{n}', res.remaining_changes) : ''),
+    t18n('okBtn')
   );
 
   loadTopics().then(loadDashboards);
@@ -2103,12 +2130,12 @@ async function castVote(topicId, side, btnEl){
   }, 'POST');
   if(btnEl) setBtnLoading(btnEl, false);
   if(!res.success){
-    showInfoPopup(res.message, 'เข้าใจแล้ว');
+    showInfoPopup(pickLang(res.message), t18n('understandBtn'));
     return;
   }
   showInfoPopup(
-    res.message + (res.remaining_changes !== undefined ? ` คุณสามารถเปลี่ยนใจได้อีก ${res.remaining_changes} ครั้ง` : ''),
-    'ตกลง'
+    pickLang(res.message) + (res.remaining_changes !== undefined ? t18n('remainingChangesText').replace('{n}', res.remaining_changes) : ''),
+    t18n('okBtn')
   );
   loadTopics().then(loadDashboards);
 }
