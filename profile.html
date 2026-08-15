@@ -642,7 +642,8 @@ const I18N = {
     logoutBtn: 'ออกจากระบบ',
     deleteAccountConfirmTitle: 'ยืนยันปิดบัญชีถาวร', deleteAccountConfirmLabel: 'ยืนยันปิดบัญชี',
     deleteAccountLoading: 'กำลังปิดบัญชี...', deleteAccountToast: 'ปิดบัญชีเรียบร้อยแล้ว',
-    logoutToast: 'ออกจากระบบแล้ว'
+    logoutToast: 'ออกจากระบบแล้ว',
+    dashGenderTitle: 'เพศ', dashAgeGroupTitle: 'ช่วงอายุ'
   },
   en: {
     backHome: '← Back to Home', lockedTitle: 'Please log in first',
@@ -666,7 +667,8 @@ const I18N = {
     logoutBtn: 'Log Out',
     deleteAccountConfirmTitle: 'Confirm permanent account closure', deleteAccountConfirmLabel: 'Close Account',
     deleteAccountLoading: 'Closing account...', deleteAccountToast: 'Account closed.',
-    logoutToast: 'Logged out.'
+    logoutToast: 'Logged out.',
+    dashGenderTitle: 'Gender', dashAgeGroupTitle: 'Age Group'
   }
 };
 function getLang(){ return localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'th'; }
@@ -689,6 +691,9 @@ function applyLang(lang){
 function setLang(lang){
   localStorage.setItem(LANG_KEY, lang);
   applyLang(lang);
+  // label ในบล็อก "เพศ/ช่วงอายุ" ของ My Dashboard เป็น dynamic HTML generate ผ่าน t() ตอน render
+  // ไม่ผ่าน [data-i18n] loop ของ applyLang() จึงต้องโหลด dashboard ใหม่ทุกครั้งที่สลับภาษา
+  if(isLoggedIn()) loadDashboard();
 }
 document.querySelectorAll('.lang-toggle button').forEach(b=>{
   b.addEventListener('click', ()=> setLang(b.dataset.lang));
@@ -948,9 +953,9 @@ async function loadDashboard(){
 
 // สีเพศตายตัวเสมอ เหมือนกับที่ใช้ในการ์ดหัวข้อหน้าแรก (index.html) เพื่อให้ design alignment ตรงกันทั้งระบบ
 const GENDER_BAR_DEFS = [
-  { key:'ชาย', color:'#76A5AF' },
-  { key:'หญิง', color:'#C27BA0' },
-  { key:'อื่นๆ', color:'#8E7CC3' }
+  { key:'ชาย', color:'#76A5AF', labelKey:'genderMale' },
+  { key:'หญิง', color:'#C27BA0', labelKey:'genderFemale' },
+  { key:'อื่นๆ', color:'#8E7CC3', labelKey:'genderOther' }
 ];
 const AGE_BAR_ORDER = ['18-24','25-34','35-44','45-54','55+'];
 
@@ -968,16 +973,16 @@ function renderDashboardBreakdown(dash){
   const el = document.getElementById('dashboardBreakdown');
   // ตัดจังหวัดออกจากการแสดงผล (backend ยังคำนวณ/ส่ง province_percent มาเหมือนเดิม เผื่อใช้ในอนาคต)
   // แสดงครบ 3 แท่งเพศ + 5 แท่งอายุเสมอ แม้ยังไม่มีใครโหวตเลย (แท่งเทา 0%) ให้ตรงกับการ์ดหัวข้อหน้าแรก
-  const genderRows = GENDER_BAR_DEFS.map(g => dashBarRowHTML(g.key, (dash.gender_percent || {})[g.key] || 0, g.color)).join('');
+  const genderRows = GENDER_BAR_DEFS.map(g => dashBarRowHTML(t(g.labelKey), (dash.gender_percent || {})[g.key] || 0, g.color)).join('');
   const ageRows = AGE_BAR_ORDER.map(a => dashBarRowHTML(a, (dash.age_group_percent || {})[a] || 0, 'var(--primary)')).join('');
 
   el.innerHTML = `
     <div class="dash-group">
-      <div class="dash-group-title">เพศ</div>
+      <div class="dash-group-title">${t('dashGenderTitle')}</div>
       ${genderRows}
     </div>
     <div class="dash-group">
-      <div class="dash-group-title">ช่วงอายุ</div>
+      <div class="dash-group-title">${t('dashAgeGroupTitle')}</div>
       ${ageRows}
     </div>`;
 }
