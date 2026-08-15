@@ -285,6 +285,26 @@
     padding:8px 4px; word-break:break-word;
   }
 
+  /* --- comment buttons: อยู่ใต้ปุ่มโหวตเสมอ คนละปุ่มคนละฝั่ง (A/B) โชว์ตลอดกดได้เสมอแม้ N=0 --- */
+  .comment-row{ display:flex; gap:8px; padding:0 14px 14px; margin-top:-6px; }
+  .comment-row-image{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; padding:0 14px 14px; margin-top:-6px; }
+  .comment-btn{
+    flex:1; text-align:center; font-size:12px; font-weight:600; color:var(--text-muted);
+    background:var(--bg); border:1.5px solid var(--line); border-radius:100px; padding:7px 8px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .comment-btn:active{ background:var(--line); }
+
+  /* --- comment modal: list + infinite scroll ผ่าน IntersectionObserver --- */
+  .comment-list{ display:flex; flex-direction:column; gap:10px; min-height:60px; }
+  .comment-item{
+    background:var(--bg); border-radius:12px; padding:10px 14px; font-size:13.5px;
+    line-height:1.6; color:var(--text); white-space:pre-wrap; word-break:break-word;
+  }
+  .comment-item-time{ display:block; margin-top:6px; font-size:11px; color:var(--text-muted); }
+  .comment-empty, .comment-loading{ text-align:center; font-size:13px; color:var(--text-muted); padding:26px 0; }
+  #commentSentinel{ height:1px; }
+
   /* --- mini dashboard --- */
   .mini-dash{ border-top:1px solid var(--line); padding:12px 14px 16px; display:flex; flex-direction:column; gap:8px; }
   .mini-dash-title{ font-size:11.5px; color:var(--text-muted); font-weight:500; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
@@ -741,10 +761,27 @@
     <button class="modal-close" data-close="voteConfirmModal" style="margin-left:auto;display:block;">✕</button>
     <h3 style="margin:0 0 10px;" data-i18n="voteConfirmTitle">ยืนยันการเลือก</h3>
     <p id="voteConfirmText" style="font-size:13.5px;color:var(--text-muted);margin:0 0 22px;line-height:1.6;"></p>
+    <div id="voteCommentWrap" style="display:none;text-align:left;margin:-10px 0 18px;">
+      <textarea id="voteCommentInput" maxlength="300" rows="3" placeholder=""
+        style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:13.5px;outline:none;background:var(--bg);resize:vertical;"></textarea>
+      <div id="voteCommentCounter" style="text-align:right;font-size:11px;color:var(--text-muted);margin-top:4px;">0/300</div>
+    </div>
     <div style="display:flex;gap:10px;" id="voteConfirmActions">
       <button class="btn btn-ghost full-btn" id="voteCancelBtn">ยกเลิก</button>
       <button class="btn btn-primary full-btn" id="voteConfirmBtn">ยืนยันเลือก</button>
     </div>
+  </div>
+</div>
+
+<!-- ===== Comment List Modal (อ่านความคิดเห็นแบบ public/anonymous แยกฝั่ง A/B, infinite scroll ทีละ 20) ===== -->
+<div class="modal-overlay" id="commentModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="commentModalTitle"></h3>
+      <button class="modal-close" data-close="commentModal">✕</button>
+    </div>
+    <div class="comment-list" id="commentList"></div>
+    <div id="commentSentinel"></div>
   </div>
 </div>
 
@@ -877,7 +914,10 @@ const I18N = {
     voteConfirmMsg: 'คุณกำลังเลือก "{side}" เมื่อยืนยันแล้วคำตอบของคุณจะถูกบันทึกทันที และสามารถเปลี่ยนใจภายหลังได้ในจำนวนจำกัด',
     remainingChangesText: ' คุณสามารถเปลี่ยนใจได้อีก {n} ครั้ง',
     apiErrorMsg: 'โอ๊ะ! มีบางอย่างขัดข้อง ทำให้ระบบสะดุดครับ ลองรีเฟรชใหม่อีกครั้งนะครับ',
-    dashGenderTitle: 'เพศ', dashAgeGroupTitle: 'ช่วงอายุ'
+    dashGenderTitle: 'เพศ', dashAgeGroupTitle: 'ช่วงอายุ',
+    commentPlaceholder: 'หากคุณมีความคิดเห็นเพิ่มเติม แบ่งปันมาได้เลย',
+    commentsModalTitle: 'ความคิดเห็น', commentEmptyMsg: 'ยังไม่มีความคิดเห็นในฝั่งนี้',
+    commentLoadingText: 'กำลังโหลดความคิดเห็น...'
   },
   en: {
     createBtn: '＋ Create Topic', createBtn2: 'Create Topic', loginBtn: 'Log In',
@@ -923,7 +963,10 @@ const I18N = {
     voteConfirmMsg: 'You are choosing "{side}". Once confirmed, your answer is saved immediately, and you can change your mind a limited number of times afterward.',
     remainingChangesText: ' You can change your mind {n} more time(s)',
     apiErrorMsg: 'Oops! Something went wrong. Please try refreshing and try again.',
-    dashGenderTitle: 'Gender', dashAgeGroupTitle: 'Age Group'
+    dashGenderTitle: 'Gender', dashAgeGroupTitle: 'Age Group',
+    commentPlaceholder: 'Tell us more about your answer...',
+    commentsModalTitle: 'Comments', commentEmptyMsg: 'No comments on this side yet',
+    commentLoadingText: 'Loading comments...'
   }
 };
 function getLang(){ return localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'th'; }
@@ -1661,6 +1704,9 @@ function bindCardEvents(scopeEl){
   scopeEl.querySelectorAll('.share-icon-btn').forEach(btn=>{
     btn.addEventListener('click', ()=> openShareMenu(btn.dataset.topic));
   });
+  scopeEl.querySelectorAll('.comment-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> openCommentModal(btn.dataset.commentTopic, btn.dataset.commentSide, btn.dataset.commentLabel));
+  });
   scopeEl.querySelectorAll('[data-lightbox]').forEach(el=>{
     el.addEventListener('click', ()=> openLightbox(el.dataset.lightbox));
   });
@@ -1756,6 +1802,22 @@ function topicCardHTML(t){
 
   const tagsHTML = (t.tags||[]).map(tag=>`<span class="tag-chip">#${escapeHtml(tag)}</span>`).join('');
 
+  // ปุ่ม "Read comment (N)" แยกใต้ปุ่มโหวตฝั่ง A/B — โชว์ตลอด กดได้เสมอแม้ N=0 (ห้ามซ่อน/disable)
+  // N มาจาก t._commentCountA/B ที่ cache ไว้หลัง getTopicDetail โหลดเสร็จ (ดู loadDashboardFor) ถ้ายังไม่โหลด
+  // (ครั้งแรกที่การ์ด render) ก็ยังกดเปิด modal ได้ปกติ แค่ยังไม่มีเลข (N) กำกับตัวเลขจนกว่าจะโหลดเสร็จ
+  const cntA = t._commentCountA !== undefined ? ` (${t._commentCountA})` : '';
+  const cntB = t._commentCountB !== undefined ? ` (${t._commentCountB})` : '';
+  const commentRowHTML = hasImg
+    ? `<div class="comment-row comment-row-image">
+        <button type="button" class="comment-btn" data-comment-topic="${t.topic_id}" data-comment-side="A" data-comment-label="${escapeHtml(t.side_a_label)}">💬 Read comment${cntA}</button>
+        <div></div>
+        <button type="button" class="comment-btn" data-comment-topic="${t.topic_id}" data-comment-side="B" data-comment-label="${escapeHtml(t.side_b_label)}">💬 Read comment${cntB}</button>
+      </div>`
+    : `<div class="comment-row">
+        <button type="button" class="comment-btn" data-comment-topic="${t.topic_id}" data-comment-side="A" data-comment-label="${escapeHtml(t.side_a_label)}">💬 Read comment${cntA}</button>
+        <button type="button" class="comment-btn" data-comment-topic="${t.topic_id}" data-comment-side="B" data-comment-label="${escapeHtml(t.side_b_label)}">💬 Read comment${cntB}</button>
+      </div>`;
+
   return `
   <div class="topic-card" data-card-id="${t.topic_id}" style="--card-color:${t.card_color || 'var(--primary)'}">
     <div class="card-top">
@@ -1774,6 +1836,8 @@ function topicCardHTML(t){
     </div>
 
     ${voteRowHTML}
+
+    ${commentRowHTML}
 
     ${translateRowHTML(t)}
 
@@ -1862,6 +1926,18 @@ async function loadDashboardFor(topicId){
   const res = await api('getTopicDetail', {topic_id: topicId});
   if(!res.success) return;
   renderDashboard(topicId, res.dashboard, t.card_color);
+
+  // cache เลข comment count ไว้ที่ topic object เอง เผื่อ re-render การ์ด (เช่นหลังแปลภาษา) จะได้โชว์เลขที่มีอยู่แล้ว
+  // ทันทีโดยไม่ต้องรอโหลดใหม่ — อัพเดตแค่ label ของปุ่มในตำแหน่งเดิม ไม่ full re-render การ์ดทั้งใบ
+  t._commentCountA = res.dashboard.comment_count_a || 0;
+  t._commentCountB = res.dashboard.comment_count_b || 0;
+  updateCommentBtnLabel(topicId, 'A', t._commentCountA);
+  updateCommentBtnLabel(topicId, 'B', t._commentCountB);
+}
+
+function updateCommentBtnLabel(topicId, side, count){
+  const btn = document.querySelector(`.comment-btn[data-comment-topic="${topicId}"][data-comment-side="${side}"]`);
+  if(btn) btn.textContent = `💬 Read comment (${count})`;
 }
 
 // สีเพศตายตัวเสมอ ไม่ผูกกับ card_color ของหัวข้อ (ใช้โทนเดียวกับ palette การ์ดสี ฟ้า/ชมพู/ม่วง ที่มีอยู่แล้วในระบบ)
@@ -2052,11 +2128,18 @@ function pickLang(msg){
 /* popup ข้อความเดียวปุ่มเดียว ใช้แทน toast ทุกจุดที่เกี่ยวกับการโหวต (สำเร็จ/error/ห้ามโหวตหัวข้อตัวเอง ฯลฯ) */
 function showInfoPopup(message, btnLabel){
   document.getElementById('voteConfirmText').textContent = message;
+  document.getElementById('voteCommentWrap').style.display = 'none'; // popup ข้อความทั่วไป ไม่ใช่ตอนยืนยันโหวตจริง ไม่ต้องโชว์ช่องคอมเมนต์
   document.getElementById('voteConfirmActions').innerHTML =
     `<button class="btn btn-primary full-btn" id="voteOkBtn">${btnLabel || t('okBtn')}</button>`;
   document.getElementById('voteOkBtn').addEventListener('click', ()=> closeModal('voteConfirmModal'));
   openModal('voteConfirmModal');
 }
+
+// นับตัวอักษรวิ่งตาม input event มุมขวาล่างของ textarea — maxlength="300" กันพิมพ์เกินตั้งแต่ client แล้ว
+// แต่ยังโชว์ตัวนับให้ user เห็นความคืบหน้า element เป็น static (อยู่ใน DOM ตลอด ไม่โดน re-render ทิ้ง) จึง bind ครั้งเดียวพอ
+document.getElementById('voteCommentInput').addEventListener('input', (e)=>{
+  document.getElementById('voteCommentCounter').textContent = `${e.target.value.length}/300`;
+});
 
 function handleVoteClick(topicId, side, btnEl){
   if(!isLoggedIn()){
@@ -2076,6 +2159,15 @@ function handleVoteClick(topicId, side, btnEl){
   pendingVoteConfirm = { topicId, side, btnEl };
 
   document.getElementById('voteConfirmText').textContent = t18n('voteConfirmMsg').replace('{side}', sideLabel);
+
+  // ช่องคอมเมนต์ optional: reset ค่าว่างทุกครั้งที่เปิด modal นี้ใหม่ (ไม่ prefill คอมเมนต์เดิม เพราะฝั่ง client
+  // ไม่มีข้อมูลนั้นอยู่แล้ว — เป็น anonymous ทางเดียว) ค่าที่พิมพ์ล่าสุดจะทับของเดิมเสมอเมื่อยืนยันสำเร็จ
+  const commentInput = document.getElementById('voteCommentInput');
+  commentInput.value = '';
+  commentInput.placeholder = t18n('commentPlaceholder');
+  document.getElementById('voteCommentCounter').textContent = '0/300';
+  document.getElementById('voteCommentWrap').style.display = 'block';
+
   document.getElementById('voteConfirmActions').innerHTML =
     `<button class="btn btn-ghost full-btn" id="voteCancelBtn">${t18n('cancelBtn')}</button>
      <button class="btn btn-primary full-btn" id="voteConfirmBtn">${t18n('voteConfirmBtnLabel')}</button>`;
@@ -2099,7 +2191,8 @@ async function confirmVote(){
   const res = await api('vote', {
     session_token: STATE.session.session_token,
     topic_id: topicId,
-    side
+    side,
+    comment: document.getElementById('voteCommentInput').value.trim()
   }, 'POST');
 
   pendingVoteConfirm = null;
@@ -2138,6 +2231,70 @@ async function castVote(topicId, side, btnEl){
     t18n('okBtn')
   );
   loadTopics().then(loadDashboards);
+}
+
+/* ================= Comment Modal (public, anonymous, อ่านความคิดเห็นแยกฝั่ง A/B) =================
+ * โหลดทีละ 20 รายการ ใช้ IntersectionObserver ผูกกับ sentinel element ท้าย list ทำ infinite scroll
+ * (เบากว่า/แม่นกว่าดัก scroll event ของทั้งหน้า) ปุ่มเปิด modal นี้กดได้เสมอไม่ว่า N จะเป็น 0 หรือไม่ก็ตาม —
+ * ถ้าไม่มีคอมเมนต์เลยจะโชว์ empty state แทนที่จะปิดปุ่มหรือซ่อนไป กัน user สับสนว่าเว็บพัง */
+let CM_STATE = { topicId:null, side:null, page:0, totalPages:1, loading:false, observer:null };
+
+function formatCommentTime(dateStr){
+  if(!dateStr) return '';
+  const d = new Date(dateStr);
+  if(isNaN(d)) return '';
+  return d.toLocaleString(getLang()==='en' ? 'en-US' : 'th-TH', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+function openCommentModal(topicId, side, sideLabel){
+  if(CM_STATE.observer) CM_STATE.observer.disconnect();
+  CM_STATE = { topicId, side, page:0, totalPages:1, loading:false, observer:null };
+  document.getElementById('commentModalTitle').textContent = `${sideLabel} · ${t18n('commentsModalTitle')}`;
+  document.getElementById('commentList').innerHTML = `<div class="comment-loading">${t18n('commentLoadingText')}</div>`;
+  openModal('commentModal');
+  loadMoreComments(true);
+}
+
+async function loadMoreComments(isFirst){
+  if(CM_STATE.loading) return;
+  if(!isFirst && CM_STATE.page >= CM_STATE.totalPages) return;
+  CM_STATE.loading = true;
+
+  const res = await api('getComments', {
+    topic_id: CM_STATE.topicId, side: CM_STATE.side, page: CM_STATE.page + 1, page_size: 20
+  });
+
+  CM_STATE.loading = false;
+  if(!res.success){
+    if(isFirst) document.getElementById('commentList').innerHTML = `<div class="comment-empty">${t18n('apiErrorMsg')}</div>`;
+    return;
+  }
+
+  CM_STATE.page = res.page;
+  CM_STATE.totalPages = res.total_pages;
+
+  const listEl = document.getElementById('commentList');
+  if(isFirst) listEl.innerHTML = '';
+
+  if(res.comments.length === 0 && isFirst){
+    listEl.innerHTML = `<div class="comment-empty">${t18n('commentEmptyMsg')}</div>`;
+  } else {
+    listEl.insertAdjacentHTML('beforeend', res.comments.map(c => `
+      <div class="comment-item">${escapeHtml(c.comment)}<span class="comment-item-time">${formatCommentTime(c.last_changed_at)}</span></div>
+    `).join(''));
+  }
+
+  setupCommentObserver();
+}
+
+function setupCommentObserver(){
+  if(CM_STATE.observer) CM_STATE.observer.disconnect();
+  if(CM_STATE.page >= CM_STATE.totalPages) return; // โหลดครบทุกหน้าแล้ว ไม่ต้องผูก observer ต่อ
+  const sentinel = document.getElementById('commentSentinel');
+  CM_STATE.observer = new IntersectionObserver((entries)=>{
+    if(entries[0].isIntersecting) loadMoreComments(false);
+  }, { root: document.querySelector('#commentModal .modal-box'), threshold: 0.1 });
+  CM_STATE.observer.observe(sentinel);
 }
 
 /* ---------- Share ---------- */
