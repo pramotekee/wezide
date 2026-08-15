@@ -279,6 +279,26 @@
   .mt-votes .mv-total{ font-weight:600; color:var(--text); margin-bottom:1px; }
   .mt-votes .mv-row{ display:flex; align-items:center; gap:6px; }
   .mt-votes .mv-dot{ width:8px; height:8px; border-radius:2px; flex-shrink:0; display:inline-block; }
+
+  /* --- comment buttons: อยู่ใต้ mt-votes เสมอ คนละปุ่มคนละฝั่ง (A/B) โชว์ตลอดกดได้เสมอแม้ N=0 --- */
+  .comment-row{ display:flex; gap:8px; margin-top:10px; }
+  .comment-btn{
+    flex:1; text-align:center; font-size:12px; font-weight:600; color:var(--text-muted);
+    background:var(--bg); border:1.5px solid var(--line); border-radius:100px; padding:7px 8px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .comment-btn:active{ background:var(--line); }
+
+  /* --- comment modal: list + infinite scroll ผ่าน IntersectionObserver --- */
+  .comment-list{ display:flex; flex-direction:column; gap:10px; min-height:60px; }
+  .comment-item{
+    background:var(--bg); border-radius:12px; padding:10px 14px; font-size:13.5px;
+    line-height:1.6; color:var(--text); white-space:pre-wrap; word-break:break-word;
+  }
+  .comment-item-time{ display:block; margin-top:6px; font-size:11px; color:var(--text-muted); }
+  .comment-empty, .comment-loading{ text-align:center; font-size:13px; color:var(--text-muted); padding:26px 0; }
+  #commentSentinel{ height:1px; }
+
   .empty-state{ text-align:center; padding:50px 20px; color:var(--text-muted); }
   .empty-state .emoji{ font-size:36px; margin-bottom:10px; }
 
@@ -513,6 +533,18 @@
   </div>
 </div>
 
+<!-- ===== Comment List Modal (อ่านความคิดเห็นแบบ public/anonymous แยกฝั่ง A/B, infinite scroll ทีละ 20) ===== -->
+<div class="modal-overlay" id="commentModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="commentModalTitle"></h3>
+      <button class="modal-close" data-close="commentModal">✕</button>
+    </div>
+    <div class="comment-list" id="commentList"></div>
+    <div id="commentSentinel"></div>
+  </div>
+</div>
+
 <!-- ===== Confirm/Info Popup (ใช้ร่วมกันทุกจุด: ลบบัญชี / เผยแพร่-ซ่อน / ลบหัวข้อ ฯลฯ แทน confirm() ของเบราว์เซอร์และ toast เล็กๆ) ===== -->
 <div class="modal-overlay" id="confirmModal">
   <div class="modal-box" style="text-align:center;">
@@ -643,7 +675,9 @@ const I18N = {
     deleteAccountConfirmTitle: 'ยืนยันปิดบัญชีถาวร', deleteAccountConfirmLabel: 'ยืนยันปิดบัญชี',
     deleteAccountLoading: 'กำลังปิดบัญชี...', deleteAccountToast: 'ปิดบัญชีเรียบร้อยแล้ว',
     logoutToast: 'ออกจากระบบแล้ว',
-    dashGenderTitle: 'เพศ', dashAgeGroupTitle: 'ช่วงอายุ'
+    dashGenderTitle: 'เพศ', dashAgeGroupTitle: 'ช่วงอายุ',
+    commentsModalTitle: 'ความคิดเห็น', commentEmptyMsg: 'ยังไม่มีความคิดเห็นในฝั่งนี้',
+    commentLoadingText: 'กำลังโหลดความคิดเห็น...'
   },
   en: {
     backHome: '← Back to Home', lockedTitle: 'Please log in first',
@@ -668,11 +702,16 @@ const I18N = {
     deleteAccountConfirmTitle: 'Confirm permanent account closure', deleteAccountConfirmLabel: 'Close Account',
     deleteAccountLoading: 'Closing account...', deleteAccountToast: 'Account closed.',
     logoutToast: 'Logged out.',
-    dashGenderTitle: 'Gender', dashAgeGroupTitle: 'Age Group'
+    dashGenderTitle: 'Gender', dashAgeGroupTitle: 'Age Group',
+    commentsModalTitle: 'Comments', commentEmptyMsg: 'No comments on this side yet',
+    commentLoadingText: 'Loading comments...'
   }
 };
 function getLang(){ return localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'th'; }
 function t(key){ const lang = getLang(); return (I18N[lang] && I18N[lang][key] !== undefined) ? I18N[lang][key] : (I18N.th[key] || ''); }
+// alias ของ t() ไว้ใช้ในจุดที่มีตัวแปร local ชื่อ t ทับอยู่แล้ว (เช่น renderMyTopics: sorted.map(t=>...))
+// กันเรียก t('key') แล้วดันไปชนกับ topic object แทนฟังก์ชันแปลภาษา (pattern เดียวกับ index.html/history.html)
+const t18n = t;
 function applyLang(lang){
   const dict = I18N[lang] || I18N.th;
   document.querySelectorAll('[data-i18n]').forEach(el=>{
@@ -801,6 +840,69 @@ function showConfirmPopup({ title, message, confirmLabel, cancelLabel, danger, o
   document.getElementById('confirmModalCancelBtn').addEventListener('click', ()=> closeModal('confirmModal'));
   document.getElementById('confirmModalConfirmBtn').addEventListener('click', onConfirm);
   openModal('confirmModal');
+}
+
+/* ================= Comment Modal (public, anonymous, อ่านความคิดเห็นแยกฝั่ง A/B) =================
+ * เหมือน index.html/history.html ทุกอย่าง (โหลดทีละ 20 รายการ, IntersectionObserver infinite scroll,
+ * ปุ่มกดได้เสมอแม้ N=0) — ใช้จากแท็บ My Topics เพื่อให้เจ้าของหัวข้อดูคอมเมนต์ที่ได้รับ แยก A/B */
+let CM_STATE = { topicId:null, side:null, page:0, totalPages:1, loading:false, observer:null };
+
+function formatCommentTime(dateStr){
+  if(!dateStr) return '';
+  const d = new Date(dateStr);
+  if(isNaN(d)) return '';
+  return d.toLocaleString(getLang()==='en' ? 'en-US' : 'th-TH', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+function openCommentModal(topicId, side, sideLabel){
+  if(CM_STATE.observer) CM_STATE.observer.disconnect();
+  CM_STATE = { topicId, side, page:0, totalPages:1, loading:false, observer:null };
+  document.getElementById('commentModalTitle').textContent = `${sideLabel} · ${t18n('commentsModalTitle')}`;
+  document.getElementById('commentList').innerHTML = `<div class="comment-loading">${t18n('commentLoadingText')}</div>`;
+  openModal('commentModal');
+  loadMoreComments(true);
+}
+
+async function loadMoreComments(isFirst){
+  if(CM_STATE.loading) return;
+  if(!isFirst && CM_STATE.page >= CM_STATE.totalPages) return;
+  CM_STATE.loading = true;
+
+  const res = await api('getComments', {
+    topic_id: CM_STATE.topicId, side: CM_STATE.side, page: CM_STATE.page + 1, page_size: 20
+  });
+
+  CM_STATE.loading = false;
+  if(!res.success){
+    if(isFirst) document.getElementById('commentList').innerHTML = `<div class="comment-empty">${t18n('commentEmptyMsg')}</div>`;
+    return;
+  }
+
+  CM_STATE.page = res.page;
+  CM_STATE.totalPages = res.total_pages;
+
+  const listEl = document.getElementById('commentList');
+  if(isFirst) listEl.innerHTML = '';
+
+  if(res.comments.length === 0 && isFirst){
+    listEl.innerHTML = `<div class="comment-empty">${t18n('commentEmptyMsg')}</div>`;
+  } else {
+    listEl.insertAdjacentHTML('beforeend', res.comments.map(c => `
+      <div class="comment-item">${escapeHtml(c.comment)}<span class="comment-item-time">${formatCommentTime(c.last_changed_at)}</span></div>
+    `).join(''));
+  }
+
+  setupCommentObserver();
+}
+
+function setupCommentObserver(){
+  if(CM_STATE.observer) CM_STATE.observer.disconnect();
+  if(CM_STATE.page >= CM_STATE.totalPages) return;
+  const sentinel = document.getElementById('commentSentinel');
+  CM_STATE.observer = new IntersectionObserver((entries)=>{
+    if(entries[0].isIntersecting) loadMoreComments(false);
+  }, { root: document.querySelector('#commentModal .modal-box'), threshold: 0.1 });
+  CM_STATE.observer.observe(sentinel);
 }
 
 /* ---------- Passcode show/hide toggle ---------- */
@@ -993,6 +1095,26 @@ async function loadMyTopics(){
   if(!res.success){ showToast(res.message); return; }
   STATE.myTopics = res.topics || [];
   renderMyTopics();
+  loadCommentCountsForMyTopics(); // lazy: ไม่บล็อกการโชว์ลิสต์หลัก เหมือน loadDashboards() ใน index.html/history.html
+}
+
+// หน้า My Topics ไม่มี per-card dashboard fetch อยู่แล้ว (ต่างจาก index.html/history.html ที่มี loadDashboardFor
+// ต่อการ์ดอยู่ก่อนแล้ว) จึงต้องยิง getTopicDetail แยกทีละหัวข้อเองที่นี่ เพื่อดึงแค่ comment_count_a/b มาโชว์ที่ปุ่ม
+// "Read comment (N)" — ไม่ต้องใช้ gender/age breakdown ส่วนอื่นของ response นี้เลยในหน้านี้
+async function loadCommentCountsForMyTopics(){
+  for(const topic of STATE.myTopics){
+    const res = await api('getTopicDetail', { topic_id: topic.topic_id });
+    if(!res.success) continue;
+    topic._commentCountA = res.dashboard.comment_count_a || 0;
+    topic._commentCountB = res.dashboard.comment_count_b || 0;
+    updateCommentBtnLabel(topic.topic_id, 'A', topic._commentCountA);
+    updateCommentBtnLabel(topic.topic_id, 'B', topic._commentCountB);
+  }
+}
+
+function updateCommentBtnLabel(topicId, side, count){
+  const btn = document.querySelector(`.comment-btn[data-comment-topic="${topicId}"][data-comment-side="${side}"]`);
+  if(btn) btn.textContent = `💬 Read comment (${count})`;
 }
 
 // อยู่หน้า "หัวข้อของฉัน" อยู่แล้ว ให้สร้างหัวข้อได้จากตรงนี้เลย ไม่ต้องอ้อมกลับไป home ก่อน
@@ -1056,6 +1178,10 @@ function renderMyTopics(){
             <span class="mv-row"><i class="mv-dot" style="background:var(--side-b)"></i>${escapeHtml(t.side_b_label)} (${t.side_b_percent}%)</span>
           </div>
         </${wrapTag}>
+        <div class="comment-row">
+          <button type="button" class="comment-btn" data-comment-topic="${t.topic_id}" data-comment-side="A" data-comment-label="${escapeHtml(t.side_a_label)}">💬 Read comment${t._commentCountA !== undefined ? ` (${t._commentCountA})` : ''}</button>
+          <button type="button" class="comment-btn" data-comment-topic="${t.topic_id}" data-comment-side="B" data-comment-label="${escapeHtml(t.side_b_label)}">💬 Read comment${t._commentCountB !== undefined ? ` (${t._commentCountB})` : ''}</button>
+        </div>
         <div class="mt-actions">
           ${toggleBtn}
           <button class="mt-action-btn edit" data-action="edit" data-topic="${t.topic_id}">แก้ไข</button>
@@ -1067,6 +1193,11 @@ function renderMyTopics(){
 
 /* event delegation: ปุ่ม action ในการ์ดถูกสร้างใหม่ทุกครั้งที่ re-render จึงผูก listener ที่ container แม่แทน */
 document.getElementById('myTopicsList').addEventListener('click', (e)=>{
+  const commentBtn = e.target.closest('.comment-btn');
+  if(commentBtn){
+    openCommentModal(commentBtn.dataset.commentTopic, commentBtn.dataset.commentSide, commentBtn.dataset.commentLabel);
+    return;
+  }
   const btn = e.target.closest('button[data-action]');
   if(!btn) return;
   const topicId = btn.dataset.topic;
