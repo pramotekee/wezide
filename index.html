@@ -644,45 +644,45 @@
 <div class="modal-overlay" id="createModal">
   <div class="modal-box">
     <div class="modal-head">
-      <h3>สร้างหัวข้อใหม่</h3>
+      <h3 data-i18n="createModalTitle">สร้างหัวข้อใหม่</h3>
       <button class="modal-close" data-close="createModal">✕</button>
     </div>
 
     <div class="field">
-      <label>รูปแบบหัวข้อ</label>
+      <label data-i18n="topicTypeLabel">รูปแบบหัวข้อ</label>
       <div class="type-toggle">
-        <button type="button" id="typeTextBtn" class="selected">ข้อความ</button>
-        <button type="button" id="typeImageBtn">รูปภาพ</button>
+        <button type="button" id="typeTextBtn" class="selected" data-i18n="typeTextBtn">ข้อความ</button>
+        <button type="button" id="typeImageBtn" data-i18n="typeImageBtn">รูปภาพ</button>
       </div>
     </div>
 
     <div class="field" id="coverField" style="display:none;">
-      <label>รูปประกอบ (สัดส่วน 9:16) <span class="field-hint">— พรีวิวนี้คือหน้าตาที่จะแสดงจริงในฟีด</span></label>
+      <label><span data-i18n="coverImageLabel">รูปประกอบ (สัดส่วน 9:16)</span> <span class="field-hint" data-i18n="coverImageHint">— พรีวิวนี้คือหน้าตาที่จะแสดงจริงในฟีด</span></label>
       <div class="preview-3col">
         <div class="preview-vote-btn" id="previewSideA">ตัวเลือก A</div>
         <div class="cover-upload" id="coverPreview" onclick="document.getElementById('coverFile').click()">
-          ＋ แตะเพื่อแนบรูปประกอบหัวข้อ
+          <span data-i18n="coverUploadPrompt">＋ แตะเพื่อแนบรูปประกอบหัวข้อ</span>
         </div>
         <div class="preview-vote-btn" id="previewSideB">ตัวเลือก B</div>
       </div>
       <input type="file" accept="image/*" id="coverFile" style="display:none;">
     </div>
 
-    <div class="field"><label>หัวข้อ</label><input type="text" id="ctTitle" placeholder="เช่น กาแฟดำดีต่อสุขภาพจริงไหม?"></div>
-    <div class="field"><label>รายละเอียด <span class="field-hint">(ไม่บังคับ)</span></label><textarea id="ctDescription" rows="3" placeholder="อธิบายเพิ่มเติม..."></textarea></div>
+    <div class="field"><label data-i18n="ctTitleLabel">หัวข้อ</label><input type="text" id="ctTitle" placeholder="เช่น กาแฟดำดีต่อสุขภาพจริงไหม?" data-i18n-ph="ctTitlePh"></div>
+    <div class="field"><label><span data-i18n="ctDescLabel">รายละเอียด</span> <span class="field-hint" data-i18n="optionalHint2">(ไม่บังคับ)</span></label><textarea id="ctDescription" rows="3" placeholder="อธิบายเพิ่มเติม..." data-i18n-ph="ctDescPh"></textarea></div>
 
     <div class="date-row">
-      <div class="field"><label>ฝั่ง A</label><input type="text" id="ctSideA" placeholder="เช่น เห็นด้วย"></div>
-      <div class="field"><label>ฝั่ง B</label><input type="text" id="ctSideB" placeholder="เช่น ไม่เห็นด้วย"></div>
+      <div class="field"><label data-i18n="ctSideALabel">ฝั่ง A</label><input type="text" id="ctSideA" placeholder="เช่น เห็นด้วย" data-i18n-ph="ctSideAPh"></div>
+      <div class="field"><label data-i18n="ctSideBLabel">ฝั่ง B</label><input type="text" id="ctSideB" placeholder="เช่น ไม่เห็นด้วย" data-i18n-ph="ctSideBPh"></div>
     </div>
 
     <div class="field">
-      <label>หมวดหมู่</label>
-      <select id="ctCategory"><option value="">เลือกหมวดหมู่</option></select>
+      <label data-i18n="ctCategoryLabel">หมวดหมู่</label>
+      <select id="ctCategory"><option value="" data-i18n="ctCategoryChoose">เลือกหมวดหมู่</option></select>
     </div>
 
     <div class="field">
-      <label>Tag <span class="field-hint">(ใส่อย่างน้อย 1 อัน สูงสุด 5 อัน)</span></label>
+      <label><span data-i18n="ctTagLabel">Tag</span> <span class="field-hint" data-i18n="ctTagHint">(ใส่อย่างน้อย 1 อัน สูงสุด 5 อัน)</span></label>
       <div class="tag-grid">
         <input type="text" id="ctTag1" placeholder="Tag 1">
         <input type="text" id="ctTag2" placeholder="Tag 2">
@@ -693,31 +693,31 @@
     </div>
 
     <div class="field">
-      <label>สีการ์ด</label>
+      <label data-i18n="ctColorLabel">สีการ์ด</label>
       <div class="color-swatches" id="colorSwatches"></div>
     </div>
 
     <div class="field">
-      <label>ระบุกลุ่มผู้ร่วมโหวต <span class="field-hint">(หากเปิดให้ทุกคนโหวต ไม่ต้องแก้ไข ข้ามไปได้เลย)</span></label>
+      <label><span data-i18n="ctTargetLabel">ระบุกลุ่มผู้ร่วมโหวต</span> <span class="field-hint" data-i18n="ctTargetHint">(หากเปิดให้ทุกคนโหวต ไม่ต้องแก้ไข ข้ามไปได้เลย)</span></label>
       <div class="target-checklist" id="ctTargetChecklist">
-        <label class="check-row"><input type="checkbox" value="ชาย" checked><span class="check-box"></span>ชาย</label>
-        <label class="check-row"><input type="checkbox" value="หญิง" checked><span class="check-box"></span>หญิง</label>
-        <label class="check-row"><input type="checkbox" value="อื่นๆ" checked><span class="check-box"></span>อื่นๆ</label>
-        <label class="check-row"><input type="checkbox" value="18-24" checked><span class="check-box"></span>อายุ 18-24 ปี</label>
-        <label class="check-row"><input type="checkbox" value="25-34" checked><span class="check-box"></span>อายุ 25-34 ปี</label>
-        <label class="check-row"><input type="checkbox" value="35-44" checked><span class="check-box"></span>อายุ 35-44 ปี</label>
-        <label class="check-row"><input type="checkbox" value="45-54" checked><span class="check-box"></span>อายุ 45-54 ปี</label>
-        <label class="check-row"><input type="checkbox" value="55+" checked><span class="check-box"></span>อายุ 55+</label>
+        <label class="check-row"><input type="checkbox" value="ชาย" checked><span class="check-box"></span><span data-i18n="genderMale">ชาย</span></label>
+        <label class="check-row"><input type="checkbox" value="หญิง" checked><span class="check-box"></span><span data-i18n="genderFemale">หญิง</span></label>
+        <label class="check-row"><input type="checkbox" value="อื่นๆ" checked><span class="check-box"></span><span data-i18n="genderOther">อื่นๆ</span></label>
+        <label class="check-row"><input type="checkbox" value="18-24" checked><span class="check-box"></span><span data-i18n="age1824">อายุ 18-24 ปี</span></label>
+        <label class="check-row"><input type="checkbox" value="25-34" checked><span class="check-box"></span><span data-i18n="age2534">อายุ 25-34 ปี</span></label>
+        <label class="check-row"><input type="checkbox" value="35-44" checked><span class="check-box"></span><span data-i18n="age3544">อายุ 35-44 ปี</span></label>
+        <label class="check-row"><input type="checkbox" value="45-54" checked><span class="check-box"></span><span data-i18n="age4554">อายุ 45-54 ปี</span></label>
+        <label class="check-row"><input type="checkbox" value="55+" checked><span class="check-box"></span><span data-i18n="age55plus">อายุ 55+</span></label>
       </div>
     </div>
 
     <div class="date-row stack-row">
-      <div class="field"><label>วันเริ่มต้นเผยแพร่</label><input type="date" id="ctStartDate"></div>
-      <div class="field"><label>วันสิ้นสุดเผยแพร่</label><input type="date" id="ctEndDate"></div>
+      <div class="field"><label data-i18n="ctStartDateLabel">วันเริ่มต้นเผยแพร่</label><input type="date" id="ctStartDate"></div>
+      <div class="field"><label data-i18n="ctEndDateLabel">วันสิ้นสุดเผยแพร่</label><input type="date" id="ctEndDate"></div>
     </div>
 
     <div class="field-error" id="createError"></div>
-    <button class="btn btn-primary full-btn" id="createSubmitBtn">สร้างหัวข้อ</button>
+    <button class="btn btn-primary full-btn" id="createSubmitBtn" data-i18n="createSubmitBtn">สร้างหัวข้อ</button>
   </div>
 </div>
 
@@ -852,7 +852,25 @@ const I18N = {
     createSuccessDesc: 'หัวข้อของคุณถูกเผยแพร่ขึ้นหน้าแรกเรียบร้อยแล้ว ไปดูกันเลย!',
     createSuccessCreateBtn: 'สร้างหัวข้อต่อ', homeToMyTopicsBtn: 'กลับไปหน้าหัวข้อของฉัน',
     footerDesc: 'เวทีความเห็น เลือกข้างที่ใช่ของคุณ<br>สร้างหัวข้อ แชร์มุมมอง แล้วดูว่าคนอื่นคิดเห็นยังไง',
-    footerMenuHeading: 'เมนู', footerHome: 'หน้าแรก', footerLoginLink: 'เข้าสู่ระบบ / สมัครสมาชิก'
+    footerMenuHeading: 'เมนู', footerHome: 'หน้าแรก', footerLoginLink: 'เข้าสู่ระบบ / สมัครสมาชิก',
+    createModalTitle: 'สร้างหัวข้อใหม่', topicTypeLabel: 'รูปแบบหัวข้อ',
+    typeTextBtn: 'ข้อความ', typeImageBtn: 'รูปภาพ',
+    coverImageLabel: 'รูปประกอบ (สัดส่วน 9:16)', coverImageHint: '— พรีวิวนี้คือหน้าตาที่จะแสดงจริงในฟีด',
+    previewSideA: 'ตัวเลือก A', previewSideB: 'ตัวเลือก B', coverUploadPrompt: '＋ แตะเพื่อแนบรูปประกอบหัวข้อ',
+    ctTitleLabel: 'หัวข้อ', ctTitlePh: 'เช่น กาแฟดำดีต่อสุขภาพจริงไหม?',
+    ctDescLabel: 'รายละเอียด', optionalHint2: '(ไม่บังคับ)', ctDescPh: 'อธิบายเพิ่มเติม...',
+    ctSideALabel: 'ฝั่ง A', ctSideAPh: 'เช่น เห็นด้วย', ctSideBLabel: 'ฝั่ง B', ctSideBPh: 'เช่น ไม่เห็นด้วย',
+    ctCategoryLabel: 'หมวดหมู่', ctCategoryChoose: 'เลือกหมวดหมู่',
+    ctTagLabel: 'Tag', ctTagHint: '(ใส่อย่างน้อย 1 อัน สูงสุด 5 อัน)', ctColorLabel: 'สีการ์ด',
+    ctTargetLabel: 'ระบุกลุ่มผู้ร่วมโหวต', ctTargetHint: '(หากเปิดให้ทุกคนโหวต ไม่ต้องแก้ไข ข้ามไปได้เลย)',
+    age1824: 'อายุ 18-24 ปี', age2534: 'อายุ 25-34 ปี', age3544: 'อายุ 35-44 ปี', age4554: 'อายุ 45-54 ปี', age55plus: 'อายุ 55+',
+    ctStartDateLabel: 'วันเริ่มต้นเผยแพร่', ctEndDateLabel: 'วันสิ้นสุดเผยแพร่', createSubmitBtn: 'สร้างหัวข้อ',
+    errTitleRequired: 'กรุณากรอกหัวข้อ', errBothSidesRequired: 'กรุณากรอกชื่อทั้ง 2 ฝั่งให้ครบ',
+    errCategoryRequired: 'กรุณาเลือกหมวดหมู่', errTagRequired: 'กรุณาใส่ Tag อย่างน้อย 1 อัน',
+    errDatesRequired: 'กรุณาเลือกวันเริ่มต้นและวันสิ้นสุดเผยแพร่', errEndBeforeStart: 'วันสิ้นสุดเผยแพร่ต้องไม่ก่อนวันเริ่มต้นเผยแพร่',
+    errCoverRequired: 'กรุณาแนบรูปประกอบให้เรียบร้อยก่อนสร้างหัวข้อ',
+    imageLoadFailToast: 'โหลดรูปไม่สำเร็จ กรุณาลองอัพโหลดรูปใหม่อีกครั้ง', imageUploadFailToast: 'อัพโหลดรูปไม่สำเร็จ',
+    loggingInText: 'กำลังเข้าสู่ระบบ...', signingUpText: 'กำลังสมัครสมาชิก...', submittingTopicText: 'กำลังส่งหัวข้อ...'
   },
   en: {
     createBtn: '＋ Create Topic', createBtn2: 'Create Topic', loginBtn: 'Log In',
@@ -873,7 +891,25 @@ const I18N = {
     createSuccessDesc: 'Your topic is now live on the homepage. Go check it out!',
     createSuccessCreateBtn: 'Create Another', homeToMyTopicsBtn: 'Back to My Topics',
     footerDesc: 'A stage for opinions. Pick the side that\'s right for you.<br>Create topics, share views, and see what others think.',
-    footerMenuHeading: 'Menu', footerHome: 'Home', footerLoginLink: 'Log In / Sign Up'
+    footerMenuHeading: 'Menu', footerHome: 'Home', footerLoginLink: 'Log In / Sign Up',
+    createModalTitle: 'Create New Topic', topicTypeLabel: 'Topic Format',
+    typeTextBtn: 'Text', typeImageBtn: 'Image',
+    coverImageLabel: 'Cover Image (9:16 ratio)', coverImageHint: '— this preview is exactly how it will look in the feed',
+    previewSideA: 'Option A', previewSideB: 'Option B', coverUploadPrompt: '＋ Tap to attach a cover image',
+    ctTitleLabel: 'Title', ctTitlePh: 'e.g. Is black coffee actually healthy?',
+    ctDescLabel: 'Description', optionalHint2: '(optional)', ctDescPh: 'Add more detail...',
+    ctSideALabel: 'Side A', ctSideAPh: 'e.g. Agree', ctSideBLabel: 'Side B', ctSideBPh: 'e.g. Disagree',
+    ctCategoryLabel: 'Category', ctCategoryChoose: 'Select Category',
+    ctTagLabel: 'Tags', ctTagHint: '(at least 1, up to 5)', ctColorLabel: 'Card Color',
+    ctTargetLabel: 'Target Voter Group', ctTargetHint: '(leave as-is to open voting to everyone)',
+    age1824: 'Age 18-24', age2534: 'Age 25-34', age3544: 'Age 35-44', age4554: 'Age 45-54', age55plus: 'Age 55+',
+    ctStartDateLabel: 'Publish Start Date', ctEndDateLabel: 'Publish End Date', createSubmitBtn: 'Create Topic',
+    errTitleRequired: 'Please enter a title', errBothSidesRequired: 'Please fill in both side labels',
+    errCategoryRequired: 'Please select a category', errTagRequired: 'Please add at least 1 tag',
+    errDatesRequired: 'Please select a start and end date', errEndBeforeStart: 'The end date must not be before the start date',
+    errCoverRequired: 'Please attach a cover image before creating the topic',
+    imageLoadFailToast: 'Failed to load image, please try uploading again', imageUploadFailToast: 'Image upload failed',
+    loggingInText: 'Logging in...', signingUpText: 'Signing up...', submittingTopicText: 'Submitting topic...'
   }
 };
 function getLang(){ return localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'th'; }
@@ -1065,7 +1101,7 @@ document.getElementById('loginSubmitBtn').addEventListener('click', async ()=>{
     return;
   }
   const btn = document.getElementById('loginSubmitBtn');
-  setBtnLoading(btn, true, 'กำลังเข้าสู่ระบบ...');
+  setBtnLoading(btn, true, t('loggingInText'));
   const res = await api('login', {phone, passcode}, 'POST');
   setBtnLoading(btn, false);
   if(!res.success){
@@ -1136,7 +1172,7 @@ document.getElementById('signupSubmitBtn').addEventListener('click', async ()=>{
   }
 
   const btn = document.getElementById('signupSubmitBtn');
-  setBtnLoading(btn, true, 'กำลังสมัครสมาชิก...');
+  setBtnLoading(btn, true, t('signingUpText'));
   const res = await api('signup', payload, 'POST');
   setBtnLoading(btn, false);
   if(!res.success){
@@ -1217,10 +1253,10 @@ document.getElementById('signupAvatarFile').addEventListener('change', async (e)
     const url = await uploadImageFile(file);
     loadImageWithRetry(url,
       (u)=>{ signupAvatarUrl = u; preview.innerHTML = `<img src="${u}">`; },
-      ()=>{ signupAvatarUrl = ''; preview.textContent = '＋'; showToast('โหลดรูปไม่สำเร็จ กรุณาลองอัพโหลดรูปใหม่อีกครั้ง'); }
+      ()=>{ signupAvatarUrl = ''; preview.textContent = '＋'; showToast(t('imageLoadFailToast')); }
     );
   }catch(err){
-    showToast('อัพโหลดรูปไม่สำเร็จ: ' + err.message);
+    showToast(t('imageUploadFailToast') + ': ' + err.message);
     preview.textContent = '＋';
   }
 });
@@ -1350,10 +1386,10 @@ document.getElementById('typeImageBtn').addEventListener('click', ()=>{
 });
 
 document.getElementById('ctSideA').addEventListener('input', (e)=>{
-  document.getElementById('previewSideA').textContent = e.target.value.trim() || 'ตัวเลือก A';
+  document.getElementById('previewSideA').textContent = e.target.value.trim() || t('previewSideA');
 });
 document.getElementById('ctSideB').addEventListener('input', (e)=>{
-  document.getElementById('previewSideB').textContent = e.target.value.trim() || 'ตัวเลือก B';
+  document.getElementById('previewSideB').textContent = e.target.value.trim() || t('previewSideB');
 });
 
 document.getElementById('coverFile').addEventListener('change', async (e)=>{
@@ -1365,11 +1401,11 @@ document.getElementById('coverFile').addEventListener('change', async (e)=>{
     const url = await uploadImageFile(file);
     loadImageWithRetry(url,
       (u)=>{ ctCoverUrl = u; preview.innerHTML = `<img src="${u}">`; },
-      ()=>{ ctCoverUrl = ''; preview.innerHTML = '＋ แตะเพื่อแนบรูปประกอบหัวข้อ'; showToast('โหลดรูปไม่สำเร็จ กรุณาลองอัพโหลดรูปใหม่อีกครั้ง'); }
+      ()=>{ ctCoverUrl = ''; preview.innerHTML = `<span data-i18n="coverUploadPrompt">${t('coverUploadPrompt')}</span>`; showToast(t('imageLoadFailToast')); }
     );
   }catch(err){
-    showToast('อัพโหลดรูปไม่สำเร็จ: ' + err.message);
-    preview.innerHTML = '＋ แตะเพื่อแนบรูปประกอบหัวข้อ';
+    showToast(t('imageUploadFailToast') + ': ' + err.message);
+    preview.innerHTML = `<span data-i18n="coverUploadPrompt">${t('coverUploadPrompt')}</span>`;
   }
 });
 
@@ -1412,13 +1448,13 @@ document.getElementById('createSubmitBtn').addEventListener('click', async ()=>{
   const startDate = document.getElementById('ctStartDate').value;
   const endDate = document.getElementById('ctEndDate').value;
 
-  if(!title){ errEl.textContent = 'กรุณากรอกหัวข้อ'; errEl.style.display = 'block'; return; }
-  if(!sideA || !sideB){ errEl.textContent = 'กรุณากรอกชื่อทั้ง 2 ฝั่งให้ครบ'; errEl.style.display = 'block'; return; }
-  if(!category){ errEl.textContent = 'กรุณาเลือกหมวดหมู่'; errEl.style.display = 'block'; return; }
-  if(!tags.some(t => t)){ errEl.textContent = 'กรุณาใส่ Tag อย่างน้อย 1 อัน'; errEl.style.display = 'block'; return; }
-  if(!startDate || !endDate){ errEl.textContent = 'กรุณาเลือกวันเริ่มต้นและวันสิ้นสุดเผยแพร่'; errEl.style.display = 'block'; return; }
-  if(new Date(endDate) < new Date(startDate)){ errEl.textContent = 'วันสิ้นสุดเผยแพร่ต้องไม่ก่อนวันเริ่มต้นเผยแพร่'; errEl.style.display = 'block'; return; }
-  if(topicType === 'image' && !ctCoverUrl){ errEl.textContent = 'กรุณาแนบรูปประกอบให้เรียบร้อยก่อนสร้างหัวข้อ'; errEl.style.display = 'block'; return; }
+  if(!title){ errEl.textContent = t('errTitleRequired'); errEl.style.display = 'block'; return; }
+  if(!sideA || !sideB){ errEl.textContent = t('errBothSidesRequired'); errEl.style.display = 'block'; return; }
+  if(!category){ errEl.textContent = t('errCategoryRequired'); errEl.style.display = 'block'; return; }
+  if(!tags.some(v => v)){ errEl.textContent = t('errTagRequired'); errEl.style.display = 'block'; return; }
+  if(!startDate || !endDate){ errEl.textContent = t('errDatesRequired'); errEl.style.display = 'block'; return; }
+  if(new Date(endDate) < new Date(startDate)){ errEl.textContent = t('errEndBeforeStart'); errEl.style.display = 'block'; return; }
+  if(topicType === 'image' && !ctCoverUrl){ errEl.textContent = t('errCoverRequired'); errEl.style.display = 'block'; return; }
 
   const payload = {
     session_token: STATE.session.session_token,
@@ -1435,7 +1471,7 @@ document.getElementById('createSubmitBtn').addEventListener('click', async ()=>{
   };
 
   const btn = document.getElementById('createSubmitBtn');
-  setBtnLoading(btn, true, 'กำลังส่งหัวข้อ...');
+  setBtnLoading(btn, true, t('submittingTopicText'));
   const res = await api('createTopic', payload, 'POST');
   setBtnLoading(btn, false);
   if(!res.success){
@@ -1476,9 +1512,9 @@ function resetCreateForm(){
   resetTargetChecklist('ctTargetChecklist');
   document.getElementById('createError').style.display = 'none';
   ctCoverUrl = '';
-  document.getElementById('coverPreview').innerHTML = '＋ แตะเพื่อแนบรูปประกอบหัวข้อ';
-  document.getElementById('previewSideA').textContent = 'ตัวเลือก A';
-  document.getElementById('previewSideB').textContent = 'ตัวเลือก B';
+  document.getElementById('coverPreview').innerHTML = `<span data-i18n="coverUploadPrompt">${t('coverUploadPrompt')}</span>`;
+  document.getElementById('previewSideA').textContent = t('previewSideA');
+  document.getElementById('previewSideB').textContent = t('previewSideB');
   const swatches = document.querySelectorAll('.color-swatch');
   const DEFAULT_IDX = 8;
   swatches.forEach(s => s.classList.remove('selected'));
