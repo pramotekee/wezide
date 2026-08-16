@@ -319,7 +319,7 @@ const I18N = {
     foundPrefix: 'พบ', foundSuffix: 'หัวข้อที่จบการโหวตแล้ว',
     genderMale: 'ชาย', genderFemale: 'หญิง', genderOther: 'อื่นๆ',
     dashGenderTitle: 'เพศ', dashAgeGroupTitle: 'ช่วงอายุ',
-    commentsModalTitle: 'ความคิดเห็น', commentEmptyMsg: 'ยังไม่มีความคิดเห็นในฝั่งนี้',
+    commentEmptyMsg: 'ยังไม่มีความคิดเห็นในฝั่งนี้',
     commentLoadingText: 'กำลังโหลดความคิดเห็น...', apiErrorMsg: 'โอ๊ะ! มีบางอย่างขัดข้อง ทำให้ระบบสะดุดครับ ลองรีเฟรชใหม่อีกครั้งนะครับ'
   },
   en: {
@@ -330,7 +330,7 @@ const I18N = {
     foundPrefix: 'Found', foundSuffix: 'finished topics',
     genderMale: 'Male', genderFemale: 'Female', genderOther: 'Other',
     dashGenderTitle: 'Gender', dashAgeGroupTitle: 'Age Group',
-    commentsModalTitle: 'Comments', commentEmptyMsg: 'No comments on this side yet',
+    commentEmptyMsg: 'No comments on this side yet',
     commentLoadingText: 'Loading comments...', apiErrorMsg: 'Oops! Something went wrong. Please try refreshing and try again.'
   }
 };
@@ -621,7 +621,7 @@ function formatCommentTime(dateStr){
 function openCommentModal(topicId, side, sideLabel){
   if(CM_STATE.observer) CM_STATE.observer.disconnect();
   CM_STATE = { topicId, side, page:0, totalPages:1, loading:false, observer:null };
-  document.getElementById('commentModalTitle').textContent = `${sideLabel} · ${t18n('commentsModalTitle')}`;
+  document.getElementById('commentModalTitle').textContent = sideLabel;
   document.getElementById('commentList').innerHTML = `<div class="comment-loading">${t18n('commentLoadingText')}</div>`;
   openModal('commentModal');
   loadMoreComments(true);
