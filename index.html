@@ -639,8 +639,16 @@
       </select>
     </div>
     <div class="field">
+      <label data-i18n="countryLabel">ประเทศ</label>
+      <select id="suCountry"></select>
+    </div>
+    <div class="field" id="suProvinceField">
       <label data-i18n="provinceLabel">จังหวัด</label>
       <select id="suProvince"><option value="" data-i18n="provinceChoose">เลือกจังหวัด</option></select>
+    </div>
+    <div class="field" id="suCityStateField" style="display:none;">
+      <label>City / State <span style="color:var(--danger);">*</span></label>
+      <input type="text" id="suCityState" maxlength="100" placeholder="e.g. Tokyo, New York, Osaka">
     </div>
     <div class="field-error" id="signupError"></div>
     <button class="btn btn-primary full-btn" id="signupSubmitBtn" data-i18n="signupSubmitBtn">สมัครสมาชิก</button>
@@ -679,11 +687,11 @@
     <div class="field" id="coverField" style="display:none;">
       <label><span data-i18n="coverImageLabel">รูปประกอบ (สัดส่วน 9:16)</span> <span class="field-hint" data-i18n="coverImageHint">— พรีวิวนี้คือหน้าตาที่จะแสดงจริงในฟีด</span></label>
       <div class="preview-3col">
-        <div class="preview-vote-btn" id="previewSideA">ตัวเลือก A</div>
+        <div class="preview-vote-btn" id="previewSideA" data-i18n="previewSideA">A</div>
         <div class="cover-upload" id="coverPreview" onclick="document.getElementById('coverFile').click()">
           <span data-i18n="coverUploadPrompt">＋ แตะเพื่อแนบรูปประกอบหัวข้อ</span>
         </div>
-        <div class="preview-vote-btn" id="previewSideB">ตัวเลือก B</div>
+        <div class="preview-vote-btn" id="previewSideB" data-i18n="previewSideB">B</div>
       </div>
       <input type="file" accept="image/*" id="coverFile" style="display:none;">
     </div>
@@ -881,7 +889,7 @@ const I18N = {
     setPasscodeLabel: 'ตั้ง Passcode', passcodeHint: '(อย่างน้อย 6 หลัก)', birthdayLabel: 'วันเกิด',
     dayOpt: 'วัน', monthOpt: 'เดือน', yearOpt: 'ปี', genderLabel: 'เพศ',
     genderChoose: 'เลือกเพศ', genderMale: 'ชาย', genderFemale: 'หญิง', genderOther: 'อื่นๆ',
-    provinceLabel: 'จังหวัด', provinceChoose: 'เลือกจังหวัด', signupSubmitBtn: 'สมัครสมาชิก',
+    provinceLabel: 'จังหวัด', provinceChoose: 'เลือกจังหวัด', signupSubmitBtn: 'สมัครสมาชิก', countryLabel: 'ประเทศ',
     welcomeTitlePre: 'ยินดีต้อนรับคุณ', welcomeTitlePost: 'เข้าสู่ WEZIDE',
     welcomeDesc: 'การตั้งคำถามและความขี้สงสัย คือทักษะที่สำคัญของคนยุคใหม่',
     welcomeCreateBtn: 'สร้างคำถาม', homeBtn: 'กลับหน้าแรก',
@@ -893,7 +901,7 @@ const I18N = {
     createModalTitle: 'สร้างหัวข้อใหม่', topicTypeLabel: 'รูปแบบหัวข้อ',
     typeTextBtn: 'ข้อความ', typeImageBtn: 'รูปภาพ',
     coverImageLabel: 'รูปประกอบ (สัดส่วน 9:16)', coverImageHint: '— พรีวิวนี้คือหน้าตาที่จะแสดงจริงในฟีด',
-    previewSideA: 'ตัวเลือก A', previewSideB: 'ตัวเลือก B', coverUploadPrompt: '＋ แตะเพื่อแนบรูปประกอบหัวข้อ',
+    previewSideA: 'A', previewSideB: 'B', coverUploadPrompt: '＋ แตะเพื่อแนบรูปประกอบหัวข้อ',
     ctTitleLabel: 'หัวข้อ', ctTitlePh: 'เช่น กาแฟดำดีต่อสุขภาพจริงไหม?',
     ctDescLabel: 'รายละเอียด', optionalHint2: '(ไม่บังคับ)', ctDescPh: 'อธิบายเพิ่มเติม...',
     ctSideALabel: 'ฝั่ง A', ctSideAPh: 'เช่น เห็นด้วย', ctSideBLabel: 'ฝั่ง B', ctSideBPh: 'เช่น ไม่เห็นด้วย',
@@ -930,7 +938,7 @@ const I18N = {
     setPasscodeLabel: 'Set Passcode', passcodeHint: '(at least 6 digits)', birthdayLabel: 'Birthday',
     dayOpt: 'Day', monthOpt: 'Month', yearOpt: 'Year', genderLabel: 'Gender',
     genderChoose: 'Select Gender', genderMale: 'Male', genderFemale: 'Female', genderOther: 'Other',
-    provinceLabel: 'Province', provinceChoose: 'Select Province', signupSubmitBtn: 'Sign Up',
+    provinceLabel: 'Province', provinceChoose: 'Select Province', signupSubmitBtn: 'Sign Up', countryLabel: 'Country',
     welcomeTitlePre: 'Welcome', welcomeTitlePost: 'to WEZIDE',
     welcomeDesc: 'Asking questions and staying curious is a key skill for the modern world',
     welcomeCreateBtn: 'Create a Topic', homeBtn: 'Back to Home',
@@ -942,7 +950,7 @@ const I18N = {
     createModalTitle: 'Create New Topic', topicTypeLabel: 'Topic Format',
     typeTextBtn: 'Text', typeImageBtn: 'Image',
     coverImageLabel: 'Cover Image (9:16 ratio)', coverImageHint: '— this preview is exactly how it will look in the feed',
-    previewSideA: 'Option A', previewSideB: 'Option B', coverUploadPrompt: '＋ Tap to attach a cover image',
+    previewSideA: 'A', previewSideB: 'B', coverUploadPrompt: '＋ Tap to attach a cover image',
     ctTitleLabel: 'Title', ctTitlePh: 'e.g. Is black coffee actually healthy?',
     ctDescLabel: 'Description', optionalHint2: '(optional)', ctDescPh: 'Add more detail...',
     ctSideALabel: 'Side A', ctSideAPh: 'e.g. Agree', ctSideBLabel: 'Side B', ctSideBPh: 'e.g. Disagree',
@@ -1002,6 +1010,9 @@ document.querySelectorAll('.lang-toggle button').forEach(b=>{
 applyLang(getLang());
 
 const PROVINCES = ['กรุงเทพมหานคร','กระบี่','กาญจนบุรี','กาฬสินธุ์','กำแพงเพชร','ขอนแก่น','จันทบุรี','ฉะเชิงเทรา','ชลบุรี','ชัยนาท','ชัยภูมิ','ชุมพร','เชียงราย','เชียงใหม่','ตรัง','ตราด','ตาก','นครนายก','นครปฐม','นครพนม','นครราชสีมา','นครศรีธรรมราช','นครสวรรค์','นนทบุรี','นราธิวาส','น่าน','บึงกาฬ','บุรีรัมย์','ปทุมธานี','ประจวบคีรีขันธ์','ปราจีนบุรี','ปัตตานี','พระนครศรีอยุธยา','พังงา','พัทลุง','พิจิตร','พิษณุโลก','เพชรบุรี','เพชรบูรณ์','แพร่','ภูเก็ต','มหาสารคาม','มุกดาหาร','แม่ฮ่องสอน','ยโสธร','ยะลา','ร้อยเอ็ด','ระนอง','ระยอง','ราชบุรี','ลพบุรี','ลำปาง','ลำพูน','เลย','ศรีสะเกษ','สกลนคร','สงขลา','สตูล','สมุทรปราการ','สมุทรสงคราม','สมุทรสาคร','สระแก้ว','สระบุรี','สิงห์บุรี','สุโขทัย','สุพรรณบุรี','สุราษฎร์ธานี','สุรินทร์','หนองคาย','หนองบัวลำภู','อ่างทอง','อำนาจเจริญ','อุดรธานี','อุตรดิตถ์','อุทัยธานี','อุบลราชธานี'];
+
+// ประเทศ: โชว์เป็นภาษาอังกฤษล้วนทั้ง UI โหมด TH/EN (ไม่แปล) เรียง A-Z — ตาม decision ของ Pop
+const COUNTRIES = ['Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda','Argentina','Armenia','Australia','Austria','Azerbaijan','Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bhutan','Bolivia','Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso','Burundi','Cabo Verde','Cambodia','Cameroon','Canada','Central African Republic','Chad','Chile','China','Colombia','Comoros','Congo (Brazzaville)','Congo (Kinshasa)','Costa Rica','Croatia','Cuba','Cyprus','Czech Republic','Denmark','Djibouti','Dominica','Dominican Republic','Ecuador','Egypt','El Salvador','Equatorial Guinea','Eritrea','Estonia','Eswatini','Ethiopia','Fiji','Finland','France','Gabon','Gambia','Georgia','Germany','Ghana','Greece','Grenada','Guatemala','Guinea','Guinea-Bissau','Guyana','Haiti','Honduras','Hong Kong','Hungary','Iceland','India','Indonesia','Iran','Iraq','Ireland','Israel','Italy','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kiribati','Kosovo','Kuwait','Kyrgyzstan','Laos','Latvia','Lebanon','Lesotho','Liberia','Libya','Liechtenstein','Lithuania','Luxembourg','Macau','Madagascar','Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands','Mauritania','Mauritius','Mexico','Micronesia','Moldova','Monaco','Mongolia','Montenegro','Morocco','Mozambique','Myanmar','Namibia','Nauru','Nepal','Netherlands','New Zealand','Nicaragua','Niger','Nigeria','North Korea','North Macedonia','Norway','Oman','Pakistan','Palau','Palestine','Panama','Papua New Guinea','Paraguay','Peru','Philippines','Poland','Portugal','Qatar','Romania','Russia','Rwanda','Saint Kitts and Nevis','Saint Lucia','Saint Vincent and the Grenadines','Samoa','San Marino','Sao Tome and Principe','Saudi Arabia','Senegal','Serbia','Seychelles','Sierra Leone','Singapore','Slovakia','Slovenia','Solomon Islands','Somalia','South Africa','South Korea','South Sudan','Spain','Sri Lanka','Sudan','Suriname','Sweden','Switzerland','Syria','Taiwan','Tajikistan','Tanzania','Thailand','Timor-Leste','Togo','Tonga','Trinidad and Tobago','Tunisia','Turkey','Turkmenistan','Tuvalu','Uganda','Ukraine','United Arab Emirates','United Kingdom','United States','Uruguay','Uzbekistan','Vanuatu','Vatican City','Venezuela','Vietnam','Yemen','Zambia','Zimbabwe'];
 
 let STATE = {
   session: JSON.parse(localStorage.getItem('wz_session') || 'null'),
@@ -1202,7 +1213,9 @@ document.getElementById('signupSubmitBtn').addEventListener('click', async ()=>{
     passcode: document.getElementById('suPasscode').value.trim(),
     birthday: `${bYear}-${bMonth}-${bDay}`,
     gender: document.getElementById('suGender').value,
+    country: document.getElementById('suCountry').value,
     province: document.getElementById('suProvince').value,
+    city_state: document.getElementById('suCityState').value.trim(),
     profile_image_url: signupAvatarUrl || ''
   };
 
@@ -1226,12 +1239,23 @@ document.getElementById('signupSubmitBtn').addEventListener('click', async ()=>{
     errEl.style.display = 'block';
     return;
   }
-  for(const k of ['username','email','phone','passcode','birthday','gender','province']){
+  for(const k of ['username','email','phone','passcode','birthday','gender','country']){
     if(!payload[k]){
       errEl.textContent = 'กรุณากรอกข้อมูลให้ครบทุกช่อง';
       errEl.style.display = 'block';
       return;
     }
+  }
+  if(payload.country === 'Thailand' && !payload.province){
+    errEl.textContent = 'กรุณาเลือกจังหวัด';
+    errEl.style.display = 'block';
+    return;
+  }
+  // ข้อความนี้ EN อย่างเดียว (ไม่ bilingual) เพราะจะเจอ error นี้ได้เฉพาะคนที่เลือกประเทศไม่ใช่ Thailand เท่านั้น
+  if(payload.country !== 'Thailand' && !payload.city_state){
+    errEl.textContent = 'Please enter your city/state';
+    errEl.style.display = 'block';
+    return;
   }
 
   const btn = document.getElementById('signupSubmitBtn');
@@ -1348,6 +1372,28 @@ async function loadProvinces(){
     opt.value = p; opt.textContent = p;
     sel.appendChild(opt);
   });
+}
+
+// ประเทศ: default เลือก 'Thailand' ไว้ก่อนเสมอ (user ไทยซึ่งเป็นกลุ่มหลักจะไม่รู้สึกถึงการเปลี่ยนแปลงเลย
+// ต้องกดเปลี่ยนเองเฉพาะคนที่ไม่ใช่ไทยเท่านั้น) เลือกไทย -> โชว์ dropdown จังหวัดเดิม, เลือกอื่น -> โชว์ช่อง City/State (บังคับกรอก)
+function loadCountries(){
+  const sel = document.getElementById('suCountry');
+  COUNTRIES.forEach(c=>{
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    sel.appendChild(opt);
+  });
+  sel.value = 'Thailand';
+  sel.addEventListener('change', ()=> toggleCountryFields(sel.value));
+  toggleCountryFields(sel.value);
+}
+
+function toggleCountryFields(country){
+  const isThailand = country === 'Thailand';
+  document.getElementById('suProvinceField').style.display = isThailand ? 'block' : 'none';
+  document.getElementById('suCityStateField').style.display = isThailand ? 'none' : 'block';
+  if(isThailand) document.getElementById('suCityState').value = '';
+  else document.getElementById('suProvince').value = '';
 }
 
 const THAI_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
@@ -2538,6 +2584,7 @@ document.getElementById('footerLoginLink').addEventListener('click', (e)=>{
 /* ---------- Init ---------- */
 (async function init(){
   renderHeaderAuth();
+  loadCountries();
   loadProvinces();
   loadBirthdaySelects();
   const sessionCheckPromise = validateSessionOnLoad(); // เช็คความถูกต้องของ session กับ server แบบไม่ block การโหลดหน้าอื่น
