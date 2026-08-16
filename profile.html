@@ -289,6 +289,15 @@
   }
   .comment-btn:active{ background:var(--line); }
 
+  /* หน้า My Topics เท่านั้น: ปุ่มฝั่ง B ใช้สีเหลืองอ่อนตาม --side-b เพื่อเชื่อมโยงกับเม็ดสี legend (m่วง=A, เหลือง=B)
+     ให้เจ้าของหัวข้อรู้เร็วๆ ว่าปุ่มซ้าย-ขวา represent คอมเมนต์ของฝั่งไหน ฝั่ง A ใช้สี .comment-btn ปกติตามเดิม */
+  .comment-btn-b{
+    background:color-mix(in srgb, var(--side-b) 20%, white);
+    border-color:color-mix(in srgb, var(--side-b) 45%, white);
+    color:#8A6D10;
+  }
+  .comment-btn-b:active{ background:color-mix(in srgb, var(--side-b) 32%, white); }
+
   /* --- comment modal: list + infinite scroll ผ่าน IntersectionObserver --- */
   .comment-list{ display:flex; flex-direction:column; gap:10px; min-height:60px; }
   .comment-item{
@@ -676,7 +685,7 @@ const I18N = {
     deleteAccountLoading: 'กำลังปิดบัญชี...', deleteAccountToast: 'ปิดบัญชีเรียบร้อยแล้ว',
     logoutToast: 'ออกจากระบบแล้ว',
     dashGenderTitle: 'เพศ', dashAgeGroupTitle: 'ช่วงอายุ',
-    commentsModalTitle: 'ความคิดเห็น', commentEmptyMsg: 'ยังไม่มีความคิดเห็นในฝั่งนี้',
+    commentEmptyMsg: 'ยังไม่มีความคิดเห็นในฝั่งนี้',
     commentLoadingText: 'กำลังโหลดความคิดเห็น...'
   },
   en: {
@@ -703,7 +712,7 @@ const I18N = {
     deleteAccountLoading: 'Closing account...', deleteAccountToast: 'Account closed.',
     logoutToast: 'Logged out.',
     dashGenderTitle: 'Gender', dashAgeGroupTitle: 'Age Group',
-    commentsModalTitle: 'Comments', commentEmptyMsg: 'No comments on this side yet',
+    commentEmptyMsg: 'No comments on this side yet',
     commentLoadingText: 'Loading comments...'
   }
 };
@@ -857,7 +866,7 @@ function formatCommentTime(dateStr){
 function openCommentModal(topicId, side, sideLabel){
   if(CM_STATE.observer) CM_STATE.observer.disconnect();
   CM_STATE = { topicId, side, page:0, totalPages:1, loading:false, observer:null };
-  document.getElementById('commentModalTitle').textContent = `${sideLabel} · ${t18n('commentsModalTitle')}`;
+  document.getElementById('commentModalTitle').textContent = sideLabel;
   document.getElementById('commentList').innerHTML = `<div class="comment-loading">${t18n('commentLoadingText')}</div>`;
   openModal('commentModal');
   loadMoreComments(true);
@@ -1180,7 +1189,7 @@ function renderMyTopics(){
         </${wrapTag}>
         <div class="comment-row">
           <button type="button" class="comment-btn" data-comment-topic="${t.topic_id}" data-comment-side="A" data-comment-label="${escapeHtml(t.side_a_label)}">💬 Read comment${t._commentCountA !== undefined ? ` (${t._commentCountA})` : ''}</button>
-          <button type="button" class="comment-btn" data-comment-topic="${t.topic_id}" data-comment-side="B" data-comment-label="${escapeHtml(t.side_b_label)}">💬 Read comment${t._commentCountB !== undefined ? ` (${t._commentCountB})` : ''}</button>
+          <button type="button" class="comment-btn comment-btn-b" data-comment-topic="${t.topic_id}" data-comment-side="B" data-comment-label="${escapeHtml(t.side_b_label)}">💬 Read comment${t._commentCountB !== undefined ? ` (${t._commentCountB})` : ''}</button>
         </div>
         <div class="mt-actions">
           ${toggleBtn}
