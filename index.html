@@ -869,7 +869,10 @@
    ============================================================ */
 
 const CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbwUBBRSKVfEkr-FmanTnQ1pHDD_-gNQ53pWkzHLvm3kvDWSTu-ARtV70yXiuN8hep8Gmg/exec'
+  API_URL: 'https://script.google.com/macros/s/AKfycbwUBBRSKVfEkr-FmanTnQ1pHDD_-gNQ53pWkzHLvm3kvDWSTu-ARtV70yXiuN8hep8Gmg/exec',
+  // ใช้เฉพาะตอนสร้างลิงก์ที่คนจะ "เปิดตรงๆ" เอง (เช่น QR code) ต้องตรงกับ FRONTEND_URL ฝั่ง appscript.txt เสมอ
+  // ถ้าย้ายโดเมนวันหลัง ต้องแก้ 2 ที่คู่กัน (ที่นี่ + FRONTEND_URL ใน appscript.txt)
+  FRONTEND_URL: 'https://wezide.vercel.app'
 };
 
 /* ================= I18N (TH ⇄ EN toggle สำหรับข้อความระบบ/static UI) =================
@@ -2368,8 +2371,19 @@ let pendingShareTopicId = '';
 
 function buildShareUrl(topicId){
   // ใช้ endpoint ?share= ของ Apps Script (renderShareOgPage) เพื่อให้ LINE/Facebook ดึง OG image/title ของหัวข้อนั้นไปทำพรีวิวได้
-  // ฝั่งนั้นจะ redirect ผู้ใช้จริงเข้า Vercel ให้เองทันที (ไม่กระทบ UX ของคนกดลิงก์)
+  // ฝั่งนั้นจะ redirect ผู้ใช้จริงเข้า Vercel ให้เองทันที — เหมาะกับ "แชร์ลิงก์" ที่จะไปโผล่ในแอปแชท (LINE/Facebook)
+  // ซึ่งต้องพึ่ง bot ของแอปแชทดึง og:image/og:title ไปทำการ์ดพรีวิว ไม่ใช่คนเปิดเบราว์เซอร์เองตรงๆ
   return `${CONFIG.API_URL}?share=${topicId}`;
+}
+
+// P0-fix (QR UX): เดิม QR code ใช้ buildShareUrl() ตัวเดียวกับปุ่ม "แชร์ลิงก์" ทำให้คนสแกน QR (เปิดเบราว์เซอร์ตรงๆ
+// ไม่ผ่าน bot ของแอปแชท) ต้องเจอหน้า interstitial ของ Google เอง ("This application was created by a Google
+// Apps Script user") ก่อนเสมอ เพราะ URL เป็น script.google.com ตรงๆ — banner นี้เป็นของแพลตฟอร์ม Google เอง
+// ซ่อน/ปิดจากโค้ดฝั่งเราไม่ได้ ทางแก้คือเลี่ยงไม่ให้ URL ที่คน "เปิดตรงๆ" ต้องผ่าน Apps Script เลย
+// QR code จึงต้องใช้ URL คนละแบบ ชี้ไปที่หน้าเว็บจริงบน Vercel ตรงๆ (ข้าม Apps Script ไปเลย) แทน
+// (ไม่กระทบ OG preview เพราะ QR ไม่ได้ผ่าน bot ดึงพรีวิวของแอปแชทอยู่แล้ว ไม่จำเป็นต้องมี og:image/title)
+function buildDirectFrontendUrl(topicId){
+  return `${CONFIG.FRONTEND_URL}/?topic=${topicId}`;
 }
 
 function openShareMenu(topicId){
@@ -2407,7 +2421,7 @@ let qrCurrentDataUrl = '';
 function openQrModal(topicId){
   const t = STATE.topics.find(x=> x.topic_id === topicId);
   if(!t) return;
-  const url = buildShareUrl(topicId);
+  const url = buildDirectFrontendUrl(topicId); // QR ต้องเปิดตรงเข้าเว็บจริงเลย ไม่ผ่านหน้า interstitial ของ Apps Script
 
   document.getElementById('qrModalTitle').textContent = t.title;
   const container = document.getElementById('qrCodeContainer');
