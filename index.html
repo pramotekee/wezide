@@ -1200,18 +1200,13 @@ document.getElementById('signupSubmitBtn').addEventListener('click', async ()=>{
   const bDay = document.getElementById('suBirthDay').value;
   const bMonth = document.getElementById('suBirthMonth').value;
   const bYear = document.getElementById('suBirthYear').value;
-  if(!bDay || !bMonth || !bYear){
-    errEl.textContent = 'กรุณาเลือกวันเกิดให้ครบ วัน/เดือน/ปี';
-    errEl.style.display = 'block';
-    return;
-  }
 
   const payload = {
     username: document.getElementById('suUsername').value.trim(),
     email: document.getElementById('suEmail').value.trim(),
     phone: document.getElementById('suPhone').value.trim(),
     passcode: document.getElementById('suPasscode').value.trim(),
-    birthday: `${bYear}-${bMonth}-${bDay}`,
+    birthday: (bDay && bMonth && bYear) ? `${bYear}-${bMonth}-${bDay}` : '',
     gender: document.getElementById('suGender').value,
     country: document.getElementById('suCountry').value,
     province: document.getElementById('suProvince').value,
@@ -1219,6 +1214,18 @@ document.getElementById('signupSubmitBtn').addEventListener('click', async ()=>{
     profile_image_url: signupAvatarUrl || ''
   };
 
+  // เช็คทีละช่องเรียงตามลำดับที่ฟิลด์ปรากฏบนหน้าจอจริง (บนลงล่าง) เพื่อให้ error message ที่เด้งขึ้นมา
+  // ตรงกับช่องแรกที่ user ข้ามไปเสมอ ไม่ใช่ไล่เช็คตามลำดับที่เขียนในโค้ดซึ่งอาจไม่ตรงกับ DOM (บั๊กเดิม)
+  if(!payload.profile_image_url){
+    errEl.textContent = 'กรุณาอัพโหลดรูปโปรไฟล์ก่อนสมัครสมาชิก';
+    errEl.style.display = 'block';
+    return;
+  }
+  if(!payload.username){
+    errEl.textContent = 'กรุณากรอก Username';
+    errEl.style.display = 'block';
+    return;
+  }
   if(!payload.email){
     errEl.textContent = 'โปรดใส่อีเมล เพื่อไม่เสียสิทธิ์ในการร่วมสนุก ลุ้นรับรางวัลต่างๆ และใช้เป็นช่องทางในการติดต่อจากทีมงานถึงคุณ';
     errEl.style.display = 'block';
@@ -1229,8 +1236,13 @@ document.getElementById('signupSubmitBtn').addEventListener('click', async ()=>{
     errEl.style.display = 'block';
     return;
   }
-  if(!payload.profile_image_url){
-    errEl.textContent = 'กรุณาอัพโหลดรูปโปรไฟล์ก่อนสมัครสมาชิก';
+  if(!payload.phone){
+    errEl.textContent = 'กรุณากรอกเบอร์โทรศัพท์';
+    errEl.style.display = 'block';
+    return;
+  }
+  if(!payload.passcode){
+    errEl.textContent = 'กรุณาตั้ง Passcode';
     errEl.style.display = 'block';
     return;
   }
@@ -1239,12 +1251,20 @@ document.getElementById('signupSubmitBtn').addEventListener('click', async ()=>{
     errEl.style.display = 'block';
     return;
   }
-  for(const k of ['username','email','phone','passcode','birthday','gender','country']){
-    if(!payload[k]){
-      errEl.textContent = 'กรุณากรอกข้อมูลให้ครบทุกช่อง';
-      errEl.style.display = 'block';
-      return;
-    }
+  if(!payload.birthday){
+    errEl.textContent = 'กรุณาเลือกวันเกิดให้ครบ วัน/เดือน/ปี';
+    errEl.style.display = 'block';
+    return;
+  }
+  if(!payload.gender){
+    errEl.textContent = 'กรุณาเลือกเพศ';
+    errEl.style.display = 'block';
+    return;
+  }
+  if(!payload.country){
+    errEl.textContent = 'กรุณาเลือกประเทศ';
+    errEl.style.display = 'block';
+    return;
   }
   if(payload.country === 'Thailand' && !payload.province){
     errEl.textContent = 'กรุณาเลือกจังหวัด';
