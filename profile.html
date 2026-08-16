@@ -465,8 +465,16 @@
           </select>
         </div>
         <div class="field">
+          <label data-i18n="countryLabel">ประเทศ</label>
+          <select id="editCountry"></select>
+        </div>
+        <div class="field" id="editProvinceField">
           <label data-i18n="provinceLabel">จังหวัด</label>
           <select id="editProvince"><option value="" data-i18n="provinceChoose">เลือกจังหวัด</option></select>
+        </div>
+        <div class="field" id="editCityStateField" style="display:none;">
+          <label>City / State <span style="color:var(--danger);">*</span></label>
+          <input type="text" id="editCityState" maxlength="100" placeholder="e.g. Tokyo, New York, Osaka">
         </div>
 
         <hr class="section-divider">
@@ -670,7 +678,7 @@ const I18N = {
     personalInfoTitle: 'ข้อมูลส่วนตัว', birthdayLabel: 'วันเกิด',
     dayOpt: 'วัน', monthOpt: 'เดือน', yearOpt: 'ปี', genderLabel: 'เพศ',
     genderChoose: 'เลือกเพศ', genderMale: 'ชาย', genderFemale: 'หญิง', genderOther: 'อื่นๆ',
-    provinceLabel: 'จังหวัด', provinceChoose: 'เลือกจังหวัด',
+    provinceLabel: 'จังหวัด', provinceChoose: 'เลือกจังหวัด', countryLabel: 'ประเทศ',
     changePhoneTitle: 'เปลี่ยนหมายเลขโทรศัพท์', optionalHint: '(เว้นว่างไว้ถ้าไม่ต้องการเปลี่ยน)',
     newPhoneLabel: 'หมายเลขโทรศัพท์ใหม่',
     phonePasscodeNote: 'ไม่สามารถเปลี่ยนหมายเลขโทรศัพท์พร้อมกับ Passcode ในรอบเดียวกันได้ กรุณาเลือกเปลี่ยนอย่างใดอย่างหนึ่งต่อครั้ง',
@@ -697,7 +705,7 @@ const I18N = {
     personalInfoTitle: 'Personal Info', birthdayLabel: 'Birthday',
     dayOpt: 'Day', monthOpt: 'Month', yearOpt: 'Year', genderLabel: 'Gender',
     genderChoose: 'Select Gender', genderMale: 'Male', genderFemale: 'Female', genderOther: 'Other',
-    provinceLabel: 'Province', provinceChoose: 'Select Province',
+    provinceLabel: 'Province', provinceChoose: 'Select Province', countryLabel: 'Country',
     changePhoneTitle: 'Change Phone Number', optionalHint: '(leave blank if you don\'t want to change it)',
     newPhoneLabel: 'New Phone Number',
     phonePasscodeNote: 'You can\'t change your phone number and Passcode at the same time. Please choose one to change per submission.',
@@ -749,6 +757,10 @@ document.querySelectorAll('.lang-toggle button').forEach(b=>{
 applyLang(getLang());
 
 const PROVINCES = ['กรุงเทพมหานคร','กระบี่','กาญจนบุรี','กาฬสินธุ์','กำแพงเพชร','ขอนแก่น','จันทบุรี','ฉะเชิงเทรา','ชลบุรี','ชัยนาท','ชัยภูมิ','ชุมพร','เชียงราย','เชียงใหม่','ตรัง','ตราด','ตาก','นครนายก','นครปฐม','นครพนม','นครราชสีมา','นครศรีธรรมราช','นครสวรรค์','นนทบุรี','นราธิวาส','น่าน','บึงกาฬ','บุรีรัมย์','ปทุมธานี','ประจวบคีรีขันธ์','ปราจีนบุรี','ปัตตานี','พระนครศรีอยุธยา','พังงา','พัทลุง','พิจิตร','พิษณุโลก','เพชรบุรี','เพชรบูรณ์','แพร่','ภูเก็ต','มหาสารคาม','มุกดาหาร','แม่ฮ่องสอน','ยโสธร','ยะลา','ร้อยเอ็ด','ระนอง','ระยอง','ราชบุรี','ลพบุรี','ลำปาง','ลำพูน','เลย','ศรีสะเกษ','สกลนคร','สงขลา','สตูล','สมุทรปราการ','สมุทรสงคราม','สมุทรสาคร','สระแก้ว','สระบุรี','สิงห์บุรี','สุโขทัย','สุพรรณบุรี','สุราษฎร์ธานี','สุรินทร์','หนองคาย','หนองบัวลำภู','อ่างทอง','อำนาจเจริญ','อุดรธานี','อุตรดิตถ์','อุทัยธานี','อุบลราชธานี'];
+
+// ประเทศ: โชว์เป็นภาษาอังกฤษล้วนทั้ง UI โหมด TH/EN (ไม่แปล) เรียง A-Z — ตาม decision ของ Pop
+const COUNTRIES = ['Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda','Argentina','Armenia','Australia','Austria','Azerbaijan','Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bhutan','Bolivia','Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso','Burundi','Cabo Verde','Cambodia','Cameroon','Canada','Central African Republic','Chad','Chile','China','Colombia','Comoros','Congo (Brazzaville)','Congo (Kinshasa)','Costa Rica','Croatia','Cuba','Cyprus','Czech Republic','Denmark','Djibouti','Dominica','Dominican Republic','Ecuador','Egypt','El Salvador','Equatorial Guinea','Eritrea','Estonia','Eswatini','Ethiopia','Fiji','Finland','France','Gabon','Gambia','Georgia','Germany','Ghana','Greece','Grenada','Guatemala','Guinea','Guinea-Bissau','Guyana','Haiti','Honduras','Hong Kong','Hungary','Iceland','India','Indonesia','Iran','Iraq','Ireland','Israel','Italy','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kiribati','Kosovo','Kuwait','Kyrgyzstan','Laos','Latvia','Lebanon','Lesotho','Liberia','Libya','Liechtenstein','Lithuania','Luxembourg','Macau','Madagascar','Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands','Mauritania','Mauritius','Mexico','Micronesia','Moldova','Monaco','Mongolia','Montenegro','Morocco','Mozambique','Myanmar','Namibia','Nauru','Nepal','Netherlands','New Zealand','Nicaragua','Niger','Nigeria','North Korea','North Macedonia','Norway','Oman','Pakistan','Palau','Palestine','Panama','Papua New Guinea','Paraguay','Peru','Philippines','Poland','Portugal','Qatar','Romania','Russia','Rwanda','Saint Kitts and Nevis','Saint Lucia','Saint Vincent and the Grenadines','Samoa','San Marino','Sao Tome and Principe','Saudi Arabia','Senegal','Serbia','Seychelles','Sierra Leone','Singapore','Slovakia','Slovenia','Solomon Islands','Somalia','South Africa','South Korea','South Sudan','Spain','Sri Lanka','Sudan','Suriname','Sweden','Switzerland','Syria','Taiwan','Tajikistan','Tanzania','Thailand','Timor-Leste','Togo','Tonga','Trinidad and Tobago','Tunisia','Turkey','Turkmenistan','Tuvalu','Uganda','Ukraine','United Arab Emirates','United Kingdom','United States','Uruguay','Uzbekistan','Vanuatu','Vatican City','Venezuela','Vietnam','Yemen','Zambia','Zimbabwe'];
+
 const THAI_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
 let STATE = {
@@ -1003,6 +1015,25 @@ function fillProvinceSelect(){
     opt.value = p; opt.textContent = p;
     sel.appendChild(opt);
   });
+}
+
+// เลือกไทย -> โชว์ dropdown จังหวัดเดิม, เลือกอื่น -> โชว์ช่อง City/State (บังคับกรอก) — pattern เดียวกับ index.html
+function fillCountrySelect(){
+  const sel = document.getElementById('editCountry');
+  COUNTRIES.forEach(c=>{
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', ()=> toggleCountryFields(sel.value));
+}
+
+function toggleCountryFields(country){
+  const isThailand = country === 'Thailand';
+  document.getElementById('editProvinceField').style.display = isThailand ? 'block' : 'none';
+  document.getElementById('editCityStateField').style.display = isThailand ? 'none' : 'block';
+  if(isThailand) document.getElementById('editCityState').value = '';
+  else document.getElementById('editProvince').value = '';
 }
 
 function fillBirthdaySelects(){
@@ -1466,7 +1497,13 @@ function populateEditForm(){
   document.getElementById('editUsername').value = u.username || '';
   document.getElementById('editEmail').value = u.email || '';
   document.getElementById('editGender').value = u.gender || '';
+  // user เก่าที่คอลัมน์ country ยังว่างอยู่ (สมัครก่อนมีฟีเจอร์นี้) ส่วนใหญ่คือคนไทยอยู่แล้ว จึง default เป็น
+  // Thailand ให้เลย ลด friction ไม่ต้องบังคับเลือกใหม่ทุกคน — ยังแก้ไขเป็นประเทศอื่นได้ปกติถ้าไม่ตรง
+  const country = u.country || 'Thailand';
+  document.getElementById('editCountry').value = country;
   document.getElementById('editProvince').value = u.province || '';
+  document.getElementById('editCityState').value = u.city_state || '';
+  toggleCountryFields(country);
   document.getElementById('editPhone').value = '';
   document.getElementById('editPhonePasscode').value = '';
   STATE.editAvatarUrl = u.profile_image_url || '';
@@ -1492,7 +1529,9 @@ document.getElementById('editSaveBtn').addEventListener('click', async ()=>{
   const bMonth = document.getElementById('editBirthMonth').value;
   const bYear = document.getElementById('editBirthYear').value;
   const gender = document.getElementById('editGender').value;
+  const country = document.getElementById('editCountry').value;
   const province = document.getElementById('editProvince').value;
+  const cityState = document.getElementById('editCityState').value.trim();
 
   const phone = document.getElementById('editPhone').value.trim();
   const phonePasscode = document.getElementById('editPhonePasscode').value.trim();
@@ -1500,8 +1539,19 @@ document.getElementById('editSaveBtn').addEventListener('click', async ()=>{
   const newPasscode = document.getElementById('editNewPasscode').value.trim();
   const newPasscode2 = document.getElementById('editNewPasscode2').value.trim();
 
-  if(!username || !email || !bDay || !bMonth || !bYear || !gender || !province){
+  if(!username || !email || !bDay || !bMonth || !bYear || !gender || !country){
     errEl.textContent = 'กรุณากรอกข้อมูลให้ครบทุกช่อง';
+    errEl.style.display = 'block';
+    return;
+  }
+  if(country === 'Thailand' && !province){
+    errEl.textContent = 'กรุณาเลือกจังหวัด';
+    errEl.style.display = 'block';
+    return;
+  }
+  // ข้อความนี้ EN อย่างเดียว (ไม่ bilingual) เพราะจะเจอ error นี้ได้เฉพาะคนที่เลือกประเทศไม่ใช่ Thailand เท่านั้น
+  if(country !== 'Thailand' && !cityState){
+    errEl.textContent = 'Please enter your city/state';
     errEl.style.display = 'block';
     return;
   }
@@ -1554,7 +1604,7 @@ document.getElementById('editSaveBtn').addEventListener('click', async ()=>{
 
   const params = {
     session_token: STATE.session.session_token,
-    username, email, gender, province,
+    username, email, gender, country, province, city_state: cityState,
     birthday: `${bYear}-${bMonth}-${bDay}`,
     profile_image_url: STATE.editAvatarUrl || ''
   };
@@ -1650,6 +1700,7 @@ async function doDeleteAccount(){
     return;
   }
 
+  fillCountrySelect();
   fillProvinceSelect();
   fillBirthdaySelects();
 
