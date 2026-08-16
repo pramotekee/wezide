@@ -1539,8 +1539,35 @@ document.getElementById('editSaveBtn').addEventListener('click', async ()=>{
   const newPasscode = document.getElementById('editNewPasscode').value.trim();
   const newPasscode2 = document.getElementById('editNewPasscode2').value.trim();
 
-  if(!username || !email || !bDay || !bMonth || !bYear || !gender || !country){
-    errEl.textContent = 'กรุณากรอกข้อมูลให้ครบทุกช่อง';
+  // เช็คทีละช่องเรียงตามลำดับที่ฟิลด์ปรากฏบนหน้าฟอร์มจริง (บนลงล่าง) เหมือนที่แก้ในหน้าสมัครสมาชิก
+  // เพื่อความสม่ำเสมอ — แม้ฟอร์มนี้ prefill ค่าเดิมมาให้อยู่แล้วโอกาสเจอน้อยกว่า แต่หลักการเดียวกัน
+  if(!username){
+    errEl.textContent = 'กรุณากรอก Username';
+    errEl.style.display = 'block';
+    return;
+  }
+  if(!email){
+    errEl.textContent = 'กรุณากรอกอีเมล';
+    errEl.style.display = 'block';
+    return;
+  }
+  if(email.indexOf('@') === -1){
+    errEl.textContent = 'อีเมลไม่ถูกต้อง กรุณาใส่ @ ด้วย';
+    errEl.style.display = 'block';
+    return;
+  }
+  if(!bDay || !bMonth || !bYear){
+    errEl.textContent = 'กรุณาเลือกวันเกิดให้ครบ วัน/เดือน/ปี';
+    errEl.style.display = 'block';
+    return;
+  }
+  if(!gender){
+    errEl.textContent = 'กรุณาเลือกเพศ';
+    errEl.style.display = 'block';
+    return;
+  }
+  if(!country){
+    errEl.textContent = 'กรุณาเลือกประเทศ';
     errEl.style.display = 'block';
     return;
   }
@@ -1552,11 +1579,6 @@ document.getElementById('editSaveBtn').addEventListener('click', async ()=>{
   // ข้อความนี้ EN อย่างเดียว (ไม่ bilingual) เพราะจะเจอ error นี้ได้เฉพาะคนที่เลือกประเทศไม่ใช่ Thailand เท่านั้น
   if(country !== 'Thailand' && !cityState){
     errEl.textContent = 'Please enter your city/state';
-    errEl.style.display = 'block';
-    return;
-  }
-  if(email.indexOf('@') === -1){
-    errEl.textContent = 'อีเมลไม่ถูกต้อง กรุณาใส่ @ ด้วย';
     errEl.style.display = 'block';
     return;
   }
