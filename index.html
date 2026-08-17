@@ -516,13 +516,14 @@
   }
   .confetti-piece{
     position:absolute; top:-12px; will-change:transform,opacity;
-    animation-name:confettiFall; animation-timing-function:linear; animation-fill-mode:forwards;
+    animation-name:confettiFall; animation-timing-function:ease-in-out; animation-fill-mode:forwards;
   }
   @keyframes confettiFall{
-    0%{ transform:translate3d(0,0,0) rotateZ(0deg) rotateX(0deg) rotateY(0deg); opacity:1; }
-    25%{ transform:translate3d(var(--dx1),24vh,0) rotateZ(calc(var(--spin) * 0.28)) rotateX(calc(var(--spinX) * 0.28)) rotateY(calc(var(--spinY) * 0.28)); }
-    50%{ transform:translate3d(var(--dx2),54vh,0) rotateZ(calc(var(--spin) * 0.58)) rotateX(calc(var(--spinX) * 0.58)) rotateY(calc(var(--spinY) * 0.58)); }
-    75%{ transform:translate3d(var(--dx3),84vh,0) rotateZ(calc(var(--spin) * 0.82)) rotateX(calc(var(--spinX) * 0.82)) rotateY(calc(var(--spinY) * 0.82)); }
+    0%{   transform:translate3d(0,0,0) rotateZ(0deg) rotateX(0deg) rotateY(0deg); opacity:1; }
+    20%{  transform:translate3d(var(--dx1),20vh,0) rotateZ(calc(var(--spin) * 0.18)) rotateX(var(--sx1)) rotateY(var(--sy1)); }
+    40%{  transform:translate3d(var(--dx2),40vh,0) rotateZ(calc(var(--spin) * 0.4))  rotateX(var(--sx2)) rotateY(var(--sy2)); }
+    60%{  transform:translate3d(var(--dx3),62vh,0) rotateZ(calc(var(--spin) * 0.62)) rotateX(var(--sx3)) rotateY(var(--sy3)); }
+    80%{  transform:translate3d(var(--dx4),85vh,0) rotateZ(calc(var(--spin) * 0.82)) rotateX(var(--sx4)) rotateY(var(--sy4)); }
     100%{ transform:translate3d(var(--drift),110vh,0) rotateZ(var(--spin)) rotateX(var(--spinX)) rotateY(var(--spinY)); opacity:0.9; }
   }
   .confetti-star{
@@ -1124,13 +1125,21 @@ function fireConfetti(){
     const finalDrift = rnd(-260, 260) * (isWide ? 1.3 : 1);
     const sway = rnd(50, 130);
     const dir = Math.random() < 0.5 ? 1 : -1;
-    piece.style.setProperty('--dx1', (finalDrift*0.3 + dir*sway) + 'px');
-    piece.style.setProperty('--dx2', (finalDrift*0.6 - dir*sway) + 'px');
-    piece.style.setProperty('--dx3', (finalDrift*0.85 + dir*sway*0.6) + 'px');
+    piece.style.setProperty('--dx1', (finalDrift*0.22 + dir*sway) + 'px');
+    piece.style.setProperty('--dx2', (finalDrift*0.48 - dir*sway) + 'px');
+    piece.style.setProperty('--dx3', (finalDrift*0.7 + dir*sway*0.7) + 'px');
+    piece.style.setProperty('--dx4', (finalDrift*0.88 - dir*sway*0.4) + 'px');
     piece.style.setProperty('--drift', finalDrift + 'px');
-    piece.style.setProperty('--spin', (Math.random()*720-360) + 'deg'); // หมุนตามระนาบจอ (แกน Z)
-    piece.style.setProperty('--spinX', (Math.random()*900-450) + 'deg'); // พลิกหน้า-หลังขึ้นลง (แกน X) เหมือนกระดาษปลิวจริง
-    piece.style.setProperty('--spinY', (Math.random()*900-450) + 'deg'); // พลิกซ้าย-ขวา (แกน Y)
+    piece.style.setProperty('--spin', (Math.random()*720-360) + 'deg'); // หมุนตามระนาบจอ (แกน Z) หมุนไปทางเดียวสม่ำเสมอ เหมือนแกนหลักที่ปลิวหมุน
+    const spinX = (Math.random()*900-450);
+    const spinY = (Math.random()*900-450);
+    piece.style.setProperty('--spinX', spinX + 'deg');
+    piece.style.setProperty('--spinY', spinY + 'deg');
+    // จุดพลิกระหว่างทาง "ไม่" ไล่ตามสัดส่วนเชิงเส้นของปลายทาง แต่สุ่มอิสระแต่ละจุด ทำให้พลิกกลับไปมาแบบกระดาษจริง ไม่ใช่หมุนทางเดียวแข็งๆ
+    for(let s=1;s<=4;s++){
+      piece.style.setProperty(`--sx${s}`, rnd(-520,520) + 'deg');
+      piece.style.setProperty(`--sy${s}`, rnd(-520,520) + 'deg');
+    }
     const duration = 3.6 + Math.random()*2.6; // ยืดเวลาร่วงให้ดูล่องลอยเพลินๆ ไม่รีบตกวูบเดียว
     const delay = Math.random()*1.1; // กระจายจังหวะเริ่มให้ไม่ตกพร้อมกันเป็นแผง
     piece.style.animationDuration = duration + 's';
