@@ -377,6 +377,7 @@
     font-size:14px; outline:none; background:var(--bg);
   }
   .field input:focus, .field select:focus, .field textarea:focus{ border-color:var(--primary); background:#fff; }
+  #ctTitle{ resize:none; overflow:hidden; line-height:1.5; min-height:44px; font-family:inherit; }
   .field-error{ color:#D64545; font-size:12px; margin-top:4px; display:none; }
   .field-hint{ font-weight:400; color:var(--text-muted); }
 
@@ -520,6 +521,9 @@
   @keyframes confettiFall{
     0%{ transform:translate3d(0,0,0) rotate(0deg); opacity:1; }
     100%{ transform:translate3d(var(--drift),110vh,0) rotate(var(--spin)); opacity:0.9; }
+  }
+  .confetti-star{
+    clip-path:polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
   }
 </style>
 </head>
@@ -710,7 +714,7 @@
       <input type="file" accept="image/*" id="coverFile" style="display:none;">
     </div>
 
-    <div class="field"><label data-i18n="ctTitleLabel">หัวข้อ</label><input type="text" id="ctTitle" placeholder="เช่น กาแฟดำดีต่อสุขภาพจริงไหม?" data-i18n-ph="ctTitlePh"></div>
+    <div class="field"><label data-i18n="ctTitleLabel">หัวข้อ</label><textarea id="ctTitle" rows="1" placeholder="เช่น กาแฟดำดีต่อสุขภาพจริงไหม?" data-i18n-ph="ctTitlePh"></textarea></div>
     <div class="field"><label><span data-i18n="ctDescLabel">รายละเอียด</span> <span class="field-hint" data-i18n="optionalHint2">(ไม่บังคับ)</span></label><textarea id="ctDescription" rows="3" placeholder="อธิบายเพิ่มเติม..." data-i18n-ph="ctDescPh"></textarea></div>
 
     <div class="date-row">
@@ -1087,17 +1091,30 @@ function fireConfetti(){
   const layer = document.getElementById('confettiLayer');
   if(!layer) return;
   const colors = ['#FF3B5C','#FFB800','#2FD675','#3B82F6','#A855F7','#FF7A00','#00C2D1'];
-  const shapes = ['rect','circle'];
-  const pieceCount = 90;
+  const shapes = ['rect','square','star'];
+  // จอกว้าง (คอม/แท็บเล็ต) พื้นที่เยอะกว่ามือถือ เพิ่มจำนวนและขนาดชิ้นเล็กน้อยให้เต็มตา ไม่ดูโหรงเหรง
+  const isWide = window.innerWidth >= 900;
+  const pieceCount = isWide ? 150 : 90;
+  const baseSize = isWide ? 8 : 6;
   for(let i=0;i<pieceCount;i++){
     const piece = document.createElement('div');
-    piece.className = 'confetti-piece';
-    const size = 6 + Math.random()*7;
-    const isCircle = shapes[Math.floor(Math.random()*shapes.length)] === 'circle';
-    piece.style.width = size + 'px';
-    piece.style.height = (isCircle ? size : size * (0.4 + Math.random()*0.9)) + 'px';
+    const shape = shapes[Math.floor(Math.random()*shapes.length)];
+    piece.className = 'confetti-piece' + (shape === 'star' ? ' confetti-star' : '');
+    const size = baseSize + Math.random()*(baseSize+1);
     piece.style.background = colors[Math.floor(Math.random()*colors.length)];
-    piece.style.borderRadius = isCircle ? '50%' : '2px';
+    if(shape === 'rect'){
+      piece.style.width = size + 'px';
+      piece.style.height = (size * (0.4 + Math.random()*0.9)) + 'px';
+      piece.style.borderRadius = '2px';
+    } else if(shape === 'square'){
+      piece.style.width = size + 'px';
+      piece.style.height = size + 'px';
+      piece.style.borderRadius = '2px';
+    } else { // star ห้าแฉก
+      const starSize = size * 1.4;
+      piece.style.width = starSize + 'px';
+      piece.style.height = starSize + 'px';
+    }
     piece.style.left = (Math.random()*100) + 'vw';
     piece.style.setProperty('--drift', (Math.random()*160-80) + 'px');
     piece.style.setProperty('--spin', (Math.random()*720-360) + 'deg');
@@ -1608,6 +1625,18 @@ function resetTargetChecklist(containerId){
   document.querySelectorAll(`#${containerId} input`).forEach(input=> input.checked = true);
 }
 
+/* ---------- Title field: auto-grow ตามเนื้อหา + ปิดการตอบสนองปุ่ม Enter ---------- */
+function autoGrowTitle(){
+  const el = document.getElementById('ctTitle');
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+document.getElementById('ctTitle').addEventListener('input', autoGrowTitle);
+document.getElementById('ctTitle').addEventListener('keydown', (e)=>{
+  // title เป็นข้อความบรรทัดเดียวเชิงความหมาย (คล้ายชื่อเรื่อง/hook การตลาด) ไม่ต้องการให้ Enter ทำอะไรเลย ไม่ว่าจะขึ้นบรรทัดใหม่หรือ submit ฟอร์ม
+  if(e.key === 'Enter'){ e.preventDefault(); }
+});
+
 document.getElementById('createSubmitBtn').addEventListener('click', async ()=>{
   const errEl = document.getElementById('createError');
   errEl.style.display = 'none';
@@ -1677,6 +1706,7 @@ document.getElementById('createSuccessHomeBtn').addEventListener('click', ()=>{
 function resetCreateForm(){
   document.getElementById('typeTextBtn').click();
   document.getElementById('ctTitle').value = '';
+  document.getElementById('ctTitle').style.height = 'auto';
   document.getElementById('ctDescription').value = '';
   document.getElementById('ctSideA').value = '';
   document.getElementById('ctSideB').value = '';
