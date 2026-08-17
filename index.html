@@ -512,18 +512,18 @@
 
   /* ===== Confetti celebration (โผล่ตอนสร้างหัวข้อสำเร็จ) ===== */
   #confettiLayer{
-    position:fixed; inset:0; z-index:300; pointer-events:none; overflow:hidden;
+    position:fixed; inset:0; z-index:300; pointer-events:none; overflow:hidden; perspective:700px;
   }
   .confetti-piece{
     position:absolute; top:-12px; will-change:transform,opacity;
     animation-name:confettiFall; animation-timing-function:linear; animation-fill-mode:forwards;
   }
   @keyframes confettiFall{
-    0%{ transform:translate3d(0,0,0) rotate(0deg); opacity:1; }
-    25%{ transform:translate3d(var(--dx1),24vh,0) rotate(calc(var(--spin) * 0.28)); }
-    50%{ transform:translate3d(var(--dx2),54vh,0) rotate(calc(var(--spin) * 0.58)); }
-    75%{ transform:translate3d(var(--dx3),84vh,0) rotate(calc(var(--spin) * 0.82)); }
-    100%{ transform:translate3d(var(--drift),110vh,0) rotate(var(--spin)); opacity:0.9; }
+    0%{ transform:translate3d(0,0,0) rotateZ(0deg) rotateX(0deg) rotateY(0deg); opacity:1; }
+    25%{ transform:translate3d(var(--dx1),24vh,0) rotateZ(calc(var(--spin) * 0.28)) rotateX(calc(var(--spinX) * 0.28)) rotateY(calc(var(--spinY) * 0.28)); }
+    50%{ transform:translate3d(var(--dx2),54vh,0) rotateZ(calc(var(--spin) * 0.58)) rotateX(calc(var(--spinX) * 0.58)) rotateY(calc(var(--spinY) * 0.58)); }
+    75%{ transform:translate3d(var(--dx3),84vh,0) rotateZ(calc(var(--spin) * 0.82)) rotateX(calc(var(--spinX) * 0.82)) rotateY(calc(var(--spinY) * 0.82)); }
+    100%{ transform:translate3d(var(--drift),110vh,0) rotateZ(var(--spin)) rotateX(var(--spinX)) rotateY(var(--spinY)); opacity:0.9; }
   }
   .confetti-star{
     clip-path:polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
@@ -1128,7 +1128,9 @@ function fireConfetti(){
     piece.style.setProperty('--dx2', (finalDrift*0.6 - dir*sway) + 'px');
     piece.style.setProperty('--dx3', (finalDrift*0.85 + dir*sway*0.6) + 'px');
     piece.style.setProperty('--drift', finalDrift + 'px');
-    piece.style.setProperty('--spin', (Math.random()*720-360) + 'deg');
+    piece.style.setProperty('--spin', (Math.random()*720-360) + 'deg'); // หมุนตามระนาบจอ (แกน Z)
+    piece.style.setProperty('--spinX', (Math.random()*900-450) + 'deg'); // พลิกหน้า-หลังขึ้นลง (แกน X) เหมือนกระดาษปลิวจริง
+    piece.style.setProperty('--spinY', (Math.random()*900-450) + 'deg'); // พลิกซ้าย-ขวา (แกน Y)
     const duration = 3.6 + Math.random()*2.6; // ยืดเวลาร่วงให้ดูล่องลอยเพลินๆ ไม่รีบตกวูบเดียว
     const delay = Math.random()*1.1; // กระจายจังหวะเริ่มให้ไม่ตกพร้อมกันเป็นแผง
     piece.style.animationDuration = duration + 's';
