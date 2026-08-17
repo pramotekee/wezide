@@ -508,9 +508,23 @@
   footer.site-footer .footer-bottom{
     max-width:960px; margin:18px 0 0; text-align:left; font-size:11.5px; color:rgba(255,255,255,0.5);
   }
+
+  /* ===== Confetti celebration (โผล่ตอนสร้างหัวข้อสำเร็จ) ===== */
+  #confettiLayer{
+    position:fixed; inset:0; z-index:300; pointer-events:none; overflow:hidden;
+  }
+  .confetti-piece{
+    position:absolute; top:-12px; will-change:transform,opacity;
+    animation-name:confettiFall; animation-timing-function:cubic-bezier(.25,.46,.45,.94); animation-fill-mode:forwards;
+  }
+  @keyframes confettiFall{
+    0%{ transform:translate3d(0,0,0) rotate(0deg); opacity:1; }
+    100%{ transform:translate3d(var(--drift),110vh,0) rotate(var(--spin)); opacity:0.9; }
+  }
 </style>
 </head>
 <body>
+<div id="confettiLayer" aria-hidden="true"></div>
 
 <header class="site-header">
   <div class="logo-wrap">
@@ -1067,6 +1081,34 @@ function showToast(msg){
 
 function openModal(id){ document.getElementById(id).classList.add('open'); }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+/* ===== Confetti celebration ===== */
+function fireConfetti(){
+  const layer = document.getElementById('confettiLayer');
+  if(!layer) return;
+  const colors = ['#FF3B5C','#FFB800','#2FD675','#3B82F6','#A855F7','#FF7A00','#00C2D1'];
+  const shapes = ['rect','circle'];
+  const pieceCount = 90;
+  for(let i=0;i<pieceCount;i++){
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    const size = 6 + Math.random()*7;
+    const isCircle = shapes[Math.floor(Math.random()*shapes.length)] === 'circle';
+    piece.style.width = size + 'px';
+    piece.style.height = (isCircle ? size : size * (0.4 + Math.random()*0.9)) + 'px';
+    piece.style.background = colors[Math.floor(Math.random()*colors.length)];
+    piece.style.borderRadius = isCircle ? '50%' : '2px';
+    piece.style.left = (Math.random()*100) + 'vw';
+    piece.style.setProperty('--drift', (Math.random()*160-80) + 'px');
+    piece.style.setProperty('--spin', (Math.random()*720-360) + 'deg');
+    const duration = 2.6 + Math.random()*1.6;
+    const delay = Math.random()*0.35;
+    piece.style.animationDuration = duration + 's';
+    piece.style.animationDelay = delay + 's';
+    layer.appendChild(piece);
+    setTimeout(()=>{ piece.remove(); }, (duration+delay)*1000 + 200);
+  }
+}
 document.querySelectorAll('[data-close]').forEach(btn=>{
   btn.addEventListener('click', ()=> closeModal(btn.dataset.close));
 });
@@ -1619,6 +1661,7 @@ document.getElementById('createSubmitBtn').addEventListener('click', async ()=>{
     homeBtnEl.textContent = t('homeToMyTopicsBtn');
   }
   openModal('createSuccessModal');
+  fireConfetti();
 });
 
 document.getElementById('createSuccessCreateBtn').addEventListener('click', ()=>{
