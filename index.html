@@ -515,16 +515,28 @@
     position:fixed; inset:0; z-index:300; pointer-events:none; overflow:hidden; perspective:700px;
   }
   .confetti-piece{
-    position:absolute; top:-12px; will-change:transform,opacity;
-    animation-name:confettiFall; animation-timing-function:ease-in-out; animation-fill-mode:forwards;
+    position:absolute; top:-12px;
+    animation-timing-function:ease-in-out; animation-fill-mode:forwards;
   }
-  @keyframes confettiFall{
+  /* เดสก์ท็อป: GPU แรงพอ ใช้พลิก 3 มิติเต็มรูปแบบ (rotateX/Y + perspective) */
+  .confetti-3d{ will-change:transform,opacity; animation-name:confettiFall3d; }
+  @keyframes confettiFall3d{
     0%{   transform:translate3d(0,0,0) rotateZ(0deg) rotateX(0deg) rotateY(0deg); opacity:1; }
     20%{  transform:translate3d(var(--dx1),20vh,0) rotateZ(calc(var(--spin) * 0.18)) rotateX(var(--sx1)) rotateY(var(--sy1)); }
     40%{  transform:translate3d(var(--dx2),40vh,0) rotateZ(calc(var(--spin) * 0.4))  rotateX(var(--sx2)) rotateY(var(--sy2)); }
     60%{  transform:translate3d(var(--dx3),62vh,0) rotateZ(calc(var(--spin) * 0.62)) rotateX(var(--sx3)) rotateY(var(--sy3)); }
     80%{  transform:translate3d(var(--dx4),85vh,0) rotateZ(calc(var(--spin) * 0.82)) rotateX(var(--sx4)) rotateY(var(--sy4)); }
     100%{ transform:translate3d(var(--drift),110vh,0) rotateZ(var(--spin)) rotateX(var(--spinX)) rotateY(var(--spinY)); opacity:0.9; }
+  }
+  /* มือถือ: จำลองอาการพลิกด้วย scaleX (2D transform ล้วน ไม่ต้องคำนวณ 3 มิติ/ไม่ต้อง promote layer หนัก) เบากว่ามาก แต่สายตายังเห็นเป็นการสะบัดพลิก */
+  .confetti-flat{ animation-name:confettiFallFlat; }
+  @keyframes confettiFallFlat{
+    0%{   transform:translate3d(0,0,0) rotateZ(0deg) scaleX(1); opacity:1; }
+    20%{  transform:translate3d(var(--dx1),20vh,0) rotateZ(calc(var(--spin) * 0.18)) scaleX(var(--fx1)); }
+    40%{  transform:translate3d(var(--dx2),40vh,0) rotateZ(calc(var(--spin) * 0.4))  scaleX(var(--fx2)); }
+    60%{  transform:translate3d(var(--dx3),62vh,0) rotateZ(calc(var(--spin) * 0.62)) scaleX(var(--fx3)); }
+    80%{  transform:translate3d(var(--dx4),85vh,0) rotateZ(calc(var(--spin) * 0.82)) scaleX(var(--fx4)); }
+    100%{ transform:translate3d(var(--drift),110vh,0) rotateZ(var(--spin)) scaleX(1); opacity:0.9; }
   }
   .confetti-star{
     clip-path:polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
@@ -1098,13 +1110,15 @@ function fireConfetti(){
   const shapes = ['rect','square','star'];
   // จอกว้าง (คอม/แท็บเล็ต) พื้นที่เยอะกว่ามือถือ เพิ่มจำนวนและขนาดชิ้นเล็กน้อยให้เต็มตา ไม่ดูโหรงเหรง
   const isWide = window.innerWidth >= 900;
-  const pieceCount = isWide ? 300 : 180; // เพิ่มความหนาแน่นเป็น 2 เท่าจากเดิม
+  // มือถือ: ลดจำนวนชิ้น + งดพลิก 3 มิติ (rotateX/Y) เพราะ GPU มือถือรับภาระหลายร้อยชิ้นพร้อมกันไม่ไหว ทำให้เฟรมตก/ค้าง
+  const pieceCount = isWide ? 260 : 130;
   const baseSize = isWide ? 8 : 6;
   const rnd = (min,max)=> min + Math.random()*(max-min);
+  const fragment = document.createDocumentFragment(); // สร้างทุกชิ้นใน memory ก่อน แล้ว insert เข้าจอครั้งเดียว กัน reflow ซ้ำๆ ระหว่างสร้างหลายร้อยชิ้น ซึ่งเป็นสาเหตุหลักที่ทำให้ main thread ค้างตอนเริ่ม
   for(let i=0;i<pieceCount;i++){
     const piece = document.createElement('div');
     const shape = shapes[Math.floor(Math.random()*shapes.length)];
-    piece.className = 'confetti-piece' + (shape === 'star' ? ' confetti-star' : '');
+    piece.className = 'confetti-piece ' + (isWide ? 'confetti-3d' : 'confetti-flat') + (shape === 'star' ? ' confetti-star' : '');
     const size = baseSize + Math.random()*(baseSize+1);
     piece.style.background = colors[Math.floor(Math.random()*colors.length)];
     if(shape === 'rect'){
@@ -1131,22 +1145,28 @@ function fireConfetti(){
     piece.style.setProperty('--dx4', (finalDrift*0.88 - dir*sway*0.4) + 'px');
     piece.style.setProperty('--drift', finalDrift + 'px');
     piece.style.setProperty('--spin', (Math.random()*720-360) + 'deg'); // หมุนตามระนาบจอ (แกน Z) หมุนไปทางเดียวสม่ำเสมอ เหมือนแกนหลักที่ปลิวหมุน
-    const spinX = (Math.random()*900-450);
-    const spinY = (Math.random()*900-450);
-    piece.style.setProperty('--spinX', spinX + 'deg');
-    piece.style.setProperty('--spinY', spinY + 'deg');
-    // จุดพลิกระหว่างทาง "ไม่" ไล่ตามสัดส่วนเชิงเส้นของปลายทาง แต่สุ่มอิสระแต่ละจุด ทำให้พลิกกลับไปมาแบบกระดาษจริง ไม่ใช่หมุนทางเดียวแข็งๆ
-    for(let s=1;s<=4;s++){
-      piece.style.setProperty(`--sx${s}`, rnd(-520,520) + 'deg');
-      piece.style.setProperty(`--sy${s}`, rnd(-520,520) + 'deg');
+    if(isWide){
+      // เดสก์ท็อป: พลิก 3 มิติเต็มรูปแบบ (rotateX/Y สุ่มอิสระแต่ละจุด ไม่ไล่ตามสัดส่วนเดียว)
+      piece.style.setProperty('--spinX', (Math.random()*900-450) + 'deg');
+      piece.style.setProperty('--spinY', (Math.random()*900-450) + 'deg');
+      for(let s=1;s<=4;s++){
+        piece.style.setProperty(`--sx${s}`, rnd(-520,520) + 'deg');
+        piece.style.setProperty(`--sy${s}`, rnd(-520,520) + 'deg');
+      }
+    } else {
+      // มือถือ: จำลองอาการพลิกด้วย scaleX สลับบวก/ลบ (ค่าติดลบ = ภาพกลับด้าน มองด้วยตาเหมือนพลิกหน้า-หลัง) เป็น 2D transform ล้วน เบากว่า 3D มาก
+      for(let s=1;s<=4;s++){
+        piece.style.setProperty(`--fx${s}`, rnd(-1, 1).toFixed(2));
+      }
     }
     const duration = 3.6 + Math.random()*2.6; // ยืดเวลาร่วงให้ดูล่องลอยเพลินๆ ไม่รีบตกวูบเดียว
     const delay = Math.random()*1.1; // กระจายจังหวะเริ่มให้ไม่ตกพร้อมกันเป็นแผง
     piece.style.animationDuration = duration + 's';
     piece.style.animationDelay = delay + 's';
-    layer.appendChild(piece);
+    fragment.appendChild(piece);
     setTimeout(()=>{ piece.remove(); }, (duration+delay)*1000 + 200);
   }
+  layer.appendChild(fragment); // insert ทั้งหมดในจังหวะเดียว
 }
 document.querySelectorAll('[data-close]').forEach(btn=>{
   btn.addEventListener('click', ()=> closeModal(btn.dataset.close));
