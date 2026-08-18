@@ -327,6 +327,12 @@
   .dob-row select{ flex:1; }
   .passcode-wrap{ position:relative; }
   .passcode-wrap input{ padding-right:42px; }
+  /* ช่อง passcode ใช้ type="text" จริงๆ (ไม่ใช้ type="password") เพราะ browser/OS ผูกพฤติกรรม "เสนอสร้าง Strong Password ให้อัตโนมัติ" ไว้กับ type="password" โดยเฉพาะ
+     ทำให้ user บางคนกดใช้รหัสที่ device สุ่มให้ แล้วจำไม่ได้ ภายหลังแก้ไขข้อมูลตัวเองไม่ได้เพราะต้องใช้ passcode ยืนยัน
+     ใช้ -webkit-text-security แทนเพื่อยังคงพรางตัวอักษรเป็นจุดๆ เหมือน password ปกติ แต่ browser จะไม่มองว่าเป็นช่อง password จึงไม่เสนอ auto-gen ให้
+     (หมายเหตุ: Firefox ไม่รองรับ -webkit-text-security ตัวอักษรจะไม่ถูกพรางบน Firefox — ถือเป็น trade-off ที่ยอมรับได้เพราะกลุ่มผู้ใช้หลักเป็นมือถือ Chrome/Safari) */
+  .passcode-wrap input{ -webkit-text-security:disc; text-security:disc; }
+  .passcode-wrap input.pc-visible{ -webkit-text-security:none; text-security:none; }
   .passcode-toggle{ position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:16px; }
   .field-avatar-row{ text-align:center; margin-bottom:18px; }
   .edit-avatar{
@@ -487,7 +493,7 @@
         <div class="field">
           <label>Passcode</label>
           <div class="passcode-wrap">
-            <input type="password" id="editPhonePasscode">
+            <input type="text" id="editPhonePasscode" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
             <button type="button" class="passcode-toggle" data-target="editPhonePasscode">👁️</button>
           </div>
         </div>
@@ -499,21 +505,21 @@
         <div class="field">
           <label data-i18n="oldPasscodeLabel">Passcode เดิม</label>
           <div class="passcode-wrap">
-            <input type="password" id="editOldPasscode">
+            <input type="text" id="editOldPasscode" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
             <button type="button" class="passcode-toggle" data-target="editOldPasscode">👁️</button>
           </div>
         </div>
         <div class="field">
           <label><span data-i18n="newPasscodeLabel">Passcode ใหม่</span> <span class="field-hint" data-i18n="passcodeHint">(อย่างน้อย 6 หลัก)</span></label>
           <div class="passcode-wrap">
-            <input type="password" id="editNewPasscode" minlength="6">
+            <input type="text" id="editNewPasscode" minlength="6" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
             <button type="button" class="passcode-toggle" data-target="editNewPasscode">👁️</button>
           </div>
         </div>
         <div class="field">
           <label data-i18n="confirmPasscodeLabel">ยืนยัน Passcode ใหม่</label>
           <div class="passcode-wrap">
-            <input type="password" id="editNewPasscode2" minlength="6">
+            <input type="text" id="editNewPasscode2" minlength="6" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
             <button type="button" class="passcode-toggle" data-target="editNewPasscode2">👁️</button>
           </div>
         </div>
@@ -534,7 +540,7 @@
         <div class="field">
           <label data-i18n="confirmPasscodeToDeleteLabel">กรอก Passcode เพื่อยืนยัน</label>
           <div class="passcode-wrap">
-            <input type="password" id="deletePasscode">
+            <input type="text" id="deletePasscode" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
             <button type="button" class="passcode-toggle" data-target="deletePasscode">👁️</button>
           </div>
         </div>
@@ -930,9 +936,8 @@ function setupCommentObserver(){
 document.querySelectorAll('.passcode-toggle').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     const input = document.getElementById(btn.dataset.target);
-    const show = input.type === 'password';
-    input.type = show ? 'text' : 'password';
-    btn.textContent = show ? '🙈' : '👁️';
+    const nowVisible = input.classList.toggle('pc-visible');
+    btn.textContent = nowVisible ? '🙈' : '👁️';
   });
 });
 
@@ -1095,8 +1100,8 @@ async function loadDashboard(){
 
 // สีเพศตายตัวเสมอ เหมือนกับที่ใช้ในการ์ดหัวข้อหน้าแรก (index.html) เพื่อให้ design alignment ตรงกันทั้งระบบ
 const GENDER_BAR_DEFS = [
-  { key:'ชาย', color:'#76A5AF', labelKey:'genderMale' },
-  { key:'หญิง', color:'#C27BA0', labelKey:'genderFemale' },
+  { key:'ชาย', color:'#00A1FF', labelKey:'genderMale' },
+  { key:'หญิง', color:'#FF42A1', labelKey:'genderFemale' },
   { key:'อื่นๆ', color:'#8E7CC3', labelKey:'genderOther' }
 ];
 const AGE_BAR_ORDER = ['18-24','25-34','35-44','45-54','55+'];
@@ -1140,7 +1145,7 @@ async function loadMyTopics(){
 
 // หน้า My Topics ไม่มี per-card dashboard fetch อยู่แล้ว (ต่างจาก index.html/history.html ที่มี loadDashboardFor
 // ต่อการ์ดอยู่ก่อนแล้ว) จึงต้องยิง getTopicDetail แยกทีละหัวข้อเองที่นี่ เพื่อดึงแค่ comment_count_a/b มาโชว์ที่ปุ่ม
-// "Read comment (N)" — ไม่ต้องใช้ gender/age breakdown ส่วนอื่นของ response นี้เลยในหน้านี้
+// "N comment" — ไม่ต้องใช้ gender/age breakdown ส่วนอื่นของ response นี้เลยในหน้านี้
 async function loadCommentCountsForMyTopics(){
   for(const topic of STATE.myTopics){
     const res = await api('getTopicDetail', { topic_id: topic.topic_id });
@@ -1154,7 +1159,7 @@ async function loadCommentCountsForMyTopics(){
 
 function updateCommentBtnLabel(topicId, side, count){
   const btn = document.querySelector(`.comment-btn[data-comment-topic="${topicId}"][data-comment-side="${side}"]`);
-  if(btn) btn.textContent = `💬 Read comment (${count})`;
+  if(btn) btn.textContent = `💬 ${count} comment`;
 }
 
 // อยู่หน้า "หัวข้อของฉัน" อยู่แล้ว ให้สร้างหัวข้อได้จากตรงนี้เลย ไม่ต้องอ้อมกลับไป home ก่อน
@@ -1219,8 +1224,8 @@ function renderMyTopics(){
           </div>
         </${wrapTag}>
         <div class="comment-row">
-          <button type="button" class="comment-btn" data-comment-topic="${t.topic_id}" data-comment-side="A" data-comment-label="${escapeHtml(t.side_a_label)}">💬 Read comment${t._commentCountA !== undefined ? ` (${t._commentCountA})` : ''}</button>
-          <button type="button" class="comment-btn comment-btn-b" data-comment-topic="${t.topic_id}" data-comment-side="B" data-comment-label="${escapeHtml(t.side_b_label)}">💬 Read comment${t._commentCountB !== undefined ? ` (${t._commentCountB})` : ''}</button>
+          <button type="button" class="comment-btn" data-comment-topic="${t.topic_id}" data-comment-side="A" data-comment-label="${escapeHtml(t.side_a_label)}">💬 ${t._commentCountA !== undefined ? `${t._commentCountA} comment` : 'Comment'}</button>
+          <button type="button" class="comment-btn comment-btn-b" data-comment-topic="${t.topic_id}" data-comment-side="B" data-comment-label="${escapeHtml(t.side_b_label)}">💬 ${t._commentCountB !== undefined ? `${t._commentCountB} comment` : 'Comment'}</button>
         </div>
         <div class="mt-actions">
           ${toggleBtn}
