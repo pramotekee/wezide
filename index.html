@@ -956,7 +956,7 @@ const I18N = {
     errSignupPasscodeRequired: 'กรุณาตั้ง Passcode', errSignupPasscodeTooShort: 'Passcode ต้องมีอย่างน้อย 6 หลัก',
     errSignupBirthdayRequired: 'กรุณาเลือกวันเกิดให้ครบ วัน/เดือน/ปี', errAgeMinimum: 'ขออภัย ไม่สามารถสมัครสมาชิกได้ เนื่องจากอายุต่ำกว่า 13 ปี',
     errSignupGenderRequired: 'กรุณาเลือกเพศ', errSignupCountryRequired: 'กรุณาเลือกประเทศ',
-    errSignupProvinceRequired: 'กรุณาเลือกจังหวัด',
+    errSignupProvinceRequired: 'กรุณาเลือกจังหวัด', myAccountFallback: 'บัญชีของฉัน', loggedOutToast: 'ออกจากระบบแล้ว',
     imageLoadFailToast: 'โหลดรูปไม่สำเร็จ กรุณาลองอัพโหลดรูปใหม่อีกครั้ง', imageUploadFailToast: 'อัพโหลดรูปไม่สำเร็จ',
     loggingInText: 'กำลังเข้าสู่ระบบ...', signingUpText: 'กำลังสมัครสมาชิก...', submittingTopicText: 'กำลังส่งหัวข้อ...',
     voteConfirmTitle: 'ยืนยันการเลือก', cancelBtn: 'ยกเลิก', voteConfirmBtnLabel: 'ยืนยันเลือก',
@@ -1012,7 +1012,7 @@ const I18N = {
     errSignupPasscodeRequired: 'Please set a Passcode', errSignupPasscodeTooShort: 'Passcode must be at least 6 digits',
     errSignupBirthdayRequired: 'Please select your full birthday (day/month/year)', errAgeMinimum: 'Sorry, you must be at least 13 years old to sign up',
     errSignupGenderRequired: 'Please select your gender', errSignupCountryRequired: 'Please select a country',
-    errSignupProvinceRequired: 'Please select a province',
+    errSignupProvinceRequired: 'Please select a province', myAccountFallback: 'My Account', loggedOutToast: 'Logged out',
     imageLoadFailToast: 'Failed to load image, please try uploading again', imageUploadFailToast: 'Image upload failed',
     loggingInText: 'Logging in...', signingUpText: 'Signing up...', submittingTopicText: 'Submitting topic...',
     voteConfirmTitle: 'Confirm your choice', cancelBtn: 'Cancel', voteConfirmBtnLabel: 'Confirm',
@@ -1228,21 +1228,21 @@ function logout(){
   STATE.session = null;
   localStorage.removeItem('wz_session');
   renderHeaderAuth();
-  showToast('ออกจากระบบแล้ว');
+  showToast(t('loggedOutToast'));
 }
 
 function renderHeaderAuth(){
   const el = document.getElementById('headerActions');
   if(isLoggedIn()){
-    const uname = (STATE.session && STATE.session.username) ? STATE.session.username : 'บัญชีของฉัน';
+    const uname = (STATE.session && STATE.session.username) ? STATE.session.username : t('myAccountFallback');
     el.innerHTML = `
-      <button class="btn btn-accent" id="createBtn">＋ สร้างหัวข้อ</button>
+      <button class="btn btn-accent" id="createBtn" data-i18n="createBtn">${t('createBtn')}</button>
       <a class="btn btn-ghost" href="profile.html" id="authBtn">${escapeHtml(uname)}</a>
     `;
   } else {
     el.innerHTML = `
-      <button class="btn btn-accent" id="createBtn">＋ สร้างหัวข้อ</button>
-      <button class="btn btn-ghost" id="authBtn">เข้าสู่ระบบ</button>
+      <button class="btn btn-accent" id="createBtn" data-i18n="createBtn">${t('createBtn')}</button>
+      <button class="btn btn-ghost" id="authBtn" data-i18n="loginBtn">${t('loginBtn')}</button>
     `;
   }
   document.getElementById('createBtn').addEventListener('click', handleCreateClick);
