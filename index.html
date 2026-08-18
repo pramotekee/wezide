@@ -1027,7 +1027,7 @@ const I18N = {
     commentLoadingText: 'Loading comments...'
   }
 };
-function getLang(){ return localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'th'; }
+function getLang(){ return localStorage.getItem(LANG_KEY) === 'th' ? 'th' : 'en'; }
 function t(key){ const lang = getLang(); return (I18N[lang] && I18N[lang][key] !== undefined) ? I18N[lang][key] : (I18N.th[key] || ''); }
 // alias ของ t() ไว้ใช้ในจุดที่มีตัวแปร local ชื่อ t ทับอยู่แล้ว (เช่น "const t = STATE.topics.find(...)"
 // ในฟังก์ชันเกี่ยวกับโหวต) กันเรียก t('key') แล้วดันไปชนกับ topic object แทนฟังก์ชันแปลภาษา
@@ -1383,8 +1383,8 @@ document.getElementById('signupSubmitBtn').addEventListener('click', async ()=>{
     return;
   }
   // ข้อความนี้ EN ตายตัว (ไม่ผูกกับ toggle) เพราะ error นี้เจอเฉพาะคนที่เลือกประเทศไม่ใช่ Thailand เท่านั้น
-  // และ default lang ของเว็บคือ TH เสมอ (getLang() คืน 'th' ถ้ายังไม่เคยกด toggle) — ถ้าผูกกับ t()
-  // user ต่างชาติที่ยังไม่เคยกด toggle จะเจอ error นี้เป็นภาษาไทย จึงล็อก EN ไว้ให้ชัวร์
+  // การล็อก EN ไว้ตรงนี้ยังเป็นทางเลือกที่ปลอดภัยที่สุด แม้ default lang ของเว็บจะเป็น EN แล้วก็ตาม
+  // เผื่อกรณีคนไทยที่อยู่ต่างประเทศ toggle กลับไปเป็น TH เอง แต่ต้องกรอกฟิลด์นี้เพราะเลือกประเทศไม่ใช่ Thailand
   if(payload.country !== 'Thailand' && !payload.city_state){
     errEl.textContent = 'Please enter your city/state';
     errEl.style.display = 'block';
