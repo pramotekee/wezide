@@ -606,10 +606,10 @@
 <div class="modal-overlay" id="loginModal">
   <div class="modal-box">
     <div class="modal-head">
-      <h3 data-i18n="loginTitle">อ่ะ! คุณลืม login</h3>
+      <h3 id="loginModalTitle" data-i18n="loginTitle">อ่ะ! คุณลืม login</h3>
       <button class="modal-close" data-close="loginModal">✕</button>
     </div>
-    <p style="font-size:13.5px;color:var(--text-muted);margin-top:-8px;margin-bottom:16px;" data-i18n="loginHint">กรอก 2 ช่องนี้แล้วกด login มาเลือกความคิดเห็นกันเลย</p>
+    <p id="loginModalHint" style="font-size:13.5px;color:var(--text-muted);margin-top:-8px;margin-bottom:16px;" data-i18n="loginHint">กรอก 2 ช่องนี้แล้วกด login มาเลือกความคิดเห็นกันเลย</p>
     <div class="field">
       <label data-i18n="phoneLabel">เบอร์โทรศัพท์</label>
       <input type="tel" id="loginPhone" placeholder="08xxxxxxxx">
@@ -919,6 +919,7 @@ const I18N = {
     heroTitle: 'มาดูกันว่าตอนนี้ <b>คนส่วนใหญ่</b> คิดเห็นยังไงกับประเด็นร้อนๆ',
     searchPlaceholder: 'ค้นหาหัวข้อ, tag...', historyLink: '🕓 ประวัติ',
     loginTitle: 'อ่ะ! คุณลืม login', loginHint: 'กรอก 2 ช่องนี้แล้วกด login มาเลือกความคิดเห็นกันเลย',
+    loginDirectTitle: 'เข้าสู่ระบบ WEZIDE', loginDirectHint: 'กรอกเบอร์โทรและ Passcode เพื่อเข้าสู่ระบบ',
     phoneLabel: 'เบอร์โทรศัพท์',
     signupCta: 'หากคุณยังไม่ได้เป็นสมาชิก สมัครเพียง <b>30 วินาที</b> ก็เข้าร่วมสนุกกับพวกเราได้แล้ว',
     signupBtn: 'สมัครเลย', signupTitle: 'สร้างโปรไฟล์ WEZIDE', avatarLabel: 'รูปโปรไฟล์',
@@ -975,6 +976,7 @@ const I18N = {
     heroTitle: 'See what <b>most people</b> think about hot topics right now',
     searchPlaceholder: 'Search topics, tags...', historyLink: '🕓 History',
     loginTitle: 'Oops! You forgot to log in', loginHint: 'Fill in these 2 fields and log in to start voting',
+    loginDirectTitle: 'Log In to WEZIDE', loginDirectHint: 'Enter your phone number and passcode to log in',
     phoneLabel: 'Phone Number',
     signupCta: 'Not a member yet? Sign up in <b>30 seconds</b> and join the fun',
     signupBtn: 'Sign Up', signupTitle: 'Create your WEZIDE profile', avatarLabel: 'Profile Photo',
@@ -1116,6 +1118,21 @@ function showToast(msg, durationMs){
 function openModal(id){ document.getElementById(id).classList.add('open'); }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 
+// เปิด loginModal โดยสลับหัวข้อ/คำโปรยตามที่มา:
+// 'direct'   = user ตั้งใจกดปุ่ม Log In เอง -> ข้อความต้อนรับปกติ ไม่มี "Oops"
+// 'redirect' = user โดนเด้งมาเพราะพยายามทำอย่างอื่น (สร้างหัวข้อ/โหวต) ทั้งที่ยังไม่ login -> คงข้อความ "Oops! คุณลืม login" ไว้ (ค่า default)
+function openLoginModal(mode){
+  const titleKey = mode === 'direct' ? 'loginDirectTitle' : 'loginTitle';
+  const hintKey = mode === 'direct' ? 'loginDirectHint' : 'loginHint';
+  const titleEl = document.getElementById('loginModalTitle');
+  const hintEl = document.getElementById('loginModalHint');
+  titleEl.setAttribute('data-i18n', titleKey);
+  titleEl.textContent = t(titleKey);
+  hintEl.setAttribute('data-i18n', hintKey);
+  hintEl.textContent = t(hintKey);
+  openModal('loginModal');
+}
+
 /* ===== Confetti celebration ===== */
 function fireConfetti(){
   const layer = document.getElementById('confettiLayer');
@@ -1247,13 +1264,13 @@ function renderHeaderAuth(){
   }
   document.getElementById('createBtn').addEventListener('click', handleCreateClick);
   if(!isLoggedIn()){
-    document.getElementById('authBtn').addEventListener('click', ()=> openModal('loginModal'));
+    document.getElementById('authBtn').addEventListener('click', ()=> openLoginModal('direct'));
   }
   // ตอน login แล้ว authBtn เป็นลิงก์ไปหน้า profile.html โดยตรง (ย้ายปุ่มออกจากระบบไปไว้ท้ายหน้า profile แทน)
 }
 
 function handleCreateClick(){
-  if(!isLoggedIn()){ openModal('loginModal'); return; }
+  if(!isLoggedIn()){ openLoginModal('redirect'); return; }
   openModal('createModal');
 }
 
@@ -2337,7 +2354,7 @@ document.getElementById('voteCommentInput').addEventListener('input', (e)=>{
 function handleVoteClick(topicId, side, btnEl){
   if(!isLoggedIn()){
     STATE.pendingVote = { topicId, side };
-    openModal('loginModal');
+    openLoginModal('redirect');
     return;
   }
   const t = STATE.topics.find(x=> x.topic_id === topicId);
@@ -2736,7 +2753,7 @@ document.getElementById('jumpTop').addEventListener('click', ()=>{
 document.getElementById('footerCreateLink').addEventListener('click', (e)=>{ e.preventDefault(); handleCreateClick(); });
 document.getElementById('footerLoginLink').addEventListener('click', (e)=>{
   e.preventDefault();
-  if(isLoggedIn()) logout(); else openModal('loginModal');
+  if(isLoggedIn()) logout(); else openLoginModal('direct');
 });
 
 /* ---------- Init ---------- */
