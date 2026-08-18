@@ -420,6 +420,12 @@
   /* passcode show/hide toggle */
   .passcode-wrap{ position:relative; }
   .passcode-wrap input{ padding-right:42px; }
+  /* ช่อง passcode ใช้ type="text" จริงๆ (ไม่ใช้ type="password") เพราะ browser/OS ผูกพฤติกรรม "เสนอสร้าง Strong Password ให้อัตโนมัติ" ไว้กับ type="password" โดยเฉพาะ
+     ทำให้ user บางคนกดใช้รหัสที่ device สุ่มให้ แล้วจำไม่ได้ ภายหลังแก้ไขข้อมูลตัวเองไม่ได้เพราะต้องใช้ passcode ยืนยัน
+     ใช้ -webkit-text-security แทนเพื่อยังคงพรางตัวอักษรเป็นจุดๆ เหมือน password ปกติ แต่ browser จะไม่มองว่าเป็นช่อง password จึงไม่เสนอ auto-gen ให้
+     (หมายเหตุ: Firefox ไม่รองรับ -webkit-text-security ตัวอักษรจะไม่ถูกพรางบน Firefox — ถือเป็น trade-off ที่ยอมรับได้เพราะกลุ่มผู้ใช้หลักเป็นมือถือ Chrome/Safari) */
+  .passcode-wrap input{ -webkit-text-security:disc; text-security:disc; }
+  .passcode-wrap input.pc-visible{ -webkit-text-security:none; text-security:none; }
   .passcode-toggle{
     position:absolute; right:4px; top:50%; transform:translateY(-50%);
     width:32px; height:32px; display:flex; align-items:center; justify-content:center;
@@ -611,7 +617,7 @@
     <div class="field">
       <label>Passcode</label>
       <div class="passcode-wrap">
-        <input type="password" id="loginPasscode" placeholder="Passcode">
+        <input type="text" id="loginPasscode" placeholder="Passcode" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
         <button type="button" class="passcode-toggle" data-target="loginPasscode" aria-label="แสดง/ซ่อน Passcode">👁️</button>
       </div>
     </div>
@@ -644,7 +650,7 @@
     <div class="field">
       <label><span data-i18n="setPasscodeLabel">ตั้ง Passcode</span> <span class="field-hint" data-i18n="passcodeHint">(อย่างน้อย 6 หลัก)</span></label>
       <div class="passcode-wrap">
-        <input type="password" id="suPasscode" minlength="6">
+        <input type="text" id="suPasscode" minlength="6" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
         <button type="button" class="passcode-toggle" data-target="suPasscode" aria-label="แสดง/ซ่อน Passcode">👁️</button>
       </div>
     </div>
@@ -1157,9 +1163,8 @@ document.querySelectorAll('.modal-overlay').forEach(ov=>{
 document.querySelectorAll('.passcode-toggle').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     const input = document.getElementById(btn.dataset.target);
-    const show = input.type === 'password';
-    input.type = show ? 'text' : 'password';
-    btn.textContent = show ? '🙈' : '👁️';
+    const nowVisible = input.classList.toggle('pc-visible');
+    btn.textContent = nowVisible ? '🙈' : '👁️';
   });
 });
 
@@ -1838,7 +1843,7 @@ function renderFeed(){
   const feed = document.getElementById('feed');
   if(STATE.feedLoadError){
     feed.innerHTML = `<div class="empty-state"><div class="emoji">⚠️</div>${escapeHtml(STATE.feedLoadError)}<br>
-      <button class="btn btn-primary" id="feedRetryBtn" style="margin-top:14px;">ลองใหม่อีกครั้ง</button></div>`;
+      <button class="btn btn-primary" id="feedRetryBtn" style="margin-top:14px;">Try again</button></div>`;
     const retryBtn = document.getElementById('feedRetryBtn');
     if(retryBtn) retryBtn.addEventListener('click', loadTopics);
     return;
@@ -1961,20 +1966,20 @@ function topicCardHTML(t){
 
   const tagsHTML = (t.tags||[]).map(tag=>`<span class="tag-chip">#${escapeHtml(tag)}</span>`).join('');
 
-  // ปุ่ม "Read comment (N)" แยกใต้ปุ่มโหวตฝั่ง A/B — โชว์ตลอด กดได้เสมอแม้ N=0 (ห้ามซ่อน/disable)
+  // ปุ่ม "N comment" แยกใต้ปุ่มโหวตฝั่ง A/B — โชว์ตลอด กดได้เสมอแม้ N=0 (ห้ามซ่อน/disable)
   // N มาจาก t._commentCountA/B ที่ cache ไว้หลัง getTopicDetail โหลดเสร็จ (ดู loadDashboardFor) ถ้ายังไม่โหลด
-  // (ครั้งแรกที่การ์ด render) ก็ยังกดเปิด modal ได้ปกติ แค่ยังไม่มีเลข (N) กำกับตัวเลขจนกว่าจะโหลดเสร็จ
-  const cntA = t._commentCountA !== undefined ? ` (${t._commentCountA})` : '';
-  const cntB = t._commentCountB !== undefined ? ` (${t._commentCountB})` : '';
+  // (ครั้งแรกที่การ์ด render) จะโชว์แค่ "Comment" เฉยๆ ไปก่อน (ไม่โชว์ 0 ทิพย์ก่อนรู้เลขจริง) พอโหลดเสร็จค่อยเปลี่ยนเป็นตัวเลขจริง
+  const cntA = t._commentCountA !== undefined ? `${t._commentCountA} comment` : 'Comment';
+  const cntB = t._commentCountB !== undefined ? `${t._commentCountB} comment` : 'Comment';
   const commentRowHTML = hasImg
     ? `<div class="comment-row comment-row-image">
-        <button type="button" class="comment-btn" data-comment-topic="${t.topic_id}" data-comment-side="A" data-comment-label="${escapeHtml(t.side_a_label)}">💬 Read comment${cntA}</button>
+        <button type="button" class="comment-btn" data-comment-topic="${t.topic_id}" data-comment-side="A" data-comment-label="${escapeHtml(t.side_a_label)}">💬 ${cntA}</button>
         <div></div>
-        <button type="button" class="comment-btn" data-comment-topic="${t.topic_id}" data-comment-side="B" data-comment-label="${escapeHtml(t.side_b_label)}">💬 Read comment${cntB}</button>
+        <button type="button" class="comment-btn" data-comment-topic="${t.topic_id}" data-comment-side="B" data-comment-label="${escapeHtml(t.side_b_label)}">💬 ${cntB}</button>
       </div>`
     : `<div class="comment-row">
-        <button type="button" class="comment-btn" data-comment-topic="${t.topic_id}" data-comment-side="A" data-comment-label="${escapeHtml(t.side_a_label)}">💬 Read comment${cntA}</button>
-        <button type="button" class="comment-btn" data-comment-topic="${t.topic_id}" data-comment-side="B" data-comment-label="${escapeHtml(t.side_b_label)}">💬 Read comment${cntB}</button>
+        <button type="button" class="comment-btn" data-comment-topic="${t.topic_id}" data-comment-side="A" data-comment-label="${escapeHtml(t.side_a_label)}">💬 ${cntA}</button>
+        <button type="button" class="comment-btn" data-comment-topic="${t.topic_id}" data-comment-side="B" data-comment-label="${escapeHtml(t.side_b_label)}">💬 ${cntB}</button>
       </div>`;
 
   return `
@@ -2096,13 +2101,13 @@ async function loadDashboardFor(topicId){
 
 function updateCommentBtnLabel(topicId, side, count){
   const btn = document.querySelector(`.comment-btn[data-comment-topic="${topicId}"][data-comment-side="${side}"]`);
-  if(btn) btn.textContent = `💬 Read comment (${count})`;
+  if(btn) btn.textContent = `💬 ${count} comment`;
 }
 
 // สีเพศตายตัวเสมอ ไม่ผูกกับ card_color ของหัวข้อ (ใช้โทนเดียวกับ palette การ์ดสี ฟ้า/ชมพู/ม่วง ที่มีอยู่แล้วในระบบ)
 const GENDER_BAR_DEFS = [
-  { key:'ชาย', color:'#76A5AF', labelKey:'genderMale' },
-  { key:'หญิง', color:'#C27BA0', labelKey:'genderFemale' },
+  { key:'ชาย', color:'#00A1FF', labelKey:'genderMale' },
+  { key:'หญิง', color:'#FF42A1', labelKey:'genderFemale' },
   { key:'อื่นๆ', color:'#8E7CC3', labelKey:'genderOther' }
 ];
 const AGE_BAR_ORDER = ['18-24','25-34','35-44','45-54','55+'];
