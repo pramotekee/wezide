@@ -1768,7 +1768,13 @@ document.getElementById('createSuccessCreateBtn').addEventListener('click', ()=>
 document.getElementById('createSuccessHomeBtn').addEventListener('click', ()=>{
   closeModal('createSuccessModal');
   // ถ้ามาจากปุ่มสร้างหัวข้อในหน้า "หัวข้อของฉัน" ให้พากลับไปหน้านั้นแทนหน้าแรก จะได้เห็นหัวข้อใหม่ในลิสต์ทันที
-  if(STATE.cameFromProfile){ location.href = 'profile.html'; }
+  if(STATE.cameFromProfile){ location.href = 'profile.html'; return; }
+  // ปุ่มนี้กดจากหน้าแรกอยู่แล้ว (ไม่ได้ navigate ไปไหน) เดิมแค่ปิด modal เฉยๆ ทำให้ feed ยังเป็นข้อมูลเก่า
+  // ต้องรีเฟรช feed ใหม่เอง ไม่งั้น user จะเห็นหัวข้อที่เพิ่งสร้างก็ต่อเมื่อกด refresh browser เอง
+  // reset กลับหน้า 1 ด้วย เพราะหัวข้อใหม่จะอยู่บนสุด (เรียงใหม่ล่าสุดก่อน) ถ้า user ค้างอยู่หน้าอื่นจะไม่เห็น
+  STATE.page = 1;
+  loadTopics();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
 function resetCreateForm(){
