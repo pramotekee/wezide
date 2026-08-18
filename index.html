@@ -950,6 +950,13 @@ const I18N = {
     errCategoryRequired: 'กรุณาเลือกหมวดหมู่', errTagRequired: 'กรุณาใส่ Tag อย่างน้อย 1 อัน',
     errDatesRequired: 'กรุณาเลือกวันเริ่มต้นและวันสิ้นสุดเผยแพร่', errEndBeforeStart: 'วันสิ้นสุดเผยแพร่ต้องไม่ก่อนวันเริ่มต้นเผยแพร่',
     errCoverRequired: 'กรุณาแนบรูปประกอบให้เรียบร้อยก่อนสร้างหัวข้อ',
+    errSignupAvatarRequired: 'กรุณาอัพโหลดรูปโปรไฟล์ก่อนสมัครสมาชิก', errSignupUsernameRequired: 'กรุณากรอก Username',
+    errSignupEmailRequired: 'โปรดใส่อีเมล เพื่อไม่เสียสิทธิ์ในการร่วมสนุก ลุ้นรับรางวัลต่างๆ และใช้เป็นช่องทางในการติดต่อจากทีมงานถึงคุณ',
+    errSignupEmailInvalid: 'อีเมลไม่ถูกต้อง กรุณาใส่ @ ด้วย', errSignupPhoneRequired: 'กรุณากรอกเบอร์โทรศัพท์',
+    errSignupPasscodeRequired: 'กรุณาตั้ง Passcode', errSignupPasscodeTooShort: 'Passcode ต้องมีอย่างน้อย 6 หลัก',
+    errSignupBirthdayRequired: 'กรุณาเลือกวันเกิดให้ครบ วัน/เดือน/ปี', errAgeMinimum: 'ขออภัย ไม่สามารถสมัครสมาชิกได้ เนื่องจากอายุต่ำกว่า 13 ปี',
+    errSignupGenderRequired: 'กรุณาเลือกเพศ', errSignupCountryRequired: 'กรุณาเลือกประเทศ',
+    errSignupProvinceRequired: 'กรุณาเลือกจังหวัด', errSignupCityStateRequired: 'กรุณากรอกเมือง/รัฐของคุณ',
     imageLoadFailToast: 'โหลดรูปไม่สำเร็จ กรุณาลองอัพโหลดรูปใหม่อีกครั้ง', imageUploadFailToast: 'อัพโหลดรูปไม่สำเร็จ',
     loggingInText: 'กำลังเข้าสู่ระบบ...', signingUpText: 'กำลังสมัครสมาชิก...', submittingTopicText: 'กำลังส่งหัวข้อ...',
     voteConfirmTitle: 'ยืนยันการเลือก', cancelBtn: 'ยกเลิก', voteConfirmBtnLabel: 'ยืนยันเลือก',
@@ -999,6 +1006,13 @@ const I18N = {
     errCategoryRequired: 'Please select a category', errTagRequired: 'Please add at least 1 tag',
     errDatesRequired: 'Please select a start and end date', errEndBeforeStart: 'The end date must not be before the start date',
     errCoverRequired: 'Please attach a cover image before creating the topic',
+    errSignupAvatarRequired: 'Please upload a profile picture before signing up', errSignupUsernameRequired: 'Please enter a Username',
+    errSignupEmailRequired: 'Please enter your email so you don\'t miss out on giveaways and updates from our team',
+    errSignupEmailInvalid: 'Invalid email, please include an @', errSignupPhoneRequired: 'Please enter your phone number',
+    errSignupPasscodeRequired: 'Please set a Passcode', errSignupPasscodeTooShort: 'Passcode must be at least 6 digits',
+    errSignupBirthdayRequired: 'Please select your full birthday (day/month/year)', errAgeMinimum: 'Sorry, you must be at least 13 years old to sign up',
+    errSignupGenderRequired: 'Please select your gender', errSignupCountryRequired: 'Please select a country',
+    errSignupProvinceRequired: 'Please select a province', errSignupCityStateRequired: 'Please enter your city/state',
     imageLoadFailToast: 'Failed to load image, please try uploading again', imageUploadFailToast: 'Image upload failed',
     loggingInText: 'Logging in...', signingUpText: 'Signing up...', submittingTopicText: 'Submitting topic...',
     voteConfirmTitle: 'Confirm your choice', cancelBtn: 'Cancel', voteConfirmBtnLabel: 'Confirm',
@@ -1301,63 +1315,75 @@ document.getElementById('signupSubmitBtn').addEventListener('click', async ()=>{
   // เช็คทีละช่องเรียงตามลำดับที่ฟิลด์ปรากฏบนหน้าจอจริง (บนลงล่าง) เพื่อให้ error message ที่เด้งขึ้นมา
   // ตรงกับช่องแรกที่ user ข้ามไปเสมอ ไม่ใช่ไล่เช็คตามลำดับที่เขียนในโค้ดซึ่งอาจไม่ตรงกับ DOM (บั๊กเดิม)
   if(!payload.profile_image_url){
-    errEl.textContent = 'กรุณาอัพโหลดรูปโปรไฟล์ก่อนสมัครสมาชิก';
+    errEl.textContent = t('errSignupAvatarRequired');
     errEl.style.display = 'block';
     return;
   }
   if(!payload.username){
-    errEl.textContent = 'กรุณากรอก Username';
+    errEl.textContent = t('errSignupUsernameRequired');
     errEl.style.display = 'block';
     return;
   }
   if(!payload.email){
-    errEl.textContent = 'โปรดใส่อีเมล เพื่อไม่เสียสิทธิ์ในการร่วมสนุก ลุ้นรับรางวัลต่างๆ และใช้เป็นช่องทางในการติดต่อจากทีมงานถึงคุณ';
+    errEl.textContent = t('errSignupEmailRequired');
     errEl.style.display = 'block';
     return;
   }
   if(payload.email.indexOf('@') === -1){
-    errEl.textContent = 'อีเมลไม่ถูกต้อง กรุณาใส่ @ ด้วย';
+    errEl.textContent = t('errSignupEmailInvalid');
     errEl.style.display = 'block';
     return;
   }
   if(!payload.phone){
-    errEl.textContent = 'กรุณากรอกเบอร์โทรศัพท์';
+    errEl.textContent = t('errSignupPhoneRequired');
     errEl.style.display = 'block';
     return;
   }
   if(!payload.passcode){
-    errEl.textContent = 'กรุณาตั้ง Passcode';
+    errEl.textContent = t('errSignupPasscodeRequired');
     errEl.style.display = 'block';
     return;
   }
   if(payload.passcode.length < 6){
-    errEl.textContent = 'Passcode ต้องมีอย่างน้อย 6 หลัก';
+    errEl.textContent = t('errSignupPasscodeTooShort');
     errEl.style.display = 'block';
     return;
   }
   if(!payload.birthday){
-    errEl.textContent = 'กรุณาเลือกวันเกิดให้ครบ วัน/เดือน/ปี';
+    errEl.textContent = t('errSignupBirthdayRequired');
     errEl.style.display = 'block';
     return;
   }
+  {
+    const today = new Date();
+    const birthDate = new Date(parseInt(bYear,10), parseInt(bMonth,10)-1, parseInt(bDay,10));
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const hasHadBirthdayThisYear = (today.getMonth() > birthDate.getMonth()) ||
+      (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
+    if(!hasHadBirthdayThisYear) age--;
+    if(age < 13){
+      errEl.textContent = t('errAgeMinimum');
+      errEl.style.display = 'block';
+      return;
+    }
+  }
   if(!payload.gender){
-    errEl.textContent = 'กรุณาเลือกเพศ';
+    errEl.textContent = t('errSignupGenderRequired');
     errEl.style.display = 'block';
     return;
   }
   if(!payload.country){
-    errEl.textContent = 'กรุณาเลือกประเทศ';
+    errEl.textContent = t('errSignupCountryRequired');
     errEl.style.display = 'block';
     return;
   }
   if(payload.country === 'Thailand' && !payload.province){
-    errEl.textContent = 'กรุณาเลือกจังหวัด';
+    errEl.textContent = t('errSignupProvinceRequired');
     errEl.style.display = 'block';
     return;
   }
-  // ข้อความนี้ EN อย่างเดียว (ไม่ bilingual) เพราะจะเจอ error นี้ได้เฉพาะคนที่เลือกประเทศไม่ใช่ Thailand เท่านั้น
   if(payload.country !== 'Thailand' && !payload.city_state){
-    errEl.textContent = 'Please enter your city/state';
+    errEl.textContent = t('errSignupCityStateRequired');
     errEl.style.display = 'block';
     return;
   }
