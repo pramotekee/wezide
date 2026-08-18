@@ -461,9 +461,9 @@
   .signup-cta-btn{ margin-top:10px; }
   .toast{
     position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
-    background:var(--primary-dark); color:#fff; padding:12px 20px; border-radius:14px;
+    background:var(--primary-dark); color:#fff; padding:13px 22px; border-radius:10px;
     font-size:13.5px; z-index:200; display:none; box-shadow:0 8px 24px rgba(0,0,0,0.25);
-    max-width:min(92vw, 380px); width:max-content; text-align:center; line-height:1.5;
+    max-width:min(92vw, 480px); width:max-content; text-align:center; line-height:1.5;
   }
   .toast.show{ display:block; animation:fadeInUp .2s ease; }
   @keyframes fadeInUp{ from{ opacity:0; transform:translate(-50%,10px);} to{opacity:1; transform:translate(-50%,0);} }
@@ -1085,11 +1085,12 @@ async function api(action, params = {}, method = 'GET'){
   }
 }
 
-function showToast(msg){
+function showToast(msg, durationMs){
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(()=> t.classList.remove('show'), 2600);
+  clearTimeout(t._hideTimer); // กันเคส toast ถูกเรียกซ้อนกัน ตัวเก่าจะไปลบ .show ทับตัวใหม่ก่อนเวลาที่ควรจะเป็น
+  t._hideTimer = setTimeout(()=> t.classList.remove('show'), durationMs || 4000); // มาตรฐานใหม่ 4 วิ (เดิม 2.6 วิ อ่านไม่ทันสำหรับข้อความยาว)
 }
 
 function openModal(id){ document.getElementById(id).classList.add('open'); }
@@ -1188,7 +1189,7 @@ async function validateSessionOnLoad(){
   const res = await api('validateSession', { session_token: STATE.session.session_token });
   if(!res.success){
     logout();
-    showToast(res.message || 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
+    showToast(res.message || 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง', 6000); // ข้อความนี้ยาวกว่าปกติ ให้เวลาอ่านนานกว่า toast ทั่วไป
     return;
   }
   // sync username/avatar เผื่อมีการแก้ไขโปรไฟล์จากที่อื่นแล้วยังไม่อัปเดต
