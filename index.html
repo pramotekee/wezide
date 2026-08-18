@@ -956,7 +956,7 @@ const I18N = {
     errSignupPasscodeRequired: 'กรุณาตั้ง Passcode', errSignupPasscodeTooShort: 'Passcode ต้องมีอย่างน้อย 6 หลัก',
     errSignupBirthdayRequired: 'กรุณาเลือกวันเกิดให้ครบ วัน/เดือน/ปี', errAgeMinimum: 'ขออภัย ไม่สามารถสมัครสมาชิกได้ เนื่องจากอายุต่ำกว่า 13 ปี',
     errSignupGenderRequired: 'กรุณาเลือกเพศ', errSignupCountryRequired: 'กรุณาเลือกประเทศ',
-    errSignupProvinceRequired: 'กรุณาเลือกจังหวัด', errSignupCityStateRequired: 'กรุณากรอกเมือง/รัฐของคุณ',
+    errSignupProvinceRequired: 'กรุณาเลือกจังหวัด',
     imageLoadFailToast: 'โหลดรูปไม่สำเร็จ กรุณาลองอัพโหลดรูปใหม่อีกครั้ง', imageUploadFailToast: 'อัพโหลดรูปไม่สำเร็จ',
     loggingInText: 'กำลังเข้าสู่ระบบ...', signingUpText: 'กำลังสมัครสมาชิก...', submittingTopicText: 'กำลังส่งหัวข้อ...',
     voteConfirmTitle: 'ยืนยันการเลือก', cancelBtn: 'ยกเลิก', voteConfirmBtnLabel: 'ยืนยันเลือก',
@@ -1012,7 +1012,7 @@ const I18N = {
     errSignupPasscodeRequired: 'Please set a Passcode', errSignupPasscodeTooShort: 'Passcode must be at least 6 digits',
     errSignupBirthdayRequired: 'Please select your full birthday (day/month/year)', errAgeMinimum: 'Sorry, you must be at least 13 years old to sign up',
     errSignupGenderRequired: 'Please select your gender', errSignupCountryRequired: 'Please select a country',
-    errSignupProvinceRequired: 'Please select a province', errSignupCityStateRequired: 'Please enter your city/state',
+    errSignupProvinceRequired: 'Please select a province',
     imageLoadFailToast: 'Failed to load image, please try uploading again', imageUploadFailToast: 'Image upload failed',
     loggingInText: 'Logging in...', signingUpText: 'Signing up...', submittingTopicText: 'Submitting topic...',
     voteConfirmTitle: 'Confirm your choice', cancelBtn: 'Cancel', voteConfirmBtnLabel: 'Confirm',
@@ -1382,8 +1382,11 @@ document.getElementById('signupSubmitBtn').addEventListener('click', async ()=>{
     errEl.style.display = 'block';
     return;
   }
+  // ข้อความนี้ EN ตายตัว (ไม่ผูกกับ toggle) เพราะ error นี้เจอเฉพาะคนที่เลือกประเทศไม่ใช่ Thailand เท่านั้น
+  // และ default lang ของเว็บคือ TH เสมอ (getLang() คืน 'th' ถ้ายังไม่เคยกด toggle) — ถ้าผูกกับ t()
+  // user ต่างชาติที่ยังไม่เคยกด toggle จะเจอ error นี้เป็นภาษาไทย จึงล็อก EN ไว้ให้ชัวร์
   if(payload.country !== 'Thailand' && !payload.city_state){
-    errEl.textContent = t('errSignupCityStateRequired');
+    errEl.textContent = 'Please enter your city/state';
     errEl.style.display = 'block';
     return;
   }
