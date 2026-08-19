@@ -344,6 +344,23 @@
   .dash-item-pct{ width:30px; flex-shrink:0; text-align:right; font-weight:600; color:var(--text); }
   .dash-empty-hint{ font-size:12px; color:var(--text-muted); text-align:center; padding:4px 0; }
 
+  /* วง spinner หมุนตอนกำลังโหลดสรุปผู้โหวต — โชว์ทันทีที่กด toggle เปิด กันไม่ให้ user คิดว่าค้าง/พัง
+     ระหว่างรอ getTopicDetail ตอบกลับ (เฉพาะเคสที่คิว preload พื้นหลังยังโหลดไม่ถึงการ์ดนี้) */
+  .dash-loading{ display:flex; align-items:center; justify-content:center; gap:8px; padding:14px 0; }
+  .dash-spinner{
+    width:16px; height:16px; border-radius:50%; flex-shrink:0;
+    border:2px solid var(--line); border-top-color:var(--primary);
+    animation:dash-spin .7s linear infinite;
+  }
+  .dash-loading-text{ font-size:12px; color:var(--text-muted); }
+  @keyframes dash-spin{ to{ transform:rotate(360deg); } }
+  .dash-retry-btn{
+    font-size:11.5px; font-weight:600; color:var(--primary); background:none;
+    border:1px solid var(--primary); border-radius:20px; padding:3px 12px;
+    flex-shrink:0; transition:background .15s ease;
+  }
+  .dash-retry-btn:active{ background:rgba(91,42,158,0.08); }
+
   /* --- gender donut chart (แทนแถบสีเดิม) --- */
   .dash-donut-wrap{ display:flex; flex-direction:column; align-items:center; gap:6px; }
   .dash-donut{ display:block; }
@@ -985,7 +1002,7 @@ const I18N = {
     voteConfirmMsg: 'คุณกำลังเลือก "{side}" เมื่อยืนยันแล้วคำตอบของคุณจะถูกบันทึกทันที และสามารถเปลี่ยนใจภายหลังได้ในจำนวนจำกัด',
     remainingChangesText: ' คุณสามารถเปลี่ยนใจได้อีก {n} ครั้ง',
     apiErrorMsg: 'โอ๊ะ! มีบางอย่างขัดข้อง ทำให้ระบบสะดุดครับ ลองรีเฟรชใหม่อีกครั้งนะครับ',
-    dashGenderTitle: 'เพศ', dashAgeGroupTitle: 'ช่วงอายุ',
+    dashGenderTitle: 'เพศ', dashAgeGroupTitle: 'ช่วงอายุ', dashLoadingText: 'กำลังโหลดข้อมูล...', dashLoadFailedText: 'Couldn\'t load', dashRetryBtn: 'Try again',
     commentPlaceholder: 'หากคุณมีความคิดเห็นเพิ่มเติม แบ่งปันมาได้เลย',
     commentEmptyMsg: 'ยังไม่มีความคิดเห็นในฝั่งนี้',
     commentLoadingText: 'กำลังโหลดความคิดเห็น...'
@@ -1042,7 +1059,7 @@ const I18N = {
     voteConfirmMsg: 'You are choosing "{side}". Once confirmed, your answer is saved immediately, and you can change your mind a limited number of times afterward.',
     remainingChangesText: ' You can change your mind {n} more time(s)',
     apiErrorMsg: 'Oops! Something went wrong. Please try refreshing and try again.',
-    dashGenderTitle: 'Gender', dashAgeGroupTitle: 'Age Group',
+    dashGenderTitle: 'Gender', dashAgeGroupTitle: 'Age Group', dashLoadingText: 'Loading...', dashLoadFailedText: 'Couldn\'t load', dashRetryBtn: 'Try again',
     commentPlaceholder: 'Tell us more about your answer...',
     commentEmptyMsg: 'No comments on this side yet',
     commentLoadingText: 'Loading comments...'
@@ -1968,6 +1985,15 @@ function toggleDashSummary(topicId){
   body.classList.toggle('open', willOpen);
   btn.classList.toggle('open', willOpen);
   btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+
+  // เพิ่งเปิดแต่ข้อมูลยังไม่มา (ยังเห็น spinner ค้างอยู่ = คิว preload พื้นหลังยังโหลดมาไม่ถึงการ์ดนี้)
+  // ตัดคิวโหลดของการ์ดนี้ทันที ไม่ต้องรอคิว ระหว่างรอ spinner จะหมุนต่อไปให้เห็นว่ากำลังทำงานอยู่ ไม่ได้ค้าง
+  if(willOpen){
+    const dashEl = document.getElementById(`dash-${topicId}`);
+    if(dashEl && !dashEl.querySelector('.dash-cols')){
+      loadDashboardFor(topicId);
+    }
+  }
 }
 
 /* เช็คทีละคำอธิบายว่าล้น 2 บรรทัดที่ clamp ไว้จริงไหม (ต้องเช็คหลัง DOM วาดเสร็จแล้วเท่านั้นถึงจะรู้ scrollHeight ที่แท้จริง)
@@ -2085,7 +2111,10 @@ function topicCardHTML(t){
         <span class="days-left${daysLeftUrgentClass(t.end_date)}">${daysLeftText(t.end_date)}</span>
       </div>
       <div class="mini-dash-body" id="dashBody-${t.topic_id}">
-        <div id="dash-${t.topic_id}"></div>
+        <div id="dash-${t.topic_id}" class="dash-loading">
+          <span class="dash-spinner"></span>
+          <span class="dash-loading-text">${t('dashLoadingText')}</span>
+        </div>
       </div>
     </div>
   </div>`;
@@ -2153,21 +2182,51 @@ async function loadDashboards(){
     await loadDashboardFor(t.topic_id);
   }
 }
+// topic_id ที่กำลังมี request getTopicDetail ค้างอยู่ — กันยิงซ้ำซ้อนเวลา user กด toggle เปิด
+// "ตัดคิว" การ์ดที่คิว preload พื้นหลัง (loadDashboards) ยังโหลดไปไม่ถึง (ดู toggleDashSummary)
+const DASH_LOADING = new Set();
+
 // โหลด dashboard breakdown ของหัวข้อเดียว — แยกออกมาจาก loadDashboards() เพื่อเรียกซ้ำได้หลัง
 // re-render การ์ดเดี่ยวๆ (เช่นหลังกดแปลภาษา) โดยไม่ต้องวนโหลดใหม่ทั้งฟีด
 async function loadDashboardFor(topicId){
+  if(DASH_LOADING.has(topicId)) return; // มี request ของการ์ดนี้กำลังทำงานอยู่แล้ว ไม่ยิงซ้ำ
   const t = STATE.topics.find(x=> x.topic_id === topicId);
   if(!t) return;
-  const res = await api('getTopicDetail', {topic_id: topicId});
-  if(!res.success) return;
-  renderDashboard(topicId, res.dashboard, t.card_color);
+  DASH_LOADING.add(topicId);
+  try{
+    const res = await api('getTopicDetail', {topic_id: topicId});
+    if(!res.success){
+      // โหลดพัง (เน็ตหลุด/เซิร์ฟเวอร์ error) — โชว์ข้อความสั้นๆ + ปุ่ม Try again แทน spinner ที่จะหมุนค้างตลอดไปแบบไม่มีที่สิ้นสุด
+      // ไม่งั้น user จะงงว่าต้องทำยังไงต่อ (รอ? รีเฟรชทั้งหน้า?) ปุ่มนี้กดแล้ว retry เฉพาะการ์ดนี้การ์ดเดียวพอ
+      const dashEl = document.getElementById(`dash-${topicId}`);
+      if(dashEl && dashEl.classList.contains('dash-loading')){
+        dashEl.innerHTML = `<span class="dash-loading-text">⚠️ ${t('dashLoadFailedText')}</span><button type="button" class="dash-retry-btn" data-dash-retry="${topicId}">${t('dashRetryBtn')}</button>`;
+        const retryBtn = dashEl.querySelector('.dash-retry-btn');
+        if(retryBtn) retryBtn.addEventListener('click', ()=> retryLoadDashboard(topicId));
+      }
+      return;
+    }
+    renderDashboard(topicId, res.dashboard, t.card_color);
 
-  // cache เลข comment count ไว้ที่ topic object เอง เผื่อ re-render การ์ด (เช่นหลังแปลภาษา) จะได้โชว์เลขที่มีอยู่แล้ว
-  // ทันทีโดยไม่ต้องรอโหลดใหม่ — อัพเดตแค่ label ของปุ่มในตำแหน่งเดิม ไม่ full re-render การ์ดทั้งใบ
-  t._commentCountA = res.dashboard.comment_count_a || 0;
-  t._commentCountB = res.dashboard.comment_count_b || 0;
-  updateCommentBtnLabel(topicId, 'A', t._commentCountA);
-  updateCommentBtnLabel(topicId, 'B', t._commentCountB);
+    // cache เลข comment count ไว้ที่ topic object เอง เผื่อ re-render การ์ด (เช่นหลังแปลภาษา) จะได้โชว์เลขที่มีอยู่แล้ว
+    // ทันทีโดยไม่ต้องรอโหลดใหม่ — อัพเดตแค่ label ของปุ่มในตำแหน่งเดิม ไม่ full re-render การ์ดทั้งใบ
+    t._commentCountA = res.dashboard.comment_count_a || 0;
+    t._commentCountB = res.dashboard.comment_count_b || 0;
+    updateCommentBtnLabel(topicId, 'A', t._commentCountA);
+    updateCommentBtnLabel(topicId, 'B', t._commentCountB);
+  } finally {
+    DASH_LOADING.delete(topicId);
+  }
+}
+
+// รีเซ็ต dash placeholder กลับเป็น spinner แล้วยิงโหลดใหม่เฉพาะการ์ดนี้ — ใช้ตอนกดปุ่ม "Try again" หลังโหลด error
+function retryLoadDashboard(topicId){
+  const dashEl = document.getElementById(`dash-${topicId}`);
+  if(dashEl){
+    dashEl.classList.add('dash-loading');
+    dashEl.innerHTML = `<span class="dash-spinner"></span><span class="dash-loading-text">${t('dashLoadingText')}</span>`;
+  }
+  loadDashboardFor(topicId);
 }
 
 function updateCommentBtnLabel(topicId, side, count){
@@ -2236,6 +2295,7 @@ function buildGenderDonutHTML(dash){
 function renderDashboard(topicId, dash, cardColor){
   const el = document.getElementById(`dash-${topicId}`);
   if(!el) return;
+  el.classList.remove('dash-loading'); // ล้าง class ของ placeholder ทิ้ง กัน layout เพี้ยน (flex-center/padding ของ spinner ค้างอยู่)
   const ageColor = cardColor || '#5B2A9E';
 
   const genderDonutHTML = buildGenderDonutHTML(dash);
