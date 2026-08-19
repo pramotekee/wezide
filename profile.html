@@ -21,6 +21,9 @@
   window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
 </script>
 <script defer src="/_vercel/speed-insights/script.js"></script>
+<!-- [PRO PLAN] Omise.js: สร้าง card token ฝั่ง client เท่านั้น (PCI compliance) — ใช้งานจริงได้ก็ต่อเมื่อตั้งค่า
+     CONFIG.OPN_PUBLIC_KEY ด้านล่างแล้ว (รอ Pop ได้ public key จริงจาก OPN หลัง merchant account approved) -->
+<script defer src="https://cdn.omise.co/omise.js"></script>
 
 <style>
   :root{
@@ -163,6 +166,7 @@
   .mt-action-btn.publish{ border-color:#2C8A4B; color:#2C8A4B; background:#E4F5E9; }
   .mt-action-btn.hide{ border-color:#B8790C; color:#B8790C; background:#FFF3DE; }
   .mt-action-btn.edit{ border-color:var(--primary); color:var(--primary); background:#fff; }
+  .mt-action-btn.export{ border-color:#2C8A4B; color:#2C8A4B; background:#fff; }
   .mt-action-btn.delete{ border-color:var(--danger); color:var(--danger); background:#fff; }
   .status-badge.scheduled{ background:#E9F0FF; color:#2A5CD6; }
 
@@ -352,6 +356,40 @@
   }
   .section-divider{ border:none; border-top:1.5px dashed var(--line); margin:18px 0; }
 
+  /* ===== Plan & Billing ===== */
+  .charge-failed-banner{
+    background:#FFF6F6; border:1.5px solid var(--danger); border-radius:var(--radius);
+    padding:16px; margin-bottom:16px; display:flex; flex-direction:column; gap:10px; align-items:flex-start;
+  }
+  .charge-failed-banner p{ margin:0; font-size:13px; color:var(--danger); line-height:1.6; }
+  .charge-failed-banner .btn{ font-size:13px; padding:9px 16px; }
+  .plan-status-card{
+    background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:20px 16px; margin-bottom:16px;
+  }
+  .plan-badge-row{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .plan-badge{ font-size:12px; font-weight:700; padding:4px 12px; border-radius:100px; letter-spacing:0.5px; }
+  .plan-badge.free{ background:#EFECF5; color:var(--text-muted); }
+  .plan-badge.pro{ background:linear-gradient(135deg,var(--accent),#FFA53C); color:var(--primary-dark); }
+  .plan-until-text{ font-size:12.5px; color:var(--text-muted); margin:0 0 16px; }
+  .plan-pitch-title{ font-size:15px; font-weight:700; margin:0 0 8px; }
+  .plan-pitch-desc{ font-size:13px; color:var(--text-muted); line-height:1.7; margin:0 0 18px; }
+  .plan-price-tag{ font-family:'Antonio',sans-serif; font-size:26px; font-weight:700; color:var(--primary); margin:0 0 4px; }
+  .plan-price-usd{ font-size:11.5px; color:var(--text-muted); margin:0 0 18px; }
+  .billing-row{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    padding:12px 0; border-bottom:1px solid var(--line); font-size:12.5px;
+  }
+  .billing-row:last-child{ border-bottom:none; }
+  .billing-row-left{ display:flex; flex-direction:column; gap:3px; }
+  .billing-date{ color:var(--text); font-weight:600; }
+  .billing-reason{ color:var(--danger); font-size:11px; }
+  .billing-row-right{ display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
+  .billing-amount{ font-weight:700; color:var(--text); white-space:nowrap; }
+  .billing-status-pill{ font-size:10.5px; font-weight:600; padding:3px 9px; border-radius:100px; white-space:nowrap; }
+  .billing-status-pill.success{ background:#E4F5E9; color:#2C8A4B; }
+  .billing-status-pill.failed{ background:#FBE7E7; color:var(--danger); }
+
   /* ===== Danger zone ===== */
   .danger-box{
     border:1.5px solid var(--danger); border-radius:var(--radius); background:#FFF6F6;
@@ -410,6 +448,7 @@
       <button class="tab-btn active" data-tab="dashboard">My Dashboard</button>
       <button class="tab-btn" data-tab="mytopics">My Topics</button>
       <button class="tab-btn" data-tab="editinfo">My Profile</button>
+      <button class="tab-btn" data-tab="planbilling">Plan & Billing</button>
       <button class="tab-btn" data-tab="deleteaccount">Account Deletion</button>
     </div>
 
@@ -526,6 +565,23 @@
 
         <div class="field-error" id="editError"></div>
         <button class="btn btn-primary full-btn" id="editSaveBtn" data-i18n="saveInfoBtn">บันทึกข้อมูล</button>
+      </div>
+    </div>
+
+    <!-- ===== Tab: Plan & Billing ===== -->
+    <div class="tab-panel" id="tab-planbilling">
+      <div id="chargeFailedBanner" class="charge-failed-banner" style="display:none;">
+        <p data-i18n="chargeFailedBannerText">การตัดเงินรอบล่าสุดไม่สำเร็จ บัญชีของคุณถูกปรับเป็น FREE plan แล้ว</p>
+        <button class="btn btn-primary" id="chargeFailedRetryBtn" data-i18n="chargeFailedRetryBtn">จ่ายเงินอีกครั้ง</button>
+      </div>
+
+      <div class="plan-status-card" id="planStatusCard">
+        <div class="area-loading"><div class="area-spinner"></div><span data-i18n="loadingText">กำลังโหลด...</span></div>
+      </div>
+
+      <div class="dash-card">
+        <h4 data-i18n="billingHistoryTitle">ประวัติการตัดเงิน</h4>
+        <div id="billingHistoryList"><div class="area-loading"><div class="area-spinner"></div><span data-i18n="loadingText">กำลังโหลด...</span></div></div>
       </div>
     </div>
 
@@ -663,11 +719,34 @@
   </div>
 </div>
 
+<!-- ===== PRO Upgrade — Card Entry Modal (Omise.js tokenization, บัตรไม่ผ่าน server ของเราเลย) ===== -->
+<div class="modal-overlay" id="proCardModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 data-i18n="proCardModalTitle">ชำระเงิน — 199 บาท/เดือน</h3>
+      <button class="modal-close" data-close="proCardModal">✕</button>
+    </div>
+    <p class="field-hint" style="margin:-4px 0 14px;" data-i18n="proCardModalHint">ข้อมูลบัตรของคุณเข้ารหัสส่งตรงถึงผู้ให้บริการชำระเงิน ไม่ผ่านเซิร์ฟเวอร์ของเราเลย</p>
+    <div class="field"><label data-i18n="cardNumberLabel">หมายเลขบัตร</label><input type="text" id="pcCardNumber" inputmode="numeric" maxlength="19" placeholder="4242 4242 4242 4242"></div>
+    <div class="field"><label data-i18n="cardNameLabel">ชื่อบนบัตร</label><input type="text" id="pcCardName" autocomplete="cc-name" placeholder="SOMCHAI JAIDEE"></div>
+    <div class="date-row">
+      <div class="field"><label data-i18n="cardExpiryLabel">หมดอายุ (MM/YY)</label><input type="text" id="pcCardExpiry" inputmode="numeric" maxlength="5" placeholder="12/29"></div>
+      <div class="field"><label>CVV</label><input type="text" id="pcCardCvv" inputmode="numeric" maxlength="4" placeholder="123"></div>
+    </div>
+    <div class="field-error" id="pcError"></div>
+    <button class="btn btn-primary full-btn" id="pcPayBtn" data-i18n="pcPayBtn">ยืนยันชำระเงิน 199 บาท</button>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
 const CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbwUBBRSKVfEkr-FmanTnQ1pHDD_-gNQ53pWkzHLvm3kvDWSTu-ARtV70yXiuN8hep8Gmg/exec'
+  API_URL: 'https://script.google.com/macros/s/AKfycbwUBBRSKVfEkr-FmanTnQ1pHDD_-gNQ53pWkzHLvm3kvDWSTu-ARtV70yXiuN8hep8Gmg/exec',
+  // [PRO PLAN] Public key จาก OPN (Omise) — ค่านี้ปลอดภัยที่จะอยู่ฝั่ง frontend (ไม่ใช่ secret key)
+  // TODO: ใส่ public key จริง (เริ่มด้วย pkey_test_ หรือ pkey_live_) หลัง Pop ได้รับ approve บัญชี OPN merchant
+  // ปล่อยว่างไว้ตอนนี้ -> ปุ่มอัพเกรดจะโชว์ข้อความ "ระบบชำระเงินยังไม่พร้อมใช้งาน" แทนการพยายามตัดบัตรจริง
+  OPN_PUBLIC_KEY: ''
 };
 
 /* ================= I18N (TH ⇄ EN toggle สำหรับข้อความระบบ/static UI) =================
@@ -700,7 +779,35 @@ const I18N = {
     logoutToast: 'ออกจากระบบแล้ว',
     dashGenderTitle: 'เพศ', dashAgeGroupTitle: 'ช่วงอายุ',
     commentEmptyMsg: 'ยังไม่มีความคิดเห็นในฝั่งนี้',
-    commentLoadingText: 'กำลังโหลดความคิดเห็น...'
+    commentLoadingText: 'กำลังโหลดความคิดเห็น...',
+    chargeFailedBannerText: 'การตัดเงินรอบล่าสุดไม่สำเร็จ บัญชีของคุณถูกปรับเป็น FREE plan แล้ว',
+    chargeFailedRetryBtn: 'จ่ายเงินอีกครั้ง',
+    chargeFailedToast: 'การตัดเงินรอบล่าสุดไม่สำเร็จ บัญชีถูกปรับเป็น FREE แล้ว — ไปที่แท็บ Plan & Billing เพื่อจ่ายเงินอีกครั้ง',
+    billingHistoryTitle: 'ประวัติการตัดเงิน',
+    billingHistoryEmpty: 'ยังไม่มีประวัติการตัดเงิน',
+    planPitchTitle: 'อัปเกรดเป็น PRO plan เพื่อใช้งานฟีเจอร์ที่มากกว่า ให้คุณสามารถ export data จากลูกค้าที่ร่วมมอบคำตอบให้คุณ',
+    planPitchDesc: 'เพียง 199 บาท/เดือน (นับ 30 วัน) สำหรับข้อมูลอันมีค่าต่อสินค้า, บริการ และเรื่องที่คุณกำลังสนใจ เพื่อช่วยให้เข้าใจตามต้องการลูกค้าของคุณมากยิ่งขึ้น (ยกเลิกได้ตลอดเวลา ถ้าคุณต้องการ)',
+    planPriceUsdHint: '(~$5.5 USD — ป้ายอ้างอิงเท่านั้น ไม่ใช่ค่าที่ตัดจริง)',
+    upgradeToProBtn: 'อัปเกรดเป็น PRO — 199 บาท/เดือน',
+    proActiveLabel: 'PRO', freeLabel: 'FREE',
+    proUntilActiveText: 'ต่ออายุอัตโนมัติรอบถัดไปวันที่ {date}',
+    proUntilCanceledText: 'ยกเลิกแล้ว ใช้สิทธิ์ PRO ต่อได้ถึงวันที่ {date}',
+    cancelProBtn: 'ยกเลิกการสมัครสมาชิก',
+    cancelProConfirmTitle: 'ยืนยันการยกเลิก',
+    cancelProConfirmMsg: 'แน่ใจนะว่าจะยกเลิก? คุณจะยังใช้ PRO ได้ถึงวันที่ {date} หลังจากนั้นจะกลับเป็น FREE plan อัตโนมัติ',
+    cancelProConfirmBtn: 'ยืนยันยกเลิก',
+    upgradeSuccessToast: 'อัพเกรดเป็น PRO สำเร็จ!',
+    cancelSuccessToast: 'ยกเลิกการสมัครสมาชิกแล้ว',
+    proCardModalTitle: 'ชำระเงิน — 199 บาท/เดือน',
+    proCardModalHint: 'ข้อมูลบัตรของคุณเข้ารหัสส่งตรงถึงผู้ให้บริการชำระเงิน ไม่ผ่านเซิร์ฟเวอร์ของเราเลย',
+    cardNumberLabel: 'หมายเลขบัตร', cardNameLabel: 'ชื่อบนบัตร', cardExpiryLabel: 'หมดอายุ (MM/YY)',
+    pcPayBtn: 'ยืนยันชำระเงิน 199 บาท', pcPayLoading: 'กำลังชำระเงิน...',
+    pcNotReadyMsg: 'ระบบชำระเงินยังไม่พร้อมใช้งานในขณะนี้ กรุณาลองใหม่อีกครั้งภายหลัง',
+    exportGateMsg: 'ฟีเจอร์ Export data นี้ สำหรับผู้ใช้งานแบบ PRO plan หากสนใจ สามารถอัปเกรดเพื่อเข้าใช้งาน',
+    exportGateUpgradeBtn: 'อัปเกรด', exportBtn: 'Export', exportLoading: 'กำลัง export...',
+    exportSuccessToast: 'Export สำเร็จ',
+    billingStatusSuccess: 'สำเร็จ', billingStatusFailed: 'ไม่สำเร็จ',
+    cardFieldsRequiredMsg: 'กรุณากรอกข้อมูลบัตรให้ครบ'
   },
   en: {
     backHome: '← Back to Home', lockedTitle: 'Please log in first',
@@ -727,7 +834,35 @@ const I18N = {
     logoutToast: 'Logged out.',
     dashGenderTitle: 'Gender', dashAgeGroupTitle: 'Age Group',
     commentEmptyMsg: 'No comments on this side yet',
-    commentLoadingText: 'Loading comments...'
+    commentLoadingText: 'Loading comments...',
+    chargeFailedBannerText: 'Your last payment failed. Your account has been switched to the FREE plan.',
+    chargeFailedRetryBtn: 'Pay again',
+    chargeFailedToast: 'Your last payment failed and your account is now on the FREE plan — go to Plan & Billing to pay again.',
+    billingHistoryTitle: 'Billing History',
+    billingHistoryEmpty: 'No billing history yet',
+    planPitchTitle: 'Upgrade to PRO plan to unlock more features, including exporting response data from people who took part in your topics.',
+    planPitchDesc: 'Just 199 THB/month (30 days) for valuable insight into your products, services, and topics of interest — so you can better understand your audience. Cancel anytime.',
+    planPriceUsdHint: '(~$5.5 USD — reference only, not the actual charged amount)',
+    upgradeToProBtn: 'Upgrade to PRO — 199 THB/month',
+    proActiveLabel: 'PRO', freeLabel: 'FREE',
+    proUntilActiveText: 'Auto-renews on {date}',
+    proUntilCanceledText: 'Canceled — you can keep using PRO until {date}',
+    cancelProBtn: 'Cancel Subscription',
+    cancelProConfirmTitle: 'Confirm Cancellation',
+    cancelProConfirmMsg: 'Are you sure you want to cancel? You can keep using PRO until {date}, after which your account will automatically switch to the FREE plan.',
+    cancelProConfirmBtn: 'Confirm Cancel',
+    upgradeSuccessToast: 'Successfully upgraded to PRO!',
+    cancelSuccessToast: 'Subscription canceled.',
+    proCardModalTitle: 'Payment — 199 THB/month',
+    proCardModalHint: 'Your card details are encrypted and sent directly to our payment provider. They never touch our servers.',
+    cardNumberLabel: 'Card Number', cardNameLabel: 'Name on Card', cardExpiryLabel: 'Expiry (MM/YY)',
+    pcPayBtn: 'Confirm Payment — 199 THB', pcPayLoading: 'Processing payment...',
+    pcNotReadyMsg: 'The payment system is not available right now. Please try again later.',
+    exportGateMsg: 'This export feature is for PRO plan users. Upgrade if you\'re interested.',
+    exportGateUpgradeBtn: 'Upgrade', exportBtn: 'Export', exportLoading: 'Exporting...',
+    exportSuccessToast: 'Export successful',
+    billingStatusSuccess: 'Success', billingStatusFailed: 'Failed',
+    cardFieldsRequiredMsg: 'Please fill in all card details'
   }
 };
 function getLang(){ return localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'th'; }
@@ -756,6 +891,13 @@ function setLang(lang){
   // label ในบล็อก "เพศ/ช่วงอายุ" ของ My Dashboard เป็น dynamic HTML generate ผ่าน t() ตอน render
   // ไม่ผ่าน [data-i18n] loop ของ applyLang() จึงต้องโหลด dashboard ใหม่ทุกครั้งที่สลับภาษา
   if(isLoggedIn()) loadDashboard();
+  // เช่นเดียวกัน: การ์ดสถานะแพลนและประวัติการตัดเงินเป็น dynamic HTML ผ่าน t() — re-render จาก cache
+  // (ไม่ยิง API ซ้ำ เพราะข้อมูลไม่ได้เปลี่ยน แค่ภาษาที่แสดงเปลี่ยน)
+  if(isLoggedIn() && STATE.profile){
+    renderPlanStatusCard();
+    renderChargeFailedBanner();
+    renderBillingHistory(STATE.billingHistory || []);
+  }
 }
 document.querySelectorAll('.lang-toggle button').forEach(b=>{
   b.addEventListener('click', ()=> setLang(b.dataset.lang));
@@ -773,6 +915,7 @@ let STATE = {
   session: JSON.parse(localStorage.getItem('wz_session') || 'null'),
   profile: null,
   myTopics: [],
+  billingHistory: [],
   sortMode: 'latest',
   editAvatarUrl: ''
 };
@@ -840,7 +983,7 @@ document.querySelectorAll('[data-close]').forEach(btn=>{
   btn.addEventListener('click', ()=> closeModal(btn.dataset.close));
 });
 // modal ที่เป็นฟอร์มยาว กรอกข้อมูลเยอะ ต้องกันพลาด: ปิดได้เฉพาะกดปุ่ม (x) เท่านั้น ห้ามปิดด้วยการแตะนอกกรอบ (เหมือนกับ createModal ใน index.html)
-const STRICT_CLOSE_MODALS = ['editTopicModal'];
+const STRICT_CLOSE_MODALS = ['editTopicModal', 'proCardModal'];
 document.querySelectorAll('.modal-overlay').forEach(ov=>{
   if(STRICT_CLOSE_MODALS.includes(ov.id)) return;
   ov.addEventListener('click', (e)=>{ if(e.target === ov) ov.classList.remove('open'); });
@@ -1230,6 +1373,7 @@ function renderMyTopics(){
         <div class="mt-actions">
           ${toggleBtn}
           <button class="mt-action-btn edit" data-action="edit" data-topic="${t.topic_id}">แก้ไข</button>
+          <button class="mt-action-btn export" data-action="export" data-topic="${t.topic_id}">${t18n('exportBtn')}</button>
           <button class="mt-action-btn delete" data-action="delete" data-topic="${t.topic_id}">ลบ</button>
         </div>
       </div>`;
@@ -1261,6 +1405,8 @@ document.getElementById('myTopicsList').addEventListener('click', (e)=>{
     });
   } else if(btn.dataset.action === 'edit'){
     openEditTopicModal(topic);
+  } else if(btn.dataset.action === 'export'){
+    handleExportClick(topicId, btn);
   } else if(btn.dataset.action === 'delete'){
     showConfirmPopup({
       title: 'ยืนยันการลบหัวข้อ',
@@ -1720,6 +1866,230 @@ async function doDeleteAccount(){
   setTimeout(()=>{ location.href = 'index.html'; }, 1200);
 }
 
+/* ================= Plan & Billing (spec: wezide_pro_plan_handoff.md) =================
+ * OPN Payment (Omise) integration เต็มรูปแบบ — บัตรไม่ผ่าน server ของเราเลย (Omise.js tokenize ที่ client)
+ * ทำงานได้จริงก็ต่อเมื่อ CONFIG.OPN_PUBLIC_KEY ถูกตั้งค่าแล้ว (รอ Pop ได้ public key จริงจาก OPN หลัง
+ * merchant account approved) — ก่อนหน้านั้นปุ่มอัพเกรดจะโชว์ popup แจ้งว่าระบบชำระเงินยังไม่พร้อมใช้งาน
+ * แทนที่จะพยายามเรียก Omise.js ที่ยังไม่มี key จริง (กันหน้าเว็บพังหรือ error ดิบโผล่ให้ user เห็น) */
+
+function formatDateShort(dateStr){
+  if(!dateStr) return '';
+  const d = new Date(dateStr);
+  if(isNaN(d)) return '';
+  return d.toLocaleDateString(getLang()==='en' ? 'en-US' : 'th-TH', { year:'numeric', month:'short', day:'numeric' });
+}
+
+async function loadPlanBilling(){
+  renderPlanStatusCard();
+  renderChargeFailedBanner();
+  const res = await api('getBillingHistory', { session_token: STATE.session.session_token });
+  if(!res.success){ showToast(res.message); return; }
+  STATE.billingHistory = res.history || [];
+  renderBillingHistory(STATE.billingHistory);
+}
+
+function renderPlanStatusCard(){
+  const el = document.getElementById('planStatusCard');
+  const pf = STATE.profile;
+  const isPro = pf.plan === 'pro';
+  const badgeHtml = `<span class="plan-badge ${isPro ? 'pro' : 'free'}">${isPro ? t('proActiveLabel') : t('freeLabel')}</span>`;
+
+  let untilHtml = '';
+  if(isPro && pf.pro_until){
+    const dateStr = formatDateShort(pf.pro_until);
+    const key = pf.subscription_status === 'canceled' ? 'proUntilCanceledText' : 'proUntilActiveText';
+    untilHtml = `<p class="plan-until-text">${t(key).replace('{date}', dateStr)}</p>`;
+  }
+
+  let actionHtml = '';
+  if(!isPro){
+    actionHtml = `
+      <p class="plan-pitch-title">${t('planPitchTitle')}</p>
+      <p class="plan-pitch-desc">${t('planPitchDesc')}</p>
+      <p class="plan-price-tag">199 THB / month</p>
+      <p class="plan-price-usd">${t('planPriceUsdHint')}</p>
+      <button class="btn btn-primary full-btn" id="upgradeProBtn">${t('upgradeToProBtn')}</button>`;
+  } else if(pf.subscription_status === 'active'){
+    actionHtml = `<button class="btn btn-ghost full-btn" id="cancelProBtn">${t('cancelProBtn')}</button>`;
+  }
+
+  el.innerHTML = `<div class="plan-badge-row">${badgeHtml}</div>${untilHtml}${actionHtml}`;
+
+  const upgradeBtn = document.getElementById('upgradeProBtn');
+  if(upgradeBtn) upgradeBtn.addEventListener('click', handleUpgradeClick);
+  const cancelBtn = document.getElementById('cancelProBtn');
+  if(cancelBtn) cancelBtn.addEventListener('click', handleCancelClick);
+}
+
+// แจ้งเตือนแบบถาวรในแท็บ (ไม่ใช่ toast ที่หายไปเอง) พร้อม CTA พาไปจ่ายเงินใหม่ทันที — โชว์เฉพาะตอนตัดเงิน
+// ล้มเหลวครั้งล่าสุดจริงๆ (last_charge_status=failed) และตอนนี้ยังเป็น free อยู่ (ยังไม่ได้แก้ไขสำเร็จ)
+function renderChargeFailedBanner(){
+  const banner = document.getElementById('chargeFailedBanner');
+  banner.style.display = (STATE.profile.last_charge_status === 'failed' && STATE.profile.plan !== 'pro') ? 'flex' : 'none';
+}
+
+function renderBillingHistory(list){
+  const el = document.getElementById('billingHistoryList');
+  if(!list.length){
+    el.innerHTML = `<div class="dash-empty">${t('billingHistoryEmpty')}</div>`;
+    return;
+  }
+  el.innerHTML = list.map(b=>{
+    const isFailed = b.status === 'failed';
+    return `<div class="billing-row">
+      <div class="billing-row-left">
+        <span class="billing-date">${formatDateShort(b.charged_at)}</span>
+        ${isFailed && b.failure_reason ? `<span class="billing-reason">${escapeHtml(b.failure_reason)}</span>` : ''}
+      </div>
+      <div class="billing-row-right">
+        <span class="billing-status-pill ${isFailed ? 'failed' : 'success'}">${isFailed ? t('billingStatusFailed') : t('billingStatusSuccess')}</span>
+        <span class="billing-amount">${b.amount} ${String(b.currency||'thb').toUpperCase()}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function goToPlanBillingTab(){
+  document.querySelector('.tab-btn[data-tab="planbilling"]').click();
+}
+
+// FREE user กด Export ที่การ์ดหัวข้อ -> popup นี้แทนการ export ทันที (ปุ่ม Export โชว์เสมอไม่ว่า plan ไหน
+// ตาม spec ข้อ 6) กด [อัปเกรด] พาไปแท็บ Plan & Billing ทันที ไม่กด ก็ปิดด้วย ✕ มุมขวาบนของ modal ปกติ
+function showExportGatePopup(){
+  document.getElementById('confirmModalTitle').textContent = 'PRO plan';
+  document.getElementById('confirmModalText').textContent = t('exportGateMsg');
+  document.getElementById('confirmModalActions').innerHTML =
+    `<button class="btn btn-primary full-btn" id="confirmModalUpgradeBtn">${t('exportGateUpgradeBtn')}</button>`;
+  document.getElementById('confirmModalUpgradeBtn').addEventListener('click', ()=>{
+    closeModal('confirmModal');
+    goToPlanBillingTab();
+  });
+  openModal('confirmModal');
+}
+
+async function handleExportClick(topicId, btn){
+  if(!STATE.profile || STATE.profile.plan !== 'pro'){
+    showExportGatePopup();
+    return;
+  }
+  setBtnLoading(btn, true, t('exportLoading'));
+  const res = await api('exportTopicVotes', { session_token: STATE.session.session_token, topic_id: topicId }, 'POST');
+  setBtnLoading(btn, false);
+  if(!res.success){ showToast(res.message); return; }
+  downloadCsv(res.csv, res.filename);
+  showToast(t('exportSuccessToast'));
+}
+
+function downloadCsv(csvContent, filename){
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename || 'export.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ---------- Upgrade flow (Omise.js card tokenization -> actionUpgradeToPro) ---------- */
+function handleUpgradeClick(){
+  if(!CONFIG.OPN_PUBLIC_KEY){
+    showInfoPopup(t('pcNotReadyMsg'));
+    return;
+  }
+  document.getElementById('pcError').style.display = 'none';
+  document.getElementById('pcCardNumber').value = '';
+  document.getElementById('pcCardName').value = '';
+  document.getElementById('pcCardExpiry').value = '';
+  document.getElementById('pcCardCvv').value = '';
+  openModal('proCardModal');
+}
+
+document.getElementById('chargeFailedRetryBtn').addEventListener('click', ()=>{
+  goToPlanBillingTab();
+  handleUpgradeClick();
+});
+
+document.getElementById('pcPayBtn').addEventListener('click', ()=>{
+  const errEl = document.getElementById('pcError');
+  errEl.style.display = 'none';
+
+  const cardNumber = document.getElementById('pcCardNumber').value.replace(/\s+/g,'');
+  const cardName = document.getElementById('pcCardName').value.trim();
+  const expiry = document.getElementById('pcCardExpiry').value.trim();
+  const cvv = document.getElementById('pcCardCvv').value.trim();
+  const expMatch = expiry.match(/^(\d{2})\/(\d{2})$/);
+
+  if(!cardNumber || !cardName || !expMatch || !cvv){
+    errEl.textContent = t('cardFieldsRequiredMsg');
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const btn = document.getElementById('pcPayBtn');
+  setBtnLoading(btn, true, t('pcPayLoading'));
+
+  if(typeof Omise === 'undefined'){
+    setBtnLoading(btn, false);
+    errEl.textContent = t('pcNotReadyMsg');
+    errEl.style.display = 'block';
+    return;
+  }
+
+  Omise.setPublicKey(CONFIG.OPN_PUBLIC_KEY);
+  Omise.createToken('card', {
+    number: cardNumber,
+    name: cardName,
+    expiration_month: expMatch[1],
+    expiration_year: '20' + expMatch[2],
+    security_code: cvv
+  }, async (statusCode, response) => {
+    if(statusCode !== 200){
+      setBtnLoading(btn, false);
+      errEl.textContent = (response && response.message) || t('cardFieldsRequiredMsg');
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const res = await api('upgradeToPro', { session_token: STATE.session.session_token, omise_token: response.id }, 'POST');
+    setBtnLoading(btn, false);
+    if(!res.success){
+      errEl.textContent = res.message;
+      errEl.style.display = 'block';
+      return;
+    }
+
+    closeModal('proCardModal');
+    STATE.profile.plan = res.plan;
+    STATE.profile.subscription_status = res.subscription_status;
+    STATE.profile.pro_until = res.pro_until;
+    STATE.profile.next_billing_date = res.next_billing_date;
+    STATE.profile.last_charge_status = 'success';
+    renderPlanStatusCard();
+    renderChargeFailedBanner();
+    showToast(t('upgradeSuccessToast'));
+    loadPlanBilling(); // ดึงประวัติการตัดเงินใหม่ ให้เห็นแถวล่าสุดที่เพิ่งจ่ายไป
+  });
+});
+
+/* ---------- Cancel flow ---------- */
+function handleCancelClick(){
+  showConfirmPopup({
+    title: t('cancelProConfirmTitle'),
+    message: t('cancelProConfirmMsg').replace('{date}', formatDateShort(STATE.profile.pro_until)),
+    confirmLabel: t('cancelProConfirmBtn'),
+    danger: true,
+    onConfirm: doCancelSubscription
+  });
+}
+
+async function doCancelSubscription(){
+  closeModal('confirmModal');
+  const res = await api('cancelSubscription', { session_token: STATE.session.session_token }, 'POST');
+  if(!res.success){ showToast(res.message); return; }
+  STATE.profile.subscription_status = 'canceled';
+  renderPlanStatusCard();
+  showToast(t('cancelSuccessToast'));
+}
+
 /* ---------- Init ---------- */
 (async function init(){
   if(!isLoggedIn()){
@@ -1751,7 +2121,14 @@ async function doDeleteAccount(){
   populateEditForm();
   loadDashboard();
   loadMyTopics();
+  loadPlanBilling();
   loadEditFormOptions(); // เติม dropdown/สีของ modal แก้ไขหัวข้อ ไม่ต้อง block หน้าโหลด
+
+  // ตัดเงินรอบล่าสุดล้มเหลว (sweepSubscriptions ปรับเป็น free อัตโนมัติไปแล้ว) -> เตือนทันทีตอนเข้าเว็บ
+  // แม้ตอนนี้จะเปิดอยู่ที่แท็บ Dashboard ก็ตาม เพราะ user อาจไม่ได้กดไปดูแท็บ Plan & Billing เอง
+  if(STATE.profile.last_charge_status === 'failed' && STATE.profile.plan !== 'pro'){
+    showToast(t('chargeFailedToast'));
+  }
 })();
 </script>
 
