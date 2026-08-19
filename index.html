@@ -1089,8 +1089,8 @@ function setLang(lang){
   localStorage.setItem(LANG_KEY, lang);
   applyLang(lang);
   // label ในการ์ด mini-dash (เพศ/ช่วงอายุ) เป็น dynamic HTML ที่ generate ผ่าน t() ตอน render
-  // ไม่ผ่าน [data-i18n] loop ของ applyLang() จึงต้อง re-render ใหม่ทุกครั้งที่สลับภาษา
-  if(STATE.topics.length) loadDashboards();
+  // ไม่ผ่าน [data-i18n] loop ของ applyLang() จึงต้อง re-render ใหม่ทุกครั้งที่สลับภาษา — ใช้ cache ไม่ยิง API ใหม่
+  rerenderLoadedDashboards();
 }
 document.querySelectorAll('.lang-toggle button').forEach(b=>{
   b.addEventListener('click', ()=> setLang(b.dataset.lang));
@@ -1856,9 +1856,9 @@ async function loadTopics(){
   renderResultCount();
   renderPagination();
 
-  // เติม voter summary ให้ทุกครั้งที่โหลดหัวข้อใหม่ (ไม่ใช่แค่ตอน init ครั้งแรก) กันการ์ดที่มาจาก
-  // pagination / เปลี่ยนหมวด / ค้นหา ไม่มี voter summary ให้เห็นเพราะไม่มีใครไปเรียกโหลดซ้ำให้
-  if(res.success) loadDashboards();
+  // dashboard (สรุปเพศ/อายุ) โหลดแบบ lazy ตอน user กดเปิดเองเท่านั้น (ดู toggleDashSummary) — ไม่ preload
+  // ทั้งฟีดอัตโนมัติอีกต่อไปแล้ว เพราะเดิมทำให้ยิง API ต่อเนื่อง 20-100 ครั้งทุกครั้งที่โหลดหน้า ซึ่งเป็นสาเหตุหลัก
+  // ที่ทำให้หน้าโหลดช้า/ค้าง (ดู commit note)
 }
 
 function renderResultCount(){
@@ -2113,7 +2113,7 @@ function topicCardHTML(t){
       <div class="mini-dash-body" id="dashBody-${t.topic_id}">
         <div id="dash-${t.topic_id}" class="dash-loading">
           <span class="dash-spinner"></span>
-          <span class="dash-loading-text">${t('dashLoadingText')}</span>
+          <span class="dash-loading-text">${t18n('dashLoadingText')}</span>
         </div>
       </div>
     </div>
@@ -2176,18 +2176,14 @@ function linkifyText(str){
   });
 }
 
-/* โหลด dashboard breakdown แยกทีหลัง (lazy) เพื่อลด payload ตอน list — เรียกซ้ำได้ทุกครั้งที่ topics เปลี่ยน (ดู loadTopics) */
-async function loadDashboards(){
-  for(const t of STATE.topics){
-    await loadDashboardFor(t.topic_id);
-  }
-}
-// topic_id ที่กำลังมี request getTopicDetail ค้างอยู่ — กันยิงซ้ำซ้อนเวลา user กด toggle เปิด
-// "ตัดคิว" การ์ดที่คิว preload พื้นหลัง (loadDashboards) ยังโหลดไปไม่ถึง (ดู toggleDashSummary)
+/* โหลด dashboard breakdown ของหัวข้อเดียว — เรียกตอน user กด toggle เปิดเอง (lazy, ดู toggleDashSummary)
+   ไม่มี auto-preload ทั้งฟีดอีกต่อไป (เดิมเคยมี loadDashboards() ที่วนยิง getTopicDetail ทีละใบ sequential
+   ทุกครั้งที่โหลดหน้า/เปลี่ยนหมวด/ค้นหา/สลับภาษา — พังเพราะยิง 20-100 request ต่อเนื่องกันทุกครั้ง ทำให้หน้าโหลดช้ามาก
+   เอาออกทั้งหมดแล้ว เหลือแค่โหลดเฉพาะใบที่ user กดเปิดจริงๆ) */
+// topic_id ที่กำลังมี request getTopicDetail ค้างอยู่ — กันยิงซ้ำซ้อนเวลา user กด toggle เปิดรัวๆ
 const DASH_LOADING = new Set();
 
-// โหลด dashboard breakdown ของหัวข้อเดียว — แยกออกมาจาก loadDashboards() เพื่อเรียกซ้ำได้หลัง
-// re-render การ์ดเดี่ยวๆ (เช่นหลังกดแปลภาษา) โดยไม่ต้องวนโหลดใหม่ทั้งฟีด
+// โหลด dashboard breakdown ของหัวข้อเดียว — เรียกซ้ำได้หลัง re-render การ์ดเดี่ยวๆ (เช่นหลังกดแปลภาษา)
 async function loadDashboardFor(topicId){
   if(DASH_LOADING.has(topicId)) return; // มี request ของการ์ดนี้กำลังทำงานอยู่แล้ว ไม่ยิงซ้ำ
   const t = STATE.topics.find(x=> x.topic_id === topicId);
@@ -2198,15 +2194,17 @@ async function loadDashboardFor(topicId){
     if(!res.success){
       // โหลดพัง (เน็ตหลุด/เซิร์ฟเวอร์ error) — โชว์ข้อความสั้นๆ + ปุ่ม Try again แทน spinner ที่จะหมุนค้างตลอดไปแบบไม่มีที่สิ้นสุด
       // ไม่งั้น user จะงงว่าต้องทำยังไงต่อ (รอ? รีเฟรชทั้งหน้า?) ปุ่มนี้กดแล้ว retry เฉพาะการ์ดนี้การ์ดเดียวพอ
+      // ใช้ t18n() ไม่ใช่ t() เพราะตัวแปร local "t" ในฟังก์ชันนี้คือ topic object ไม่ใช่ฟังก์ชันแปลภาษา (ดู alias บรรทัด ~1072)
       const dashEl = document.getElementById(`dash-${topicId}`);
       if(dashEl && dashEl.classList.contains('dash-loading')){
-        dashEl.innerHTML = `<span class="dash-loading-text">⚠️ ${t('dashLoadFailedText')}</span><button type="button" class="dash-retry-btn" data-dash-retry="${topicId}">${t('dashRetryBtn')}</button>`;
+        dashEl.innerHTML = `<span class="dash-loading-text">⚠️ ${t18n('dashLoadFailedText')}</span><button type="button" class="dash-retry-btn" data-dash-retry="${topicId}">${t18n('dashRetryBtn')}</button>`;
         const retryBtn = dashEl.querySelector('.dash-retry-btn');
         if(retryBtn) retryBtn.addEventListener('click', ()=> retryLoadDashboard(topicId));
       }
       return;
     }
     renderDashboard(topicId, res.dashboard, t.card_color);
+    t._dashData = res.dashboard; // cache ไว้ใช้ re-render ตอนสลับภาษา (ดู rerenderLoadedDashboards) กันยิง API ซ้ำโดยไม่จำเป็น
 
     // cache เลข comment count ไว้ที่ topic object เอง เผื่อ re-render การ์ด (เช่นหลังแปลภาษา) จะได้โชว์เลขที่มีอยู่แล้ว
     // ทันทีโดยไม่ต้องรอโหลดใหม่ — อัพเดตแค่ label ของปุ่มในตำแหน่งเดิม ไม่ full re-render การ์ดทั้งใบ
@@ -2219,12 +2217,22 @@ async function loadDashboardFor(topicId){
   }
 }
 
+// รีเรนเดอร์เฉพาะ dashboard ที่โหลดข้อมูลมาแล้ว (มี t._dashData cache อยู่) ด้วย label ภาษาใหม่ โดยไม่ยิง API ซ้ำ
+// ใช้ตอนสลับภาษา (setLang) แทนการเรียก loadDashboards() แบบเดิมที่ยิง getTopicDetail ใหม่ทั้งหมดทุกใบ —
+// ตัวเลข % ไม่เปลี่ยนตามภาษา เปลี่ยนแค่ label เพศ/หัวข้อกลุ่มเท่านั้น จึงใช้ข้อมูลเดิมมา render ซ้ำได้เลย
+// ใบที่ยังไม่เคยโหลด (ไม่มี _dashData เพราะ user ยังไม่เคยกดเปิด) จะไม่ทำอะไร ปล่อยให้โหลดตอนกดเปิดตามปกติ
+function rerenderLoadedDashboards(){
+  STATE.topics.forEach(t=>{
+    if(t._dashData) renderDashboard(t.topic_id, t._dashData, t.card_color);
+  });
+}
+
 // รีเซ็ต dash placeholder กลับเป็น spinner แล้วยิงโหลดใหม่เฉพาะการ์ดนี้ — ใช้ตอนกดปุ่ม "Try again" หลังโหลด error
 function retryLoadDashboard(topicId){
   const dashEl = document.getElementById(`dash-${topicId}`);
   if(dashEl){
     dashEl.classList.add('dash-loading');
-    dashEl.innerHTML = `<span class="dash-spinner"></span><span class="dash-loading-text">${t('dashLoadingText')}</span>`;
+    dashEl.innerHTML = `<span class="dash-spinner"></span><span class="dash-loading-text">${t18n('dashLoadingText')}</span>`;
   }
   loadDashboardFor(topicId);
 }
@@ -2331,15 +2339,17 @@ function rerenderSingleCard(topicId){
   bindCardEvents(newEl);
   setupDescMoreButtons();
 
-  // mini-dash โดน re-render ทิ้งไปพร้อมการ์ด ต้องโหลด breakdown ใหม่ใส่การ์ดที่เพิ่ง replace เสมอ
-  // (เหมือน behavior เดิมตอน list โหลดครั้งแรกที่ preload ทุกการ์ด) แล้วค่อยเปิดค้างไว้ต่อถ้าเปิดอยู่ก่อนแปล
+  // mini-dash โดน re-render ทิ้งไปพร้อมการ์ด (DOM ใหม่ทั้งใบ) — ถ้าเดิมเปิดค้างอยู่ก่อนแปล ให้เปิดต่อ
+  // แล้วถ้ามี dashboard cache ไว้แล้ว (t._dashData จากโหลดครั้งก่อน) render จาก cache ทันที ไม่ต้องรอ API
+  // ถ้ายังไม่เคยโหลดมาก่อนเลยค่อยยิงจริง — และถ้าปิดอยู่ (ไม่เคยเปิด) ไม่ต้องโหลดอะไรเลย ปล่อย lazy ตามปกติ
   if(wasDashOpen){
     const body = newEl.querySelector('.mini-dash-body');
     const toggleBtn = newEl.querySelector('.dash-toggle-btn');
     if(body) body.classList.add('open');
     if(toggleBtn){ toggleBtn.classList.add('open'); toggleBtn.setAttribute('aria-expanded','true'); }
+    if(t._dashData) renderDashboard(topicId, t._dashData, t.card_color);
+    else loadDashboardFor(topicId);
   }
-  loadDashboardFor(topicId);
 }
 
 /* ================= Translate (ปุ่ม "แปล" บนการ์ดหัวข้อ) =================
