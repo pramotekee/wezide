@@ -330,15 +330,34 @@
   }
   .mini-dash-body.open{ max-height:600px; opacity:1; }
 
+  /* เพศ(donut ซ้าย) + ช่วงอายุ(bar ขวา) เคียงข้างกันเสมอ ไม่ stack แม้จอแคบ — donut หดเล็กลงเพื่อพอดีจอ */
+  .dash-cols{ display:flex; align-items:flex-start; gap:10px; }
   .dash-group{ display:flex; flex-direction:column; gap:6px; }
+  .dash-group-gender{ flex:0 0 auto; }
+  .dash-group-age{ flex:1 1 auto; min-width:0; }
   .dash-group-title{ font-size:13px; font-weight:700; color:var(--text); }
-  .dash-item-row{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-muted); }
-  .dash-item-label{ width:52px; flex-shrink:0; }
+  .dash-item-row{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); }
+  .dash-item-label{ width:44px; flex-shrink:0; }
   .dash-item-bg{ flex:1; height:8px; border-radius:4px; background:var(--bg); overflow:hidden; }
   .dash-item-fill{ display:block; height:100%; border-radius:4px; transition:width .5s ease; }
   .dash-item-fill.zero{ background:var(--line) !important; }
-  .dash-item-pct{ width:34px; flex-shrink:0; text-align:right; font-weight:600; color:var(--text); }
+  .dash-item-pct{ width:30px; flex-shrink:0; text-align:right; font-weight:600; color:var(--text); }
   .dash-empty-hint{ font-size:12px; color:var(--text-muted); text-align:center; padding:4px 0; }
+
+  /* --- gender donut chart (แทนแถบสีเดิม) --- */
+  .dash-donut-wrap{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .dash-donut{ display:block; }
+  .dash-donut circle{ transition:stroke-dasharray .5s ease; }
+  .dash-legend{ display:flex; flex-direction:column; gap:2px; width:100%; }
+  .dash-legend-row{ display:flex; align-items:center; gap:5px; font-size:10.5px; color:var(--text-muted); white-space:nowrap; }
+  .dash-legend-dot{ width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .dash-legend-label{ flex-shrink:0; }
+  .dash-legend-pct{ font-weight:600; color:var(--text); margin-left:auto; }
+  @media(max-width:360px){
+    .dash-cols{ gap:8px; }
+    .dash-item-label{ width:38px; }
+    .dash-item-pct{ width:26px; }
+  }
 
   /* --- translate button (อยู่ใต้ปุ่มตัวเลือก เหนือเส้นแบ่ง mini-dash) --- */
   .translate-row{ padding:0 14px 12px; margin-top:-6px; display:flex; align-items:center; flex-wrap:wrap; gap:10px; }
@@ -2176,22 +2195,62 @@ function dashBarRowHTML(label, pct, color){
   </div>`;
 }
 
+// สร้าง donut chart (SVG ล้วน ไม่พึ่ง library ภายนอก) จากสัดส่วนเพศ + legend ใต้วง (label + %)
+// ถ้ายังไม่มีคนโหวตเลย (ทุก % เป็น 0) แสดงวงเทาเต็มวงแทนวงว่างเปล่า เพื่อกันสับสนกับ "กำลังโหลด"
+const DASH_DONUT_SIZE = 72, DASH_DONUT_R = 27, DASH_DONUT_CX = 36, DASH_DONUT_CY = 36, DASH_DONUT_SW = 12;
+function buildGenderDonutHTML(dash){
+  const genderPct = dash.gender_percent || {};
+  const total = GENDER_BAR_DEFS.reduce((sum, g) => sum + (genderPct[g.key] || 0), 0);
+  const circumference = 2 * Math.PI * DASH_DONUT_R;
+
+  let circlesHTML;
+  if(!total){
+    circlesHTML = `<circle cx="${DASH_DONUT_CX}" cy="${DASH_DONUT_CY}" r="${DASH_DONUT_R}" fill="none" stroke="var(--line)" stroke-width="${DASH_DONUT_SW}"/>`;
+  } else {
+    let acc = 0;
+    circlesHTML = GENDER_BAR_DEFS.map(g => {
+      const pct = genderPct[g.key] || 0;
+      if(pct <= 0) return '';
+      const segLen = (pct / 100) * circumference;
+      const dashOffset = -(acc / 100) * circumference;
+      acc += pct;
+      return `<circle cx="${DASH_DONUT_CX}" cy="${DASH_DONUT_CY}" r="${DASH_DONUT_R}" fill="none" stroke="${g.color}" stroke-width="${DASH_DONUT_SW}" stroke-dasharray="${segLen} ${circumference - segLen}" stroke-dashoffset="${dashOffset}" transform="rotate(-90 ${DASH_DONUT_CX} ${DASH_DONUT_CY})"/>`;
+    }).join('');
+  }
+
+  const legendHTML = GENDER_BAR_DEFS.map(g => {
+    const pct = genderPct[g.key] || 0;
+    return `<div class="dash-legend-row">
+      <span class="dash-legend-dot" style="background:${g.color}"></span>
+      <span class="dash-legend-label">${escapeHtml(t(g.labelKey))}</span>
+      <span class="dash-legend-pct">${pct}%</span>
+    </div>`;
+  }).join('');
+
+  return `<div class="dash-donut-wrap">
+    <svg class="dash-donut" viewBox="0 0 ${DASH_DONUT_SIZE} ${DASH_DONUT_SIZE}" width="${DASH_DONUT_SIZE}" height="${DASH_DONUT_SIZE}">${circlesHTML}</svg>
+    <div class="dash-legend">${legendHTML}</div>
+  </div>`;
+}
+
 function renderDashboard(topicId, dash, cardColor){
   const el = document.getElementById(`dash-${topicId}`);
   if(!el) return;
   const ageColor = cardColor || '#5B2A9E';
 
-  const genderRows = GENDER_BAR_DEFS.map(g => dashBarRowHTML(t(g.labelKey), (dash.gender_percent || {})[g.key] || 0, g.color)).join('');
+  const genderDonutHTML = buildGenderDonutHTML(dash);
   const ageRows = AGE_BAR_ORDER.map(a => dashBarRowHTML(a, (dash.age_group_percent || {})[a] || 0, ageColor)).join('');
 
   el.innerHTML = `
-    <div class="dash-group">
-      <div class="dash-group-title">${t('dashGenderTitle')}</div>
-      ${genderRows}
-    </div>
-    <div class="dash-group">
-      <div class="dash-group-title">${t('dashAgeGroupTitle')}</div>
-      ${ageRows}
+    <div class="dash-cols">
+      <div class="dash-group dash-group-gender">
+        <div class="dash-group-title">${t('dashGenderTitle')}</div>
+        ${genderDonutHTML}
+      </div>
+      <div class="dash-group dash-group-age">
+        <div class="dash-group-title">${t('dashAgeGroupTitle')}</div>
+        ${ageRows}
+      </div>
     </div>`;
 }
 
