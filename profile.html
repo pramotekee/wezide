@@ -1333,7 +1333,13 @@ function renderMyTopics(){
     return;
   }
   const sorted = [...STATE.myTopics].sort((a,b)=>{
-    if(STATE.sortMode === 'popular') return b.total_votes - a.total_votes;
+    // Popular: โหวตมาก -> น้อย, เท่ากันให้เก่าสุดขึ้นก่อน (sync กับ _popularCompare ฝั่ง appscript.txt —
+    // แพทเทิร์นเดียวกันทั้งระบบ: tie-break ด้วย created_at น้อยสุดเสมอ)
+    if(STATE.sortMode === 'popular'){
+      const voteDiff = b.total_votes - a.total_votes;
+      if(voteDiff !== 0) return voteDiff;
+      return new Date(a.created_at) - new Date(b.created_at);
+    }
     return new Date(b.created_at) - new Date(a.created_at);
   });
   el.innerHTML = sorted.map(t=>{
