@@ -146,6 +146,7 @@
   .view-toggle{ display:flex; background:var(--surface); border:1.5px solid var(--line); border-radius:100px; padding:3px; }
   .view-toggle button{ padding:6px 12px; border-radius:100px; font-size:13px; color:var(--text-muted); }
   .view-toggle button.active{ background:var(--primary); color:#fff; }
+  #feedSortToggle{ width:fit-content; margin-bottom:10px; }
 
   .pill-row{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
   .pill-row::-webkit-scrollbar{ display:none; }
@@ -610,6 +611,11 @@
     </div>
     <a class="btn btn-ghost history-btn" href="history.html" data-i18n="historyLink">🕓 ประวัติ</a>
   </div>
+  <div class="view-toggle" id="feedSortToggle">
+    <button data-sort="shuffle" class="active" data-i18n="sortShuffle">Shuffle</button>
+    <button data-sort="latest" data-i18n="sortLatest">Latest</button>
+    <button data-sort="popular" data-i18n="sortPopular">Popular</button>
+  </div>
   <div class="pill-row" id="categoryPills"></div>
   <div class="result-count" id="resultCount"></div>
 </div>
@@ -954,6 +960,7 @@ const I18N = {
     createBtn: '＋ สร้างหัวข้อ', createBtn2: 'สร้างหัวข้อ', loginBtn: 'เข้าสู่ระบบ',
     heroTitle: 'มาดูกันว่าตอนนี้ <b>คนส่วนใหญ่</b> คิดเห็นยังไงกับประเด็นร้อนๆ',
     searchPlaceholder: 'ค้นหาหัวข้อ, tag...', historyLink: '🕓 ประวัติ',
+    sortShuffle: 'Shuffle', sortLatest: 'Latest', sortPopular: 'Popular',
     loginTitle: 'อ่ะ! คุณลืม login', loginHint: 'กรอก 2 ช่องนี้แล้วกด login มาเลือกความคิดเห็นกันเลย',
     loginDirectTitle: 'เข้าสู่ระบบ WEZIDE', loginDirectHint: 'กรอกเบอร์โทรและ Passcode เพื่อเข้าสู่ระบบ',
     phoneLabel: 'เบอร์โทรศัพท์',
@@ -1011,6 +1018,7 @@ const I18N = {
     createBtn: '＋ Create Topic', createBtn2: 'Create Topic', loginBtn: 'Log In',
     heroTitle: '<b>Ask</b> Better. See Further.',
     searchPlaceholder: 'Search topics, tags...', historyLink: '🕓 History',
+    sortShuffle: 'Shuffle', sortLatest: 'Latest', sortPopular: 'Popular',
     loginTitle: 'Oops! You forgot to log in', loginHint: 'Fill in these 2 fields and log in to start voting',
     loginDirectTitle: 'Log In to WEZIDE', loginDirectHint: 'Enter your phone number and passcode to log in',
     phoneLabel: 'Phone Number',
@@ -1102,12 +1110,21 @@ const PROVINCES = ['กรุงเทพมหานคร','กระบี่
 // ประเทศ: โชว์เป็นภาษาอังกฤษล้วนทั้ง UI โหมด TH/EN (ไม่แปล) เรียง A-Z — ตาม decision ของ Pop
 const COUNTRIES = ['Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda','Argentina','Armenia','Australia','Austria','Azerbaijan','Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bhutan','Bolivia','Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso','Burundi','Cabo Verde','Cambodia','Cameroon','Canada','Central African Republic','Chad','Chile','China','Colombia','Comoros','Congo (Brazzaville)','Congo (Kinshasa)','Costa Rica','Croatia','Cuba','Cyprus','Czech Republic','Denmark','Djibouti','Dominica','Dominican Republic','Ecuador','Egypt','El Salvador','Equatorial Guinea','Eritrea','Estonia','Eswatini','Ethiopia','Fiji','Finland','France','Gabon','Gambia','Georgia','Germany','Ghana','Greece','Grenada','Guatemala','Guinea','Guinea-Bissau','Guyana','Haiti','Honduras','Hong Kong','Hungary','Iceland','India','Indonesia','Iran','Iraq','Ireland','Israel','Italy','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kiribati','Kosovo','Kuwait','Kyrgyzstan','Laos','Latvia','Lebanon','Lesotho','Liberia','Libya','Liechtenstein','Lithuania','Luxembourg','Macau','Madagascar','Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands','Mauritania','Mauritius','Mexico','Micronesia','Moldova','Monaco','Mongolia','Montenegro','Morocco','Mozambique','Myanmar','Namibia','Nauru','Nepal','Netherlands','New Zealand','Nicaragua','Niger','Nigeria','North Korea','North Macedonia','Norway','Oman','Pakistan','Palau','Palestine','Panama','Papua New Guinea','Paraguay','Peru','Philippines','Poland','Portugal','Qatar','Romania','Russia','Rwanda','Saint Kitts and Nevis','Saint Lucia','Saint Vincent and the Grenadines','Samoa','San Marino','Sao Tome and Principe','Saudi Arabia','Senegal','Serbia','Seychelles','Sierra Leone','Singapore','Slovakia','Slovenia','Solomon Islands','Somalia','South Africa','South Korea','South Sudan','Spain','Sri Lanka','Sudan','Suriname','Sweden','Switzerland','Syria','Taiwan','Tajikistan','Tanzania','Thailand','Timor-Leste','Togo','Tonga','Trinidad and Tobago','Tunisia','Turkey','Turkmenistan','Tuvalu','Uganda','Ukraine','United Arab Emirates','United Kingdom','United States','Uruguay','Uzbekistan','Vanuatu','Vatican City','Venezuela','Vietnam','Yemen','Zambia','Zimbabwe'];
 
+// สร้าง seed สุ่มใหม่ 1 ค่าทุกครั้งที่โหลดสคริปต์นี้ (= ทุกครั้งที่เข้า/รีเฟรชหน้า Home) ส่งไป backend
+// คู่กับ sort=shuffle เพื่อให้ backend สร้างลำดับสุ่มที่ "คงที่" ตลอดรอบนี้ (เปลี่ยนหมวด/เปลี่ยนหน้าไม่กระโดดมั่ว)
+// แต่พอรีเฟรชหน้าใหม่ ตัวแปรนี้ถูกสร้างใหม่ทั้งหมด เลยได้ลำดับสุ่มใหม่ทันทีตามที่ต้องการ
+function genShuffleSeed(){
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
 let STATE = {
   session: JSON.parse(localStorage.getItem('wz_session') || 'null'),
   topics: [],
   categories: [],
   activeCategory: '',
   searchQuery: '',
+  sortMode: 'shuffle', // 'shuffle' (default เสมอทุกครั้งที่เข้า/รีเฟรชหน้า Home) | 'latest' | 'popular'
+  shuffleSeed: genShuffleSeed(), // สุ่มใหม่ 1 ค่าต่อการเปิดหน้า Home 1 รอบ — คงที่ตลอดจนกว่าจะรีเฟรชหน้า
   page: 1,
   pageSize: 20,
   totalCount: 0,
@@ -1634,6 +1651,18 @@ function selectCategory(cat, el){
   loadTopics();
 }
 
+// สลับโหมดเรียงฟีด (Shuffle/Latest/Popular) — เป็นอิสระจากหมวดหมู่/คำค้นหาที่เลือกไว้อยู่ ไม่รีเซ็ตตัวกรองอื่น
+// แค่เปลี่ยนลำดับการ์ดของหัวข้อที่ผ่าน filter เดิม แล้ว fetch หน้า 1 ใหม่
+document.getElementById('feedSortToggle').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button[data-sort]');
+  if(!btn || btn.classList.contains('active')) return;
+  document.querySelectorAll('#feedSortToggle button').forEach(b=> b.classList.remove('active'));
+  btn.classList.add('active');
+  STATE.sortMode = btn.dataset.sort;
+  STATE.page = 1;
+  loadTopics();
+});
+
 /* ---------- Create Topic form ---------- */
 let ctSelectedColor = '';
 let ctCoverUrl = '';
@@ -1840,7 +1869,8 @@ function resetCreateForm(){
 /* ---------- Topics / Feed ---------- */
 async function loadTopics(){
   document.getElementById('feed').innerHTML = `<div class="area-loading"><div class="area-spinner"></div>กำลังโหลดหัวข้อ...</div>`;
-  const params = { page: STATE.page, page_size: STATE.pageSize };
+  const params = { page: STATE.page, page_size: STATE.pageSize, sort: STATE.sortMode };
+  if(STATE.sortMode === 'shuffle') params.shuffle_seed = STATE.shuffleSeed;
   if(STATE.activeCategory) params.category = STATE.activeCategory;
   if(STATE.searchQuery) params.search = STATE.searchQuery;
   const res = await api('getTopics', params);
