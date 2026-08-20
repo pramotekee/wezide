@@ -367,7 +367,9 @@
     background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow);
     padding:20px 16px; margin-bottom:16px;
   }
-  .plan-badge-row{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .plan-badge-row{ display:flex; flex-direction:column; gap:4px; margin-bottom:6px; }
+  .plan-badge-label{ font-size:12px; color:var(--text-muted); font-weight:500; }
+  .plan-badge-current{ display:flex; align-items:center; gap:8px; }
   .plan-badge{ font-size:12px; font-weight:700; padding:4px 12px; border-radius:100px; letter-spacing:0.5px; }
   .plan-badge.free{ background:#EFECF5; color:var(--text-muted); }
   .plan-badge.pro{ background:linear-gradient(135deg,var(--accent),#FFA53C); color:var(--primary-dark); }
@@ -789,6 +791,7 @@ const I18N = {
     planPitchDesc: 'เพียง 199 บาท/เดือน (นับ 30 วัน) สำหรับข้อมูลอันมีค่าต่อสินค้า, บริการ และเรื่องที่คุณกำลังสนใจ เพื่อช่วยให้เข้าใจตามต้องการลูกค้าของคุณมากยิ่งขึ้น (ยกเลิกได้ตลอดเวลา ถ้าคุณต้องการ)',
     planPriceUsdHint: '(~$5.5 USD — ป้ายอ้างอิงเท่านั้น ไม่ใช่ค่าที่ตัดจริง)',
     upgradeToProBtn: 'อัปเกรดเป็น PRO — 199 บาท/เดือน',
+    currentPlanLabel: 'แผนที่คุณใช้งานอยู่ตอนนี้',
     proActiveLabel: 'PRO', freeLabel: 'FREE',
     proUntilActiveText: 'ต่ออายุอัตโนมัติรอบถัดไปวันที่ {date}',
     proUntilCanceledText: 'ยกเลิกแล้ว ใช้สิทธิ์ PRO ต่อได้ถึงวันที่ {date}',
@@ -844,6 +847,7 @@ const I18N = {
     planPitchDesc: 'Just 199 THB/month (30 days) for valuable insight into your products, services, and topics of interest — so you can better understand your audience. Cancel anytime.',
     planPriceUsdHint: '(~$5.5 USD — reference only, not the actual charged amount)',
     upgradeToProBtn: 'Upgrade to PRO — 199 THB/month',
+    currentPlanLabel: 'Your current plan',
     proActiveLabel: 'PRO', freeLabel: 'FREE',
     proUntilActiveText: 'Auto-renews on {date}',
     proUntilCanceledText: 'Canceled — you can keep using PRO until {date}',
@@ -1339,8 +1343,8 @@ function renderMyTopics(){
     const canToggle = ['active','scheduled','inactive'].indexOf(t.status) !== -1;
     const toggleBtn = !canToggle ? '' :
       (t.status === 'inactive'
-        ? `<button class="mt-action-btn publish" data-action="publish" data-topic="${t.topic_id}">เผยแพร่</button>`
-        : `<button class="mt-action-btn hide" data-action="hide" data-topic="${t.topic_id}">ซ่อน</button>`);
+        ? `<button class="mt-action-btn publish" data-action="publish" data-topic="${t.topic_id}">Publish</button>`
+        : `<button class="mt-action-btn hide" data-action="hide" data-topic="${t.topic_id}">Hide</button>`);
     // สถานะ "รอตรวจสอบ" ยังไม่เคยผ่านการอนุมัติ จึงไม่มีการ์ดจริงในหน้าแรกให้กดไปเจอ
     // กดแล้วนิ่งๆ ดีกว่าพาไป home เปล่าๆ (ใช้ div ธรรมดาแทน <a> ตัดการนำทางออกไปเลย ไม่ใช่แค่ preventDefault)
     const isPending = t.status === 'pending';
@@ -1372,9 +1376,9 @@ function renderMyTopics(){
         </div>
         <div class="mt-actions">
           ${toggleBtn}
-          <button class="mt-action-btn edit" data-action="edit" data-topic="${t.topic_id}">แก้ไข</button>
+          <button class="mt-action-btn edit" data-action="edit" data-topic="${t.topic_id}">Edit</button>
           <button class="mt-action-btn export" data-action="export" data-topic="${t.topic_id}">${t18n('exportBtn')}</button>
-          <button class="mt-action-btn delete" data-action="delete" data-topic="${t.topic_id}">ลบ</button>
+          <button class="mt-action-btn delete" data-action="delete" data-topic="${t.topic_id}">Delete</button>
         </div>
       </div>`;
   }).join('');
@@ -1892,7 +1896,8 @@ function renderPlanStatusCard(){
   const el = document.getElementById('planStatusCard');
   const pf = STATE.profile;
   const isPro = pf.plan === 'pro';
-  const badgeHtml = `<span class="plan-badge ${isPro ? 'pro' : 'free'}">${isPro ? t('proActiveLabel') : t('freeLabel')}</span>`;
+  const badgeHtml = `<span class="plan-badge-label">${t('currentPlanLabel')}</span>
+    <div class="plan-badge-current"><span class="plan-badge ${isPro ? 'pro' : 'free'}">${isPro ? t('proActiveLabel') : t('freeLabel')}</span></div>`;
 
   let untilHtml = '';
   if(isPro && pf.pro_until){
