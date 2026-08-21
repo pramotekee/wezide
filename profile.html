@@ -186,6 +186,8 @@
   .profile-avatar img{ width:100%; height:100%; object-fit:cover; }
   .profile-name{ font-size:19px; font-weight:700; }
   .profile-sub{ font-size:13px; color:var(--text-muted); margin-top:2px; }
+  .mytype-link{ display:inline-block; margin-top:6px; font-size:12.5px; font-weight:600; color:var(--primary); }
+  .mytype-link:hover{ text-decoration:underline; }
 
   /* ===== Tabs ===== */
   .tab-row{
@@ -443,6 +445,7 @@
       <div>
         <div class="profile-name" id="profileName">—</div>
         <div class="profile-sub" id="profileSub">—</div>
+        <a class="mytype-link" id="myTypeLink" href="#" data-i18n="myTypeLinkText">✨ My Type — ดูตัวตนของฉัน</a>
       </div>
     </div>
 
@@ -761,6 +764,7 @@ const I18N = {
     lockedDesc: 'เข้าสู่ระบบที่หน้าแรกเพื่อจัดการโปรไฟล์ของคุณ', goHomeBtn: 'ไปหน้าแรก',
     statTopicsLabel: 'หัวข้อที่สร้างทั้งหมด', statVotersLabel: 'คนร่วมโหวตทั้งหมด',
     dashOverviewTitle: 'ภาพรวมคนที่มาร่วมโหวตหัวข้อของคุณ', loadingText: 'กำลังโหลด...',
+    myTypeLinkText: '✨ My Type — ดูตัวตนของฉัน',
     createBtn: '＋ สร้างหัวข้อ', sortLatest: 'ล่าสุด', sortPopular: 'ยอดนิยม',
     personalInfoTitle: 'ข้อมูลส่วนตัว', birthdayLabel: 'วันเกิด',
     dayOpt: 'วัน', monthOpt: 'เดือน', yearOpt: 'ปี', genderLabel: 'เพศ',
@@ -817,6 +821,7 @@ const I18N = {
     lockedDesc: 'Log in on the home page to manage your profile.', goHomeBtn: 'Go to Home',
     statTopicsLabel: 'Topics Created', statVotersLabel: 'Total Voters',
     dashOverviewTitle: 'Overview of people voting on your topics', loadingText: 'Loading...',
+    myTypeLinkText: '✨ My Type — See who I am',
     createBtn: '＋ Create Topic', sortLatest: 'Latest', sortPopular: 'Popular',
     personalInfoTitle: 'Personal Info', birthdayLabel: 'Birthday',
     dayOpt: 'Day', monthOpt: 'Month', yearOpt: 'Year', genderLabel: 'Gender',
@@ -1234,6 +1239,8 @@ function renderProfileHead(){
   }
   document.getElementById('profileName').textContent = u.username || '—';
   document.getElementById('profileSub').textContent = u.phone ? `Phone: ${u.phone}` : '';
+  // ลิงก์ไปหน้า My Type สาธารณะของตัวเอง (?id=user_id) — ใช้ user_id เดียวกับที่แชร์ในหน้า mytype.html ได้เลย
+  document.getElementById('myTypeLink').href = `mytype.html?id=${u.user_id}`;
 }
 
 /* ---------- Dashboard tab ---------- */
