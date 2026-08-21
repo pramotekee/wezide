@@ -840,7 +840,7 @@ const I18N = {
     deleteAccountConfirmTitle: 'Confirm permanent account closure', deleteAccountConfirmLabel: 'Close Account',
     deleteAccountLoading: 'Closing account...', deleteAccountToast: 'Account closed.',
     logoutToast: 'Logged out.',
-    dashGenderTitle: 'Gender', dashAgeGroupTitle: 'Age Group',
+    dashGenderTitle: 'Gender', dashAgeGroupTitle: 'Age',
     commentEmptyMsg: 'No comments on this side yet',
     commentLoadingText: 'Loading comments...',
     chargeFailedBannerText: 'Your last payment failed. Your account has been switched to the FREE plan.',
@@ -948,7 +948,7 @@ async function api(action, params = {}, method = 'GET'){
     }
   }catch(err){
     // กันทุกกรณี error ไม่ให้หลุดเป็น unhandled exception ที่ทำให้หน้าจอค้างเป็น spinner ตลอดกาล
-    return { success:false, message:'โอ๊ะ! มีบางอย่างขัดข้อง ทำให้ระบบสะดุดครับ ลองรีเฟรชใหม่อีกครั้งนะครับ' };
+    return { success:false, message:'Oops! Something went wrong. Please try refreshing and try again.' };
   }finally{
     clearTimeout(timeoutId);
   }
