@@ -403,11 +403,14 @@
   .danger-box p{ font-size:13px; color:var(--text-muted); line-height:1.6; margin:0 0 16px; }
 
   /* ===== Toast ===== */
+  /* Toast แบบสี่เหลี่ยมมุมโค้งเล็ก (border-radius เล็ก ไม่ใช่ pill ยักษ์) ข้อความยาวจะ wrap เป็นพารากราฟสวยๆ
+     แทนที่จะโป่งเป็นวงกลมเบี้ยวๆ เวลาข้อความยาว — เทียบเท่า pattern เดียวกับ index.html */
   #toast{
     position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
-    background:var(--primary-dark); color:#fff; padding:12px 22px; border-radius:100px;
+    background:var(--primary-dark); color:#fff; padding:13px 20px; border-radius:12px;
     font-size:13.5px; opacity:0; pointer-events:none; transition:all .25s ease; z-index:200;
-    max-width:90vw; text-align:center;
+    max-width:min(92vw, 380px); width:max-content; text-align:left; line-height:1.5;
+    box-shadow:0 8px 24px rgba(0,0,0,0.25);
   }
   #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 </style>
@@ -929,24 +932,27 @@ let STATE = {
   editAvatarUrl: ''
 };
 
-/* ---------- API helper (เหมือน index.html ใส่ timeout 20 วิกันปุ่มค้าง) ---------- */
-async function api(action, params = {}, method = 'GET'){
+/* ---------- API helper ---------- 
+ * timeout เพิ่มเป็น 30 วิ + retry อัตโนมัติแบบเงียบๆ 1 ครั้งก่อนฟ้อง error จริง (Apps Script cold start
+ * ช้าเป็นพักๆ เป็นเรื่องปกติ โดยเฉพาะหลัง deploy ใหม่ๆ หรือไม่มีคนใช้นานๆ) */
+async function api(action, params = {}, method = 'GET', _isRetry = false){
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 20000);
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
   try{
+    let res;
     if(method === 'GET'){
       const qs = new URLSearchParams({action, ...params}).toString();
-      const res = await fetch(`${CONFIG.API_URL}?${qs}`, { signal: controller.signal });
-      return await res.json();
+      res = await fetch(`${CONFIG.API_URL}?${qs}`, { signal: controller.signal });
     } else {
-      const res = await fetch(CONFIG.API_URL, {
+      res = await fetch(CONFIG.API_URL, {
         method: 'POST',
         body: JSON.stringify({action, ...params}),
         signal: controller.signal
       });
-      return await res.json();
     }
+    return await res.json();
   }catch(err){
+    if(!_isRetry) return api(action, params, method, true); // retry เงียบๆ 1 ครั้งก่อนฟ้อง error จริง
     // กันทุกกรณี error ไม่ให้หลุดเป็น unhandled exception ที่ทำให้หน้าจอค้างเป็น spinner ตลอดกาล
     return { success:false, message:'Oops! Something went wrong. Please try refreshing and try again.' };
   }finally{
