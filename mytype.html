@@ -398,7 +398,7 @@ async function api(action, params = {}, method = 'GET'){
       return await res.json();
     }
   }catch(err){
-    return { success:false, message: getLang()==='th' ? 'โอ๊ะ! มีบางอย่างขัดข้อง ลองรีเฟรชใหม่อีกครั้งนะครับ' : 'Oops! Something went wrong, please refresh and try again.' };
+    return { success:false, message: 'Oops! Something went wrong. Please try refreshing and try again.' };
   }finally{ clearTimeout(timeoutId); }
 }
 
