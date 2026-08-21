@@ -959,8 +959,7 @@ const I18N = {
   th: {
     createBtn: '＋ สร้างหัวข้อ', createBtn2: 'สร้างหัวข้อ', loginBtn: 'เข้าสู่ระบบ',
     heroTitle: 'มาดูกันว่าตอนนี้ <b>คนส่วนใหญ่</b> คิดเห็นยังไงกับประเด็นร้อนๆ',
-    searchPlaceholder: 'ค้นหาหัวข้อ, tag...', historyLink: '🕓 ประวัติ',
-    sortShuffle: 'Shuffle', sortLatest: 'Latest', sortPopular: 'Popular',
+
     loginTitle: 'อ่ะ! คุณลืม login', loginHint: 'กรอก 2 ช่องนี้แล้วกด login มาเลือกความคิดเห็นกันเลย',
     loginDirectTitle: 'เข้าสู่ระบบ WEZIDE', loginDirectHint: 'กรอกเบอร์โทรและ Passcode เพื่อเข้าสู่ระบบ',
     phoneLabel: 'เบอร์โทรศัพท์',
@@ -1868,7 +1867,9 @@ function resetCreateForm(){
 
 /* ---------- Topics / Feed ---------- */
 async function loadTopics(){
-  document.getElementById('feed').innerHTML = `<div class="area-loading"><div class="area-spinner"></div>กำลังโหลดหัวข้อ...</div>`;
+  // ใช้ข้อความ EN ตายตัวเสมอ (ไม่ผูกกับ TH/EN toggle) ตาม decision ของ Pop เพราะเป็นแค่ spinner ชั่วคราว
+  // อยากให้คนทุกชาติเข้าใจได้ทันทีโดยไม่ต้องพึ่งภาษาที่เลือกไว้
+  document.getElementById('feed').innerHTML = `<div class="area-loading"><div class="area-spinner"></div>Loading topics...</div>`;
   const params = { page: STATE.page, page_size: STATE.pageSize, sort: STATE.sortMode };
   if(STATE.sortMode === 'shuffle') params.shuffle_seed = STATE.shuffleSeed;
   if(STATE.activeCategory) params.category = STATE.activeCategory;
