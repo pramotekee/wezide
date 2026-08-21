@@ -907,31 +907,31 @@
   <img id="lightboxImg" src="">
 </div>
 
-<!-- ===== Share Menu (เลือกว่าจะแชร์ลิงก์ทันที หรือแสดง QR Code) ===== -->
+<!-- ===== Share Menu (เลือกว่าจะแชร์ลิงก์ทันที หรือแสดง QR Code) — ข้อความ hardcode เป็น EN ตายตัวตาม decision ของ Pop ===== -->
 <div class="modal-overlay" id="shareMenuModal">
   <div class="modal-box" style="text-align:center;">
     <button class="modal-close" data-close="shareMenuModal" style="margin-left:auto;display:block;">✕</button>
-    <h3 style="margin:0 0 18px;">แชร์หัวข้อนี้</h3>
+    <h3 style="margin:0 0 18px;">Share this topic</h3>
     <div style="display:flex;flex-direction:column;gap:10px;">
-      <button class="btn btn-primary full-btn" id="shareNowBtn">🔗 แชร์ลิงก์ทันที</button>
-      <button class="btn btn-ghost full-btn" id="shareQrBtn">📱 แสดง QR Code</button>
+      <button class="btn btn-primary full-btn" id="shareNowBtn">🔗 Share Link</button>
+      <button class="btn btn-ghost full-btn" id="shareQrBtn">📱 Show QR Code</button>
     </div>
   </div>
 </div>
 
-<!-- ===== QR Code Modal ===== -->
+<!-- ===== QR Code Modal (แปล EN ให้ครบทั้ง flow แชร์ ไม่ให้ค้าง TH กลางทาง) ===== -->
 <div class="modal-overlay" id="qrModal">
   <div class="modal-box" style="text-align:center;">
     <button class="modal-close" data-close="qrModal" style="margin-left:auto;display:block;">✕</button>
     <h3 id="qrModalTitle" style="margin:0 0 6px;font-size:15.5px;"></h3>
-    <p style="font-size:12.5px;color:var(--text-muted);margin:0 0 16px;">สแกนเพื่อไปโหวตหัวข้อนี้ได้ทันที</p>
+    <p style="font-size:12.5px;color:var(--text-muted);margin:0 0 16px;">Scan to vote on this topic right away</p>
     <div id="qrCodeContainer" class="qr-code-box"></div>
     <div style="display:flex;gap:10px;margin-top:18px;">
-      <button class="btn btn-ghost full-btn" id="qrDownloadBtn">⬇️ ดาวน์โหลดรูป</button>
-      <button class="btn btn-primary full-btn" id="qrShareBtn" style="display:none;">📤 แชร์รูปนี้</button>
+      <button class="btn btn-ghost full-btn" id="qrDownloadBtn">⬇️ Download Image</button>
+      <button class="btn btn-primary full-btn" id="qrShareBtn" style="display:none;">📤 Share This Image</button>
     </div>
     <p id="qrShareHint" style="font-size:11.5px;color:var(--text-muted);margin:10px 0 0;display:none;">
-      อุปกรณ์นี้ไม่รองรับการแชร์ไฟล์รูปโดยตรง — ดาวน์โหลดแล้วส่งต่อเอง หรือ Capture หน้าจอได้เลย
+      This device doesn't support sharing image files directly — please download it and share it yourself, or take a screenshot.
     </p>
   </div>
 </div>
@@ -1007,7 +1007,7 @@ const I18N = {
     voteOwnTopicMsg: 'ไม่สามารถโหวตหัวข้อของตัวเองได้ เนื่องจากคุณเป็นผู้สร้างหัวข้อนี้', sideLabelPrefix: 'ฝั่ง',
     voteConfirmMsg: 'คุณกำลังเลือก "{side}" เมื่อยืนยันแล้วคำตอบของคุณจะถูกบันทึกทันที และสามารถเปลี่ยนใจภายหลังได้ในจำนวนจำกัด',
     remainingChangesText: ' คุณสามารถเปลี่ยนใจได้อีก {n} ครั้ง',
-    apiErrorMsg: 'โอ๊ะ! มีบางอย่างขัดข้อง ทำให้ระบบสะดุดครับ ลองรีเฟรชใหม่อีกครั้งนะครับ',
+    apiErrorMsg: 'Oops! Something went wrong. Please try refreshing and try again.',
     dashGenderTitle: 'เพศ', dashAgeGroupTitle: 'ช่วงอายุ', dashLoadingText: 'กำลังโหลดข้อมูล...', dashLoadFailedText: 'Couldn\'t load', dashRetryBtn: 'Try again',
     commentPlaceholder: 'หากคุณมีความคิดเห็นเพิ่มเติม แบ่งปันมาได้เลย',
     commentEmptyMsg: 'ยังไม่มีความคิดเห็นในฝั่งนี้',
@@ -1066,7 +1066,7 @@ const I18N = {
     voteConfirmMsg: 'You are choosing "{side}". Once confirmed, your answer is saved immediately, and you can change your mind a limited number of times afterward.',
     remainingChangesText: ' You can change your mind {n} more time(s)',
     apiErrorMsg: 'Oops! Something went wrong. Please try refreshing and try again.',
-    dashGenderTitle: 'Gender', dashAgeGroupTitle: 'Age Group', dashLoadingText: 'Loading...', dashLoadFailedText: 'Couldn\'t load', dashRetryBtn: 'Try again',
+    dashGenderTitle: 'Gender', dashAgeGroupTitle: 'Age', dashLoadingText: 'Loading...', dashLoadFailedText: 'Couldn\'t load', dashRetryBtn: 'Try again',
     commentPlaceholder: 'Tell us more about your answer...',
     commentEmptyMsg: 'No comments on this side yet',
     commentLoadingText: 'Loading comments...'
@@ -1878,7 +1878,7 @@ async function loadTopics(){
 
   // แยกเคส "ยิง API ไม่สำเร็จ" ออกจากเคส "ยิงสำเร็จแต่ไม่มีหัวข้อจริงๆ" ให้ชัดเจน
   // กันไม่ให้ user เห็นข้อความ "ยังไม่มีหัวข้อ" ทั้งที่จริงๆ แล้วระบบแค่โหลดพัง/ช้าเกินไป
-  STATE.feedLoadError = res.success ? '' : (res.message || 'โอ๊ะ! มีบางอย่างขัดข้อง ทำให้ระบบสะดุดครับ ลองรีเฟรชใหม่อีกครั้งนะครับ');
+  STATE.feedLoadError = res.success ? '' : (res.message || t('apiErrorMsg'));
   STATE.topics = res.success ? res.topics : [];
   STATE.totalCount = res.success ? (res.count || 0) : 0;
   STATE.totalPages = res.success ? (res.total_pages || 1) : 1;
@@ -1894,7 +1894,8 @@ async function loadTopics(){
 
 function renderResultCount(){
   const el = document.getElementById('resultCount');
-  el.innerHTML = STATE.totalCount > 0 ? `พบ <b>${STATE.totalCount}</b> หัวข้อ` : '';
+  // hardcode EN ตายตัว (ไม่ผูก TH/EN toggle) ตาม decision ของ Pop เหมือนข้อความ system อื่นๆ
+  el.innerHTML = STATE.totalCount > 0 ? `Found <b>${STATE.totalCount}</b> topics` : '';
 }
 
 function renderPagination(){
@@ -2136,8 +2137,8 @@ function topicCardHTML(t){
     <div class="mini-dash">
       <div class="mini-dash-title">
         <span class="mini-dash-summary">
-          สรุปผู้ร่วมโหวตทั้งหมด <b style="color:${t.card_color || 'var(--primary)'}">${t.total_votes}</b> คน
-          <button class="dash-toggle-btn" data-dash-toggle="${t.topic_id}" aria-expanded="false" aria-label="แสดง/ซ่อนสรุปผู้ร่วมโหวต">▾</button>
+          Total voters <b style="color:${t.card_color || 'var(--primary)'}">${t.total_votes}</b>
+          <button class="dash-toggle-btn" data-dash-toggle="${t.topic_id}" aria-expanded="false" aria-label="Show/hide voter summary">▾</button>
         </span>
         <span class="days-left${daysLeftUrgentClass(t.end_date)}">${daysLeftText(t.end_date)}</span>
       </div>
@@ -2169,15 +2170,15 @@ function translateRowHTML(t){
   </div>`;
 }
 
-// คำนวณจำนวนวันที่เหลือก่อนปิดโหวตจาก end_date เทียบกับวันนี้
+// คำนวณจำนวนวันที่เหลือก่อนปิดโหวตจาก end_date เทียบกับวันนี้ (hardcode EN ตายตัวเหมือนข้อความ system อื่นๆ)
 function daysLeftText(endDate){
   if(!endDate) return '';
   const end = new Date(endDate); end.setHours(0,0,0,0);
   const today = new Date(); today.setHours(0,0,0,0);
   const diffDays = Math.round((end - today) / 86400000);
-  if(diffDays < 0) return 'ปิดโหวตแล้ว';
-  if(diffDays === 0) return 'ปิดโหวตวันนี้';
-  return `เหลืออีก ${diffDays} วัน ปิดโหวต`;
+  if(diffDays < 0) return 'Voting closed';
+  if(diffDays === 0) return 'Closes today';
+  return `${diffDays} day${diffDays === 1 ? '' : 's'} left to vote`;
 }
 function daysLeftUrgentClass(endDate){
   if(!endDate) return '';
@@ -2717,7 +2718,7 @@ function shareTopic(topicId){
     navigator.share({ title: t.title, text: teaser, url }).catch(()=>{});
   } else {
     navigator.clipboard.writeText(`${teaser}\n${url}`);
-    showToast('คัดลอกลิงก์แล้ว เอาไปวางแชร์ได้เลย');
+    showToast('Link copied — paste it anywhere to share.');
   }
 }
 
@@ -2761,7 +2762,7 @@ function openQrModal(topicId){
 }
 
 document.getElementById('qrDownloadBtn').addEventListener('click', ()=>{
-  if(!qrCurrentDataUrl){ showToast('QR Code ยังโหลดไม่เสร็จ กรุณารอสักครู่'); return; }
+  if(!qrCurrentDataUrl){ showToast('QR Code is still loading, please wait a moment.'); return; }
   const a = document.createElement('a');
   a.href = qrCurrentDataUrl;
   a.download = `wezide-qr-${pendingShareTopicId}.png`;
@@ -2771,7 +2772,7 @@ document.getElementById('qrDownloadBtn').addEventListener('click', ()=>{
 });
 
 document.getElementById('qrShareBtn').addEventListener('click', async ()=>{
-  if(!qrCurrentDataUrl){ showToast('QR Code ยังโหลดไม่เสร็จ กรุณารอสักครู่'); return; }
+  if(!qrCurrentDataUrl){ showToast('QR Code is still loading, please wait a moment.'); return; }
   // ใส่บริบทหัวข้อไปพร้อม QR เหมือนตอนแชร์เป็นลิงก์ ผู้รับปลายทางจะได้ไม่งงว่าสแกนไปทำไม โหวตเรื่องอะไร
   const t = STATE.topics.find(x=> x.topic_id === pendingShareTopicId);
   const teaser = t
@@ -2783,10 +2784,10 @@ document.getElementById('qrShareBtn').addEventListener('click', async ()=>{
     if(navigator.canShare && navigator.canShare({ files: [file] })){
       await navigator.share({ files: [file], title: t ? t.title : 'WEZIDE', text: teaser });
     } else {
-      showToast('อุปกรณ์นี้ไม่รองรับการแชร์ไฟล์ กรุณาดาวน์โหลดแทน');
+      showToast('This device doesn\'t support file sharing — please download instead.');
     }
   }catch(err){
-    if(err.name !== 'AbortError') showToast('แชร์ไม่สำเร็จ กรุณาลองดาวน์โหลดรูปแทน');
+    if(err.name !== 'AbortError') showToast('Share failed — please try downloading the image instead.');
   }
 });
 
