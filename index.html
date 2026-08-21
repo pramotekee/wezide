@@ -1132,25 +1132,28 @@ let STATE = {
 };
 
 /* ---------- API helper ---------- */
-async function api(action, params = {}, method = 'GET'){
-  // ใส่ timeout กันปุ่มหมุนค้างไม่รู้จบ — ถ้า Apps Script ประมวลผลช้าเกินไป (เช่นคิวยาวจากการทดสอบหลายโปรเจคพร้อมกัน)
-  // จะตัดจบแล้วแจ้ง error ที่ชัดเจนแทนการรอเงียบๆ ไม่มีกำหนด
+async function api(action, params = {}, method = 'GET', _isRetry = false){
+  // ใส่ timeout กันปุ่มหมุนค้างไม่รู้จบ — เพิ่มจาก 20 เป็น 30 วิ เพราะ Apps Script cold start ช้าเป็นพักๆ
+  // เป็นเรื่องปกติ (โดยเฉพาะหลัง deploy เวอร์ชันใหม่ หรือไม่มีคนใช้งานมาสักพัก) 20 วิเดิมตัดจบเร็วเกินไป
+  // จนกลายเป็น false-positive error บ่อยทั้งที่จริงๆ แค่รอ Apps Script warm up อีกไม่กี่วิก็เสร็จแล้ว
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 20000);
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
   try{
+    let res;
     if(method === 'GET'){
       const qs = new URLSearchParams({action, ...params}).toString();
-      const res = await fetch(`${CONFIG.API_URL}?${qs}`, { signal: controller.signal });
-      return await res.json();
+      res = await fetch(`${CONFIG.API_URL}?${qs}`, { signal: controller.signal });
     } else {
-      const res = await fetch(CONFIG.API_URL, {
+      res = await fetch(CONFIG.API_URL, {
         method: 'POST',
         body: JSON.stringify({action, ...params}),
         signal: controller.signal
       });
-      return await res.json();
     }
+    return await res.json();
   }catch(err){
+    // retry อัตโนมัติแบบเงียบๆ 1 ครั้งก่อนฟ้อง error จริงให้ user เห็น — ช่วยลด error หลอกจาก cold start/เน็ตสะดุดชั่วครู่
+    if(!_isRetry) return api(action, params, method, true);
     // กันทุกกรณี error (timeout / เน็ตหลุด / response ไม่ใช่ JSON ฯลฯ) ไม่ให้หลุดไปเป็น unhandled exception
     // ที่ทำให้หน้าจอค้างเป็น spinner ตลอดกาลโดยไม่มีข้อความอะไรบอก user เลย — ต้อง fail แบบมี message เสมอ
     return { success:false, message: t('apiErrorMsg') };
