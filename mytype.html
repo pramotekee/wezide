@@ -95,6 +95,29 @@
   .q-track.readonly .q-handle{ background:var(--text-muted); }
   .edit-hint{ text-align:left; font-size:12px; color:var(--text-muted); margin-top:-6px; margin-bottom:14px; }
 
+  /* ===== My Type guessing game (visitor view only) =====
+     วงกลม 2 สี: guess-handle (สีทองใหม่ ไม่ซ้ำระบบ) = ที่ user ทาย, actual-handle (สีม่วงเดิมของระบบ) = คำตอบจริงเจ้าของโปรไฟล์ */
+  .game-actions{ display:flex; gap:10px; margin-bottom:16px; }
+  .game-actions .btn{ flex:1; }
+  .game-row .q-track{ margin-bottom:12px; }
+  .guess-handle{ width:18px; height:18px; background:var(--accent); z-index:2; }
+  .actual-handle{ background:var(--primary); z-index:1; }
+  .game-input-row{ display:flex; gap:8px; align-items:center; margin-top:2px; }
+  .game-input-row input{ width:76px; padding:8px 10px; border-radius:10px; border:1.5px solid var(--line); font-size:14px; text-align:center; outline:none; background:var(--bg-input,#FAF9FC); }
+  .game-input-row input:focus{ border-color:var(--primary); background:#fff; }
+  .game-input-row input:disabled{ opacity:.6; }
+  .check-btn{ padding:8px 16px; font-size:12.5px; font-weight:700; border-radius:10px; background:var(--primary); color:#fff; white-space:nowrap; }
+  .check-btn:disabled{ opacity:.35; cursor:not-allowed; }
+  .game-feedback{ font-size:12.5px; font-weight:700; margin-top:7px; min-height:16px; }
+  .game-feedback.correct{ color:#218848; }
+  .game-feedback.wrong{ color:var(--danger); }
+  .bottom-showme-row{ margin-top:18px; }
+
+  /* ===== Game result popup ===== */
+  .result-emoji{ font-size:40px; text-align:center; margin-bottom:6px; }
+  .result-title{ font-size:19px; font-weight:800; text-align:center; margin-bottom:6px; font-family:'Lexend',sans-serif; }
+  .result-desc{ font-size:13.5px; color:var(--text-muted); text-align:center; margin-bottom:20px; }
+
   /* ===== Grouping (Very Me / Kinda Me / Not Me / So Different) ===== */
   .grouping-hint{ text-align:center; font-size:13px; color:rgba(255,255,255,0.85); margin:8px 0 12px; }
   .match-modes{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -226,6 +249,32 @@
   <img id="imageZoomImg" src="" alt="">
 </div>
 
+<!-- ===== Show Me Confirm Modal (เช็คก่อนเผยคำตอบจริงทุกข้อ) — EN only ไม่ผูก TH/EN toggle เหมือน shareProfileLink() ===== -->
+<div class="modal-overlay" id="showMeConfirmModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>Show me now?</h3>
+      <button class="modal-close" data-close="showMeConfirmModal">✕</button>
+    </div>
+    <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 20px;">This reveals every real answer right away — any guesses in progress will be cleared.</p>
+    <div class="btn-row" style="margin:0;">
+      <button class="btn btn-ghost" data-close="showMeConfirmModal">Cancel</button>
+      <button class="btn btn-primary" id="confirmShowMeBtn">Yes, Show Me</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Game Result Modal (สรุปผลหลังเช็คครบ 50 ข้อ) — EN only ===== -->
+<div class="modal-overlay" id="gameResultModal">
+  <div class="modal-box" style="text-align:center;">
+    <button class="modal-close" data-close="gameResultModal" style="margin-left:auto;display:block;">✕</button>
+    <div id="gameResultBody"></div>
+    <div class="btn-row" style="margin:0;">
+      <button class="btn btn-primary full-btn" onclick="replayGame()">🔁 Replay</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -325,7 +374,7 @@ const MYTYPE_QUESTIONS = [
   { key:'q03', a:'Home Addict', b:'Traveller' },
   { key:'q04', a:'Coffee', b:'Tea' },
   { key:'q05', a:'Save Money', b:'Spend on Experience' },
-  { key:'q06', a:'Minimalist', b:'Maximizer' },
+  { key:'q06', a:'Bookworm', b:'Go Out' },
   { key:'q07', a:'Walk Everywhere', b:'Drive Everywhere' },
   { key:'q08', a:'Park Person', b:'Mall Person' },
   { key:'q09', a:'Work From Café', b:'Office Person' },
@@ -338,16 +387,16 @@ const MYTYPE_QUESTIONS = [
   { key:'q16', a:'Love Rain', b:'Love Sunshine' },
   { key:'q17', a:'Logic', b:'Emotion' },
   { key:'q18', a:'Clean Desk', b:'Creative Mess' },
-  { key:'q19', a:'Do It Alone', b:'Do It Together' },
+  { key:'q19', a:'Solo', b:'Gangster' },
   { key:'q20', a:'Family First', b:'Friend First' },
-  { key:'q21', a:'Live for Today', b:'Plan for Tomorrow' },
-  { key:'q22', a:'Embrace Uncertainty', b:'Choose Stability' },
+  { key:'q21', a:'Live Today', b:'Future Plan' },
+  { key:'q22', a:'Love Uncertainty', b:'Keep Stability' },
   { key:'q23', a:'Stand Out', b:'Fit In' },
   { key:'q24', a:'Money First', b:'Purpose First' },
   { key:'q25', a:'Specialist', b:'Generalist' },
   { key:'q26', a:'Corporate', b:'Startup' },
   { key:'q27', a:'Done is Better', b:'Perfect is Great' },
-  { key:'q28', a:'Stay Curious', b:'Stay Comfortable' },
+  { key:'q28', a:'Curious', b:'Comfortable' },
   { key:'q29', a:'Challenge Me', b:'Keep It Easy' },
   { key:'q30', a:'Detail Obsessed', b:'Big Picture' },
   { key:'q31', a:'Doer', b:'Dreamer' },
@@ -369,7 +418,7 @@ const MYTYPE_QUESTIONS = [
   { key:'q47', a:'Say It With Words', b:'Show It With Actions' },
   { key:'q48', a:'Text All Day', b:'Call When It Matters' },
   { key:'q49', a:'Chemistry First', b:'Compatibility First' },
-  { key:'q50', a:'Touchy-Feely', b:'Give Me Space' }
+  { key:'q50', a:'Skinship', b:'Personal Space' }
 ];
 function questionByKey(key){ return MYTYPE_QUESTIONS.find(q => q.key === key); }
 
@@ -514,6 +563,150 @@ function renderAnswerSliders(answers, editable){
   return keys.map(k => sliderRowHtml(questionByKey(k), answers[k], editable)).join('');
 }
 
+/* ================= MY TYPE GUESSING GAME (visitor only, EN-only copy, no backend/persistence) =================
+   3 โหมด: 'initial' (ยังไม่กดอะไร ไม่เห็นจุดเลย) -> 'playing' (กด Let's Play แล้ว กรอกเลขทายทีละข้อ)
+   -> 'revealed' (กด Show Me + confirm แล้ว เห็นจุดจริงหมด). กด Let's Play ซ้ำจาก revealed ก็กลับเข้า playing ใหม่ได้
+   (เคส "จำไว้ก่อนแล้วมาเล่นทายตัวเอง" ตามที่ Pop ต้องการ) */
+let gameMode = 'initial';
+let gameState = { checked:{}, correct:{} }; // checked[key]=true หลังกด Check this ของข้อนั้น, correct[key]=true/false
+
+const GAME_CORRECT_PHRASES = ['🔥 You got me!', '🎯 Spot on!', '✨ You know me!', '👏 Right on!'];
+const GAME_WRONG_PHRASES = ['😂 You missed me!', '🙃 Nice try!', '🤔 Not quite!', '🫠 Way off!'];
+const GAME_MATCH_TOLERANCE = 5; // ทายถูกถ้าห่างจากคำตอบจริงไม่เกิน ±5 จุด (รัศมีรวม 10 จุด)
+
+// สร้าง HTML ทั้งการ์ดเกม (ปุ่มด้านบน + 50 แถว + ปุ่ม Show Me ด้านล่างตอน playing) ตาม mode ปัจจุบัน
+function gameSectionInnerHtml(mode){
+  if(mode === 'revealed'){
+    return `
+      <div class="game-actions"><button class="btn btn-ghost full-btn" onclick="startGuessGame()">🎮 Let's Play</button></div>
+      ${renderAnswerSliders(currentProfile.answers, false)}
+    `;
+  }
+  if(mode === 'playing'){
+    const rows = MYTYPE_QUESTIONS.map(q => gameRowHtml(q)).join('');
+    return `
+      ${rows}
+      <div class="bottom-showme-row"><button class="btn btn-ghost full-btn" onclick="confirmShowMe()">👀 Show Me</button></div>
+    `;
+  }
+  // initial
+  return `
+    <div class="game-actions">
+      <button class="btn btn-ghost" onclick="startGuessGame()">🎮 Let's Play</button>
+      <button class="btn btn-ghost" onclick="confirmShowMe()">👀 Show Me</button>
+    </div>
+    ${MYTYPE_QUESTIONS.map(q => `
+      <div class="q-row">
+        <div class="q-label"><span class="q-left">${escapeHtml(q.a)}</span><span class="q-right">${escapeHtml(q.b)}</span></div>
+        <div class="q-track"><div class="q-handle" style="display:none;"></div></div>
+      </div>`).join('')}
+  `;
+}
+
+// แถวคำถามระหว่างเล่นเกม — มี handle 2 อัน (guess/actual) ซ่อนไว้ก่อน + ช่องกรอกเลข + ปุ่ม Check this + ข้อความเฉลย
+function gameRowHtml(q){
+  return `
+    <div class="q-row game-row" data-key="${q.key}">
+      <div class="q-label"><span class="q-left">${escapeHtml(q.a)}</span><span class="q-right">${escapeHtml(q.b)}</span></div>
+      <div class="q-track game-track" data-key="${q.key}">
+        <div class="q-handle guess-handle" style="display:none;"></div>
+        <div class="q-handle actual-handle" style="display:none;"></div>
+      </div>
+      <div class="game-input-row">
+        <input type="number" min="0" max="100" step="1" class="guess-input" placeholder="0–100" aria-label="Your guess, 0 to 100">
+        <button class="btn check-btn" disabled>Check this</button>
+      </div>
+      <div class="game-feedback"></div>
+    </div>`;
+}
+
+function startGuessGame(){
+  gameMode = 'playing';
+  gameState = { checked:{}, correct:{} };
+  document.getElementById('myTypeGameCard').innerHTML = gameSectionInnerHtml('playing');
+  bindGameRowEvents();
+}
+
+function confirmShowMe(){ openModal('showMeConfirmModal'); }
+document.getElementById('confirmShowMeBtn').addEventListener('click', ()=>{
+  closeModal('showMeConfirmModal');
+  gameMode = 'revealed';
+  gameState = { checked:{}, correct:{} };
+  document.getElementById('myTypeGameCard').innerHTML = gameSectionInnerHtml('revealed');
+  document.querySelectorAll('#myTypeGameCard .q-track').forEach(tr => positionHandle(tr));
+});
+
+function replayGame(){
+  closeModal('gameResultModal');
+  startGuessGame();
+}
+
+// ผูก event ให้ทุกแถวเกมที่กำลังแสดงอยู่ (เรียกซ้ำได้ปลอดภัยทุกครั้งที่ innerHTML ของการ์ดเกมถูกวาดใหม่)
+function bindGameRowEvents(){
+  document.querySelectorAll('#myTypeGameCard .game-row').forEach(row => {
+    const key = row.dataset.key;
+    const track = row.querySelector('.game-track');
+    const guessHandle = row.querySelector('.guess-handle');
+    const input = row.querySelector('.guess-input');
+    const checkBtn = row.querySelector('.check-btn');
+
+    input.addEventListener('input', ()=>{
+      let v = parseFloat(input.value);
+      const valid = !isNaN(v) && input.value.trim() !== '';
+      if(valid){
+        v = Math.max(0, Math.min(100, v));
+        guessHandle.style.left = v + '%';
+        guessHandle.style.display = 'block';
+      } else {
+        guessHandle.style.display = 'none';
+      }
+      checkBtn.disabled = !valid;
+    });
+
+    checkBtn.addEventListener('click', ()=> checkOneAnswer(key, track, guessHandle, input, checkBtn, row));
+  });
+}
+
+function checkOneAnswer(key, track, guessHandle, input, checkBtn, row){
+  if(gameState.checked[key]) return; // เช็คแล้วล็อกไว้ กันแก้เลขย้อนหลังหลังเห็นเฉลย
+  const guess = Math.max(0, Math.min(100, parseFloat(input.value)));
+  const actual = currentProfile.answers[key];
+  const actualHandle = track.querySelector('.actual-handle');
+  actualHandle.style.left = actual + '%';
+  actualHandle.style.display = 'block';
+
+  const correct = Math.abs(guess - actual) <= GAME_MATCH_TOLERANCE;
+  gameState.checked[key] = true;
+  gameState.correct[key] = correct;
+
+  input.disabled = true;
+  checkBtn.disabled = true;
+  const pool = correct ? GAME_CORRECT_PHRASES : GAME_WRONG_PHRASES;
+  const feedback = row.querySelector('.game-feedback');
+  feedback.textContent = pool[Math.floor(Math.random() * pool.length)];
+  feedback.classList.add(correct ? 'correct' : 'wrong');
+
+  const checkedCount = Object.keys(gameState.checked).length;
+  if(checkedCount >= MYTYPE_QUESTIONS.length) showGameResultPopup();
+}
+
+function showGameResultPopup(){
+  const correctCount = Object.values(gameState.correct).filter(Boolean).length;
+  const pct = Math.round((correctCount / MYTYPE_QUESTIONS.length) * 100);
+  let emoji, title, desc;
+  if(pct >= 80){ emoji='🏆'; title='SOULMATE'; desc='You know what I\u2019m thinking.'; }
+  else if(pct >= 60){ emoji='😎'; title='You Know Me Pretty Well'; desc='Okay, you definitely know me.'; }
+  else if(pct >= 30){ emoji='👀'; title='Getting to Know Me'; desc='You know some of me. Time to know the rest.'; }
+  else { emoji='😂'; title='Do You Even Know Me?'; desc='We clearly need to spend more time together.'; }
+
+  document.getElementById('gameResultBody').innerHTML = `
+    <div class="result-emoji">${emoji}</div>
+    <div class="result-title">${escapeHtml(title)}</div>
+    <div class="result-desc">${escapeHtml(desc)}<br>${correctCount}/${MYTYPE_QUESTIONS.length} correct (${pct}%)</div>
+  `;
+  openModal('gameResultModal');
+}
+
 function renderView(data){
   document.getElementById('content').innerHTML = ''; // clear ก่อน (กัน id ซ้ำตอน re-render สลับภาษา)
 
@@ -524,9 +717,24 @@ function renderView(data){
 
   const isOwner = data.is_owner;
   const answerKeys = Object.keys(data.answers || {});
-  const slidersHtml = answerKeys.length
-    ? `<div class="card"><div class="section-title">My Type</div>${renderAnswerSliders(data.answers, false)}</div>`
-    : '';
+  let slidersHtml = '';
+  if(answerKeys.length){
+    if(isOwner){
+      // เจ้าของโปรไฟล์เห็นคำตอบตัวเองปกติ ไม่ต้องเล่นเกมทาย
+      slidersHtml = `<div class="card"><div class="section-title">My Type</div>${renderAnswerSliders(data.answers, false)}</div>`;
+    } else {
+      // ผู้เยี่ยมชม (เช่นเพื่อนที่กด share link มา) เจอโหมดเกมทายแทน — ไม่เห็นตำแหน่งจุดจริงจนกว่าจะเล่น/กด Show Me
+      // EN only ตาม Pop กำหนด (ไม่ผูก TH/EN toggle เหมือน shareProfileLink())
+      // renderView ทุกครั้งเริ่มที่ 'initial' เสมอ (เช่น re-render หลัง login กลางเกม) เลย sync state ให้ตรงกันไว้ด้วย
+      gameMode = 'initial';
+      gameState = { checked:{}, correct:{} };
+      slidersHtml = `<div class="card">
+        <div class="section-title">My Type</div>
+        <div class="edit-hint">Same type as you or totally different?</div>
+        <div id="myTypeGameCard">${gameSectionInnerHtml('initial')}</div>
+      </div>`;
+    }
+  }
 
   document.getElementById('content').innerHTML = `
     <div class="card">
@@ -544,7 +752,8 @@ function renderView(data){
     </div>
     ${isOwner ? renderGroupingSection() : ''}
   `;
-  document.querySelectorAll('#content .q-track').forEach(tr => positionHandle(tr));
+  document.querySelectorAll('#content .q-track:not(.game-track)').forEach(tr => positionHandle(tr));
+  if(!isOwner && answerKeys.length) bindGameRowEvents();
   if(isOwner) bindGroupingEvents();
 }
 
