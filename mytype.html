@@ -45,7 +45,7 @@
   .topbar{ display:flex; align-items:center; justify-content:space-between; padding:6px 4px 18px; }
   .topbar .brand{ font-family:'Antonio',sans-serif; font-weight:700; font-size:22px; color:#fff; letter-spacing:1px; }
   .topbar .brand a{ color:#fff; }
-  .top-actions{ display:flex; align-items:center; gap:10px; }
+  .top-actions{ display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
   .back-link{ font-size:12.5px; color:rgba(255,255,255,0.8); }
   .back-link:hover{ color:#fff; }
 
@@ -195,6 +195,7 @@
     <div class="brand"><a href="index.html">WEZIDE</a></div>
     <div class="top-actions">
       <a class="back-link" href="index.html" data-i18n="backHome">← กลับหน้าแรก</a>
+      <a class="back-link" href="#" id="backMyTypeLink" data-i18n="backMyType" style="display:none;">← กลับไปหน้า My Type ของฉัน</a>
     </div>
   </div>
 
@@ -274,7 +275,7 @@ const CONFIG = {
 const LANG_KEY = 'wz_lang';
 const I18N = {
   th: {
-    backHome: '← กลับหน้าแรก', loadingText: 'กำลังโหลด...',
+    backHome: '← กลับหน้าแรก', backMyType: '← กลับไปหน้า My Type ของฉัน', loadingText: 'กำลังโหลด...',
     notFoundMsg: 'ไม่พบผู้ใช้นี้ กรุณาตรวจสอบลิงก์อีกครั้ง',
     aboutMeTitle: 'About Me',
     emptyOwnerMsg: 'คุณยังไม่ได้ตั้งค่า My Type ของตัวเองเลย ลองเริ่มเลยไหม?',
@@ -304,7 +305,7 @@ const I18N = {
     charCount: '{n}/500 ตัวอักษร'
   },
   en: {
-    backHome: '← Back to Home', loadingText: 'Loading...',
+    backHome: '← Back to Home', backMyType: '← Back to My Type', loadingText: 'Loading...',
     notFoundMsg: 'User not found. Please check the link again.',
     aboutMeTitle: 'About Me',
     emptyOwnerMsg: 'You haven\'t set up your My Type yet. Want to start now?',
@@ -999,6 +1000,15 @@ function renderMatchWall(results, mode){
 /* ================= INIT ================= */
 applyLang(getLang());
 loadProfile();
+
+// UX-fix: เดิมกด "Back to Home" อย่างเดียว ทำให้คนที่กำลังไล่ดูโปรไฟล์เพื่อนทีละคน (จาก search/match wall)
+// ต้องอ้อมกลับเข้า account -> กด My Type ใหม่ทุกครั้งเพื่อไปหน้า search ต่อ — เลยเพิ่มปุ่มลัดกลับไปหน้า
+// My Type ของตัวเอง (มี search/match tools) โชว์เฉพาะตอน login อยู่ และกำลังดูโปรไฟล์ "คนอื่น" ไม่ใช่ของตัวเอง
+if(isLoggedIn() && !isOwnerOfCurrentPage()){
+  const link = document.getElementById('backMyTypeLink');
+  link.href = `mytype.html?id=${STATE.session.user_id}`;
+  link.style.display = 'inline-block';
+}
 </script>
 </body>
 </html>
