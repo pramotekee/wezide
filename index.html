@@ -1666,10 +1666,17 @@ function selectCategory(cat, el){
 // แค่เปลี่ยนลำดับการ์ดของหัวข้อที่ผ่าน filter เดิม แล้ว fetch หน้า 1 ใหม่
 document.getElementById('feedSortToggle').addEventListener('click', (e)=>{
   const btn = e.target.closest('button[data-sort]');
-  if(!btn || btn.classList.contains('active')) return;
+  if(!btn) return;
+  const sortMode = btn.dataset.sort;
+  // UX-fix: เดิม shuffleSeed สุ่มแค่ครั้งเดียวตอนโหลดหน้า Home แล้วค้างอยู่แบบนั้นตลอด session เลยทำให้
+  // กดเข้า Latest/Popular แล้วกลับมา Shuffle ใหม่ เจอ "ลำดับเดิม" ทุกครั้ง ทั้งที่ user คาดหวังว่ากด Shuffle
+  // แต่ละครั้งควรได้ชุดสุ่มใหม่ (เหมือนคำว่า shuffle จริงๆ) — ตอนนี้สุ่ม seed ใหม่ทุกครั้งที่กดปุ่ม Shuffle
+  // ไม่ว่าจะกำลัง active อยู่แล้วหรือไม่ก็ตาม ส่วน Latest/Popular กดซ้ำโหมดเดิมไม่ต้อง fetch ใหม่เหมือนเดิม
+  if(sortMode === 'shuffle') STATE.shuffleSeed = genShuffleSeed();
+  else if(btn.classList.contains('active')) return;
   document.querySelectorAll('#feedSortToggle button').forEach(b=> b.classList.remove('active'));
   btn.classList.add('active');
-  STATE.sortMode = btn.dataset.sort;
+  STATE.sortMode = sortMode;
   STATE.page = 1;
   loadTopics();
 });
