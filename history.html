@@ -339,6 +339,7 @@ const I18N = {
     foundPrefix: 'พบ', foundSuffix: 'หัวข้อที่จบการโหวตแล้ว',
     genderMale: 'ชาย', genderFemale: 'หญิง', genderOther: 'อื่นๆ',
     dashGenderTitle: 'เพศ', dashAgeGroupTitle: 'ช่วงอายุ',
+    voterSummaryText: 'สรุปผู้ร่วมโหวตทั้งหมด {n} คน', voterSummaryAria: 'แสดง/ซ่อนสรุปผู้ร่วมโหวต',
     commentEmptyMsg: 'ยังไม่มีความคิดเห็นในฝั่งนี้',
     commentLoadingText: 'กำลังโหลดความคิดเห็น...', apiErrorMsg: 'โอ๊ะ! มีบางอย่างขัดข้อง ทำให้ระบบสะดุดครับ ลองรีเฟรชใหม่อีกครั้งนะครับ'
   },
@@ -349,13 +350,19 @@ const I18N = {
     loadFailed: 'Failed to load data', emptyHistory: 'No finished topics in this category yet',
     foundPrefix: 'Found', foundSuffix: 'finished topics',
     genderMale: 'Male', genderFemale: 'Female', genderOther: 'Other',
-    dashGenderTitle: 'Gender', dashAgeGroupTitle: 'Age Group',
+    dashGenderTitle: 'Gender', dashAgeGroupTitle: 'Age',
+    voterSummaryText: 'Total voters: {n}', voterSummaryAria: 'Show/hide voter summary',
     commentEmptyMsg: 'No comments on this side yet',
     commentLoadingText: 'Loading comments...', apiErrorMsg: 'Oops! Something went wrong. Please try refreshing and try again.'
   }
 };
 function getLang(){ return localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'th'; }
-function t(key){ const lang = getLang(); return (I18N[lang] && I18N[lang][key] !== undefined) ? I18N[lang][key] : (I18N.th[key] || ''); }
+function t(key, vars){
+  const lang = getLang();
+  let s = (I18N[lang] && I18N[lang][key] !== undefined) ? I18N[lang][key] : (I18N.th[key] || '');
+  if(vars) Object.keys(vars).forEach(k => { s = s.replace('{' + k + '}', vars[k]); });
+  return s;
+}
 // alias ของ t() ไว้ใช้ในจุดที่มีตัวแปร local ชื่อ t ทับอยู่แล้ว (เช่น historyCardHTML(t)) กันเรียก t('key')
 // แล้วดันไปชนกับ topic object แทนฟังก์ชันแปลภาษา (pattern เดียวกับ index.html)
 const t18n = t;
@@ -882,8 +889,8 @@ function historyCardHTML(t){
       <div class="mini-dash">
         <div class="mini-dash-title">
           <span class="mini-dash-summary">
-            สรุปผู้ร่วมโหวตทั้งหมด <b style="color:var(--primary)">${total}</b> คน
-            <button class="dash-toggle-btn" data-dash-toggle="${t.topic_id}" aria-expanded="false" aria-label="แสดง/ซ่อนสรุปผู้ร่วมโหวต">▾</button>
+            ${t18n('voterSummaryText', {n: `<b style="color:var(--primary)">${total}</b>`})}
+            <button class="dash-toggle-btn" data-dash-toggle="${t.topic_id}" aria-expanded="false" aria-label="${t18n('voterSummaryAria')}">▾</button>
           </span>
         </div>
         <div class="mini-dash-body" id="dashBody-${t.topic_id}">
