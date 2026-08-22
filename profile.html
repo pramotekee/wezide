@@ -440,6 +440,14 @@
     <a class="btn btn-primary" href="index.html" style="margin-top:10px; display:inline-block;" data-i18n="goHomeBtn">ไปหน้าแรก</a>
   </div>
 
+  <!-- ===== แสดงเมื่อโหลดโปรไฟล์ไม่สำเร็จเพราะเน็ต/เซิร์ฟเวอร์สะดุด (ไม่ใช่ session หมดอายุจริง — ไม่ logout) ===== -->
+  <div class="locked-state" id="loadErrorState" style="display:none;">
+    <div class="emoji">⚠️</div>
+    <h3 data-i18n="loadErrorTitle">โหลดโปรไฟล์ไม่สำเร็จ</h3>
+    <p data-i18n="loadErrorDesc">อาจเป็นเพราะเน็ตหรือเซิร์ฟเวอร์สะดุดชั่วคราว ลองใหม่อีกครั้งได้เลย</p>
+    <button class="btn btn-primary" id="loadErrorRetryBtn" style="margin-top:10px;" data-i18n="dashRetryBtn">Try again</button>
+  </div>
+
   <!-- ===== เนื้อหาโปรไฟล์ (แสดงเมื่อ login แล้ว) ===== -->
   <div id="profileContent" style="display:none;">
 
@@ -765,6 +773,7 @@ const I18N = {
   th: {
     backHome: '← กลับหน้าแรก', lockedTitle: 'กรุณาเข้าสู่ระบบก่อน',
     lockedDesc: 'เข้าสู่ระบบที่หน้าแรกเพื่อจัดการโปรไฟล์ของคุณ', goHomeBtn: 'ไปหน้าแรก',
+    loadErrorTitle: 'โหลดโปรไฟล์ไม่สำเร็จ', loadErrorDesc: 'อาจเป็นเพราะเน็ตหรือเซิร์ฟเวอร์สะดุดชั่วคราว ลองใหม่อีกครั้งได้เลย',
     statTopicsLabel: 'หัวข้อที่สร้างทั้งหมด', statVotersLabel: 'คนร่วมโหวตทั้งหมด',
     dashOverviewTitle: 'ภาพรวมคนที่มาร่วมโหวตหัวข้อของคุณ', loadingText: 'กำลังโหลด...',
     myTypeLinkText: '✨ My Type — ดูตัวตนของฉัน',
@@ -822,6 +831,7 @@ const I18N = {
   en: {
     backHome: '← Back to Home', lockedTitle: 'Please log in first',
     lockedDesc: 'Log in on the home page to manage your profile.', goHomeBtn: 'Go to Home',
+    loadErrorTitle: 'Couldn\'t load profile', loadErrorDesc: 'This may be a temporary network or server hiccup. Please try again.',
     statTopicsLabel: 'Topics Created', statVotersLabel: 'Total Voters',
     dashOverviewTitle: 'Overview of people voting on your topics', loadingText: 'Loading...',
     myTypeLinkText: '✨ My Type — See who I am',
@@ -933,11 +943,11 @@ let STATE = {
 };
 
 /* ---------- API helper ---------- 
- * timeout เพิ่มเป็น 30 วิ + retry อัตโนมัติแบบเงียบๆ 1 ครั้งก่อนฟ้อง error จริง (Apps Script cold start
- * ช้าเป็นพักๆ เป็นเรื่องปกติ โดยเฉพาะหลัง deploy ใหม่ๆ หรือไม่มีคนใช้นานๆ) */
+ * timeout ลดเหลือ 15 วิ/ครั้ง (รวม retry แล้ว worst-case 30 วิ) + retry อัตโนมัติแบบเงียบๆ 1 ครั้งก่อนฟ้อง
+ * error จริง — Apps Script cold start ช้าเป็นพักๆ เป็นเรื่องปกติ แต่ปล่อยให้รอนานเกิน 30 วิ/คำขอจะยิ่งแย่กว่าเดิม */
 async function api(action, params = {}, method = 'GET', _isRetry = false){
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
   try{
     let res;
     if(method === 'GET'){
@@ -953,8 +963,10 @@ async function api(action, params = {}, method = 'GET', _isRetry = false){
     return await res.json();
   }catch(err){
     if(!_isRetry) return api(action, params, method, true); // retry เงียบๆ 1 ครั้งก่อนฟ้อง error จริง
-    // กันทุกกรณี error ไม่ให้หลุดเป็น unhandled exception ที่ทำให้หน้าจอค้างเป็น spinner ตลอดกาล
-    return { success:false, message:'Oops! Something went wrong. Please try refreshing and try again.' };
+    // _networkError:true แยกไว้ให้ต่างจาก success:false ปกติที่ backend ตอบกลับมาจริงว่า "ไม่ผ่าน"
+    // (เช่น session หมดอายุจริง) เพราะ 2 เคสนี้ต้องจัดการต่างกัน — request ที่ยิงไม่สำเร็จเลย ไม่ควรถูกตีความ
+    // ว่า "session ไม่ถูกต้อง" แล้วบังคับ logout ทั้งที่จริงๆ แค่เน็ต/เซิร์ฟเวอร์สะดุดชั่วคราว
+    return { success:false, message:'Oops! Something went wrong. Please try refreshing and try again.', _networkError:true };
   }finally{
     clearTimeout(timeoutId);
   }
@@ -2115,7 +2127,7 @@ async function doCancelSubscription(){
 }
 
 /* ---------- Init ---------- */
-(async function init(){
+async function initProfilePage(){
   if(!isLoggedIn()){
     document.getElementById('lockedState').style.display = 'block';
     return;
@@ -2127,6 +2139,19 @@ async function doCancelSubscription(){
 
   const res = await api('getMyProfile', { session_token: STATE.session.session_token });
   if(!res.success){
+    // บั๊กที่เจอ: เดิม logout() + ล็อกหน้าทันทีทุกครั้งที่ res.success===false — แต่ api() เองก็คืน
+    // success:false เหมือนกันตอนเน็ต/Apps Script สะดุดจนคำขอไม่สำเร็จ (ไม่ใช่ backend ตอบมาว่า session ไม่ถูกต้องจริง)
+    // ผลคือ user login ปกติดีอยู่ดันโดนเตะออกทั้งที่ session ยังใช้ได้ แค่เน็ตสะดุดตอนโหลดหน้าพอดี
+    // แก้โดยเช็ค _networkError ก่อน — logout เฉพาะตอน backend ยืนยันจริงๆ ว่า session ไม่ถูกต้องเท่านั้น
+    // ส่วนเน็ต/เซิร์ฟเวอร์สะดุด ให้โชว์ error state ที่กด "ลองใหม่" ได้ โดยไม่แตะ session เลย
+    if(res._networkError){
+      document.getElementById('loadErrorState').style.display = 'block';
+      document.getElementById('loadErrorRetryBtn').addEventListener('click', ()=>{
+        document.getElementById('loadErrorState').style.display = 'none';
+        initProfilePage();
+      }, { once:true });
+      return;
+    }
     showToast(res.message);
     logout();
     document.getElementById('lockedState').style.display = 'block';
@@ -2153,7 +2178,8 @@ async function doCancelSubscription(){
   if(STATE.profile.last_charge_status === 'failed' && STATE.profile.plan !== 'pro'){
     showToast(t('chargeFailedToast'));
   }
-})();
+}
+initProfilePage();
 </script>
 
 </body>
