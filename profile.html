@@ -822,7 +822,7 @@ const I18N = {
     cardNumberLabel: 'หมายเลขบัตร', cardNameLabel: 'ชื่อบนบัตร', cardExpiryLabel: 'หมดอายุ (MM/YY)',
     pcPayBtn: 'ยืนยันชำระเงิน 199 บาท', pcPayLoading: 'กำลังชำระเงิน...',
     pcNotReadyMsg: 'ระบบชำระเงินยังไม่พร้อมใช้งานในขณะนี้ กรุณาลองใหม่อีกครั้งภายหลัง',
-    exportGateMsg: 'ฟีเจอร์ Export data นี้ สำหรับผู้ใช้งานแบบ PRO plan หากสนใจ สามารถอัปเกรดเพื่อเข้าใช้งาน',
+    exportGateMsg: 'ฟีเจอร์นี้ใช้ได้เฉพาะแพลน PRO เท่านั้น อัปเกรดเป็น PRO เพื่อปลดล็อกการใช้งาน',
     exportGateUpgradeBtn: 'อัปเกรด', exportBtn: 'Export', exportLoading: 'กำลัง export...',
     exportSuccessToast: 'Export สำเร็จ',
     billingStatusSuccess: 'สำเร็จ', billingStatusFailed: 'ไม่สำเร็จ',
@@ -880,7 +880,7 @@ const I18N = {
     cardNumberLabel: 'Card Number', cardNameLabel: 'Name on Card', cardExpiryLabel: 'Expiry (MM/YY)',
     pcPayBtn: 'Confirm Payment — 199 THB', pcPayLoading: 'Processing payment...',
     pcNotReadyMsg: 'The payment system is not available right now. Please try again later.',
-    exportGateMsg: 'This export feature is for PRO plan users. Upgrade if you\'re interested.',
+    exportGateMsg: 'This feature is available on PRO. Upgrade to PRO to unlock it.',
     exportGateUpgradeBtn: 'Upgrade', exportBtn: 'Export', exportLoading: 'Exporting...',
     exportSuccessToast: 'Export successful',
     billingStatusSuccess: 'Success', billingStatusFailed: 'Failed',
@@ -1017,8 +1017,8 @@ document.querySelectorAll('.modal-overlay').forEach(ov=>{
 });
 
 /* ---------- Confirm/Info popup (แทน confirm() ของเบราว์เซอร์ + toast เล็กๆ ทุกจุดที่เกี่ยวกับหัวข้อ/บัญชี) ---------- */
-function showInfoPopup(message, btnLabel){
-  document.getElementById('confirmModalTitle').textContent = 'แจ้งให้ทราบ';
+function showInfoPopup(message, btnLabel, title){
+  document.getElementById('confirmModalTitle').textContent = title || 'แจ้งให้ทราบ';
   document.getElementById('confirmModalText').textContent = message;
   document.getElementById('confirmModalActions').innerHTML =
     `<button class="btn btn-primary full-btn" id="confirmModalOkBtn">${btnLabel || 'ตกลง'}</button>`;
@@ -1992,7 +1992,7 @@ function goToPlanBillingTab(){
 // FREE user กด Export ที่การ์ดหัวข้อ -> popup นี้แทนการ export ทันที (ปุ่ม Export โชว์เสมอไม่ว่า plan ไหน
 // ตาม spec ข้อ 6) กด [อัปเกรด] พาไปแท็บ Plan & Billing ทันที ไม่กด ก็ปิดด้วย ✕ มุมขวาบนของ modal ปกติ
 function showExportGatePopup(){
-  document.getElementById('confirmModalTitle').textContent = 'PRO plan';
+  document.getElementById('confirmModalTitle').textContent = 'Export your results';
   document.getElementById('confirmModalText').textContent = t('exportGateMsg');
   document.getElementById('confirmModalActions').innerHTML =
     `<button class="btn btn-primary full-btn" id="confirmModalUpgradeBtn">${t('exportGateUpgradeBtn')}</button>`;
@@ -2028,7 +2028,7 @@ function downloadCsv(csvContent, filename){
 /* ---------- Upgrade flow (Omise.js card tokenization -> actionUpgradeToPro) ---------- */
 function handleUpgradeClick(){
   if(!CONFIG.OPN_PUBLIC_KEY){
-    showInfoPopup(t('pcNotReadyMsg'));
+    showInfoPopup(t('pcNotReadyMsg'), 'OK', 'Notice');
     return;
   }
   document.getElementById('pcError').style.display = 'none';
