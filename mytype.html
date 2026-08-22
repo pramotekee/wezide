@@ -397,12 +397,11 @@ function isLoggedIn(){ return !!(STATE.session && STATE.session.session_token); 
 function isOwnerOfCurrentPage(){ return isLoggedIn() && STATE.session.user_id === profileId; }
 
 /* ---------- API helper ----------
- * เพิ่ม timeout เป็น 30 วิ (จากเดิม 20 วิ) และ retry อัตโนมัติแบบเงียบๆ 1 ครั้งก่อนค่อยฟ้อง error จริง —
- * Apps Script Web App มักมี cold start ช้าเป็นพักๆ โดยเฉพาะหลัง deploy เวอร์ชันใหม่ หรือตอนไม่มีคนใช้งาน
- * นานๆ การ retry เงียบๆ แบบนี้ช่วยลด false-positive error ที่คนเห็นได้เยอะโดยไม่ต้องรอนานขึ้นในเคสปกติ */
+ * timeout ลดเหลือ 15 วิ/ครั้ง (รวม retry แล้ว worst-case 30 วิ แทนที่จะเป็น 60 วิ) + retry อัตโนมัติ
+ * แบบเงียบๆ 1 ครั้งก่อนฟ้อง error จริง — ปล่อยให้รอนานเกินไปต่อคำขอทำให้หน้าเว็บดูค้างจนคนกดรีเฟรชซ้ำๆ เอง */
 async function api(action, params = {}, method = 'GET', _isRetry = false){
   const controller = new AbortController();
-  const timeoutId = setTimeout(()=> controller.abort(), 30000);
+  const timeoutId = setTimeout(()=> controller.abort(), 15000);
   const withSession = Object.assign({}, params);
   if(isLoggedIn() && withSession.session_token === undefined) withSession.session_token = STATE.session.session_token;
   try{
@@ -416,7 +415,7 @@ async function api(action, params = {}, method = 'GET', _isRetry = false){
     return await res.json();
   }catch(err){
     if(!_isRetry) return api(action, params, method, true); // retry เงียบๆ 1 ครั้งก่อนฟ้อง error จริง
-    return { success:false, message: 'Oops! Something went wrong. Please try refreshing and try again.' };
+    return { success:false, message: 'Oops! Something went wrong. Please try refreshing and try again.', _networkError:true };
   }finally{ clearTimeout(timeoutId); }
 }
 
