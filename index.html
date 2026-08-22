@@ -1133,11 +1133,12 @@ let STATE = {
 
 /* ---------- API helper ---------- */
 async function api(action, params = {}, method = 'GET', _isRetry = false){
-  // ใส่ timeout กันปุ่มหมุนค้างไม่รู้จบ — เพิ่มจาก 20 เป็น 30 วิ เพราะ Apps Script cold start ช้าเป็นพักๆ
-  // เป็นเรื่องปกติ (โดยเฉพาะหลัง deploy เวอร์ชันใหม่ หรือไม่มีคนใช้งานมาสักพัก) 20 วิเดิมตัดจบเร็วเกินไป
-  // จนกลายเป็น false-positive error บ่อยทั้งที่จริงๆ แค่รอ Apps Script warm up อีกไม่กี่วิก็เสร็จแล้ว
+  // ลด timeout ต่อครั้งเหลือ 15 วิ (จากที่เคยขยับเป็น 30 วิ) เพราะรวมกับ retry 1 ครั้งแล้ว worst-case
+  // จะยาวถึง 30 วิต่อ 1 คำขอ — ตอน init หน้าแรกมีหลายคำขอยิงพร้อมกัน (hero banner/categories/topics/session)
+  // ถ้าปล่อยให้แต่ละอันรอนานถึง 60 วิ จะรู้สึกเหมือนหน้าเว็บค้างจริงจนคนกดรีเฟรชซ้ำๆ ระหว่างที่ของเดิมยังโหลดไม่เสร็จ
+  // ซึ่งเป็นสาเหตุคลาสสิกที่ Safari มือถือขึ้น "A problem repeatedly occurred" (WebKit ล้มซ้ำจากการรีเฟรชทับกัน)
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
   try{
     let res;
     if(method === 'GET'){
@@ -1154,9 +1155,12 @@ async function api(action, params = {}, method = 'GET', _isRetry = false){
   }catch(err){
     // retry อัตโนมัติแบบเงียบๆ 1 ครั้งก่อนฟ้อง error จริงให้ user เห็น — ช่วยลด error หลอกจาก cold start/เน็ตสะดุดชั่วครู่
     if(!_isRetry) return api(action, params, method, true);
+    // _networkError:true = ยิง request ไม่สำเร็จเลย (timeout/เน็ตหลุด/response ไม่ใช่ JSON) แยกไว้ให้ต่างจาก
+    // res.success===false ปกติที่ backend ตอบกลับมาจริงๆ ว่า "ไม่ผ่าน" (เช่น session หมดอายุจริง) — เพราะ 2 เคสนี้
+    // ต้องจัดการต่างกัน จุดที่เรียก validateSession ต้อง "ไม่" logout ถ้าสาเหตุคือเน็ตสะดุด ไม่ใช่ session ไม่ถูกต้องจริง
     // กันทุกกรณี error (timeout / เน็ตหลุด / response ไม่ใช่ JSON ฯลฯ) ไม่ให้หลุดไปเป็น unhandled exception
     // ที่ทำให้หน้าจอค้างเป็น spinner ตลอดกาลโดยไม่มีข้อความอะไรบอก user เลย — ต้อง fail แบบมี message เสมอ
-    return { success:false, message: t('apiErrorMsg') };
+    return { success:false, message: t('apiErrorMsg'), _networkError:true };
   }finally{
     clearTimeout(timeoutId);
   }
@@ -1279,6 +1283,11 @@ async function validateSessionOnLoad(){
   if(!isLoggedIn()) return;
   const res = await api('validateSession', { session_token: STATE.session.session_token });
   if(!res.success){
+    // บั๊กที่เจอ: เดิม logout() ทันทีทุกครั้งที่ res.success===false — แต่ api() เองก็คืน success:false
+    // เหมือนกันตอนเน็ต/Apps Script สะดุดจนคำขอไม่สำเร็จ (ไม่ใช่ backend ตอบมาจริงๆ ว่า session ไม่ถูกต้อง)
+    // เลยกลายเป็นว่า user login อยู่ดีๆ โดน logout ทั้งที่ session ยังใช้ได้ปกติ แค่เน็ตสะดุดตอนเช็คพอดี
+    // แก้โดยเช็ค _networkError ก่อน — logout เฉพาะตอนที่ backend ตอบกลับมาจริงๆ ว่า session ไม่ถูกต้องเท่านั้น
+    if(res._networkError) return; // เน็ต/เซิร์ฟเวอร์สะดุดชั่วคราว ไม่ใช่ session ผิดจริง ปล่อยผ่านไปก่อน รอบหน้าค่อยเช็คใหม่
     logout();
     showToast(res.message || 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง', 6000); // ข้อความนี้ยาวกว่าปกติ ให้เวลาอ่านนานกว่า toast ทั่วไป
     return;
