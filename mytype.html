@@ -186,6 +186,38 @@
      เป็นพารากราฟแทนการตัดข้อความทิ้งด้วย ... กลางประโยค (เดิม white-space:nowrap ทำให้ข้อความยาวโดนตัดขาด) */
   #toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--text); color:#fff; padding:13px 20px; border-radius:12px; font-size:13.5px; opacity:0; pointer-events:none; transition:all .25s ease; z-index:300; max-width:min(92vw, 380px); width:max-content; text-align:left; line-height:1.5; box-shadow:var(--shadow); }
   #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ===== My Type PDF export sheet (mte- prefix, print-only, isolated from rest of app CSS) ===== */
+  #myTypeExportPrint{ display:none; }
+  .mte-page{ font-family:'Inter',Arial,sans-serif; color:#1C1329; }
+  .mte-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; border-bottom:1px solid #E6E2EF; padding-bottom:10px; margin-bottom:14px; }
+  .mte-brand{ font-family:'Antonio',sans-serif; font-weight:700; font-size:16px; color:#5B2A9E; letter-spacing:0.5px; }
+  .mte-desc{ font-size:10px; color:#6E6680; max-width:420px; margin-top:4px; line-height:1.5; }
+  .mte-date{ font-size:10px; color:#6E6680; white-space:nowrap; }
+  .mte-identity{ display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+  .mte-avatar{ width:44px; height:44px; border-radius:50%; object-fit:cover; }
+  .mte-avatar-fallback{ background:#5B2A9E; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:17px; }
+  .mte-name{ font-size:17px; font-weight:700; }
+  .mte-toppick{ background:#FFF8E5; border:1px solid #FFC93C; border-radius:8px; padding:10px 14px; margin-bottom:16px; }
+  .mte-toppick-label{ font-size:9px; font-weight:700; color:#8A6A10; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:4px; }
+  .mte-toppick-desc{ font-size:9.5px; color:#6E6680; line-height:1.5; margin-bottom:8px; }
+  .mte-toppick-pills{ display:flex; flex-wrap:wrap; gap:6px; }
+  .mte-pill{ background:#fff; border:1px solid #FFC93C; color:#1C1329; font-size:11px; font-weight:700; padding:3px 10px; border-radius:100px; }
+  .mte-grid{ display:flex; gap:20px; }
+  .mte-col{ flex:1; }
+  .mte-row{ display:flex; align-items:center; gap:6px; font-size:9.5px; padding:4.5px 0; border-bottom:1px solid #F1EDF9; }
+  .mte-num{ width:16px; flex-shrink:0; color:#B4ACC7; font-size:8.5px; }
+  .mte-a{ flex:1; text-align:right; color:#6E6680; }
+  .mte-b{ flex:1; color:#6E6680; }
+  .mte-a.mte-win, .mte-b.mte-win{ font-weight:700; color:#1C1329; }
+  .mte-foot{ display:flex; align-items:center; justify-content:space-between; border-top:1px solid #E6E2EF; margin-top:16px; padding-top:10px; }
+  .mte-qr{ width:40px; height:40px; }
+  .mte-powered{ font-size:9px; color:#6E6680; }
+  @media print{
+    body > *:not(#myTypeExportPrint){ display:none !important; }
+    #myTypeExportPrint{ display:block !important; }
+    @page{ size:A4; margin:14mm; }
+  }
 </style>
 </head>
 <body>
@@ -262,6 +294,8 @@
     </div>
   </div>
 </div>
+
+<div id="myTypeExportPrint"></div>
 
 <div id="toast"></div>
 
@@ -565,6 +599,7 @@ function gameSectionInnerHtml(mode){
     return `
       <div class="game-actions"><button class="btn btn-ghost full-btn" onclick="startGuessGame()">🎮 Let's Play</button></div>
       ${renderAnswerSliders(currentProfile.answers, false)}
+      <div class="btn-row" style="margin-top:16px;margin-bottom:0;"><button class="btn btn-ghost full-btn" onclick="downloadMyTypePdf()">⬇ Download (PDF)</button></div>
     `;
   }
   if(mode === 'playing'){
@@ -706,7 +741,9 @@ function renderView(data){
   if(answerKeys.length){
     if(isOwner){
       // เจ้าของโปรไฟล์เห็นคำตอบตัวเองปกติ ไม่ต้องเล่นเกมทาย
-      slidersHtml = `<div class="card"><div class="section-title">My Type</div>${renderAnswerSliders(data.answers, false)}</div>`;
+      slidersHtml = `<div class="card"><div class="section-title">My Type</div>${renderAnswerSliders(data.answers, false)}
+        <div class="btn-row" style="margin-top:16px;margin-bottom:0;"><button class="btn btn-ghost full-btn" onclick="downloadMyTypePdf()">⬇ Download (PDF)</button></div>
+      </div>`;
     } else {
       // ผู้เยี่ยมชม (เช่นเพื่อนที่กด share link มา) เจอโหมดเกมทายแทน — ไม่เห็นตำแหน่งจุดจริงจนกว่าจะเล่น/กด Show Me
       // EN only ตาม Pop กำหนด (ไม่ผูก TH/EN toggle เหมือน shareProfileLink())
@@ -995,6 +1032,76 @@ function renderMatchWall(results, mode){
       <div class="name">${escapeHtml(r.username)}</div>
     </div>`).join('');
   area.innerHTML = `<div class="match-count">${t('matchCountText', {n: results.length})}</div><div class="card"><div class="wall-grid">${items}</div></div>`;
+}
+
+/* ================= MY TYPE PDF EXPORT (mte-, print-only, self-contained — does not touch any existing render/game logic) ================= */
+function myTypeExportHtml(){
+  const user = (currentProfile && currentProfile.user) || {};
+  const answers = (currentProfile && currentProfile.answers) || {};
+  const name = user.username || '';
+  const initial = name ? name.charAt(0).toUpperCase() : '?';
+  const dateStr = new Date().toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
+  const profileUrl = `${CONFIG.FRONTEND_URL}/mytype.html?id=${profileId}`;
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(profileUrl)}`;
+
+  const topPicks = [];
+  MYTYPE_QUESTIONS.forEach(q => {
+    const v = answers[q.key];
+    if(v == null) return;
+    if(v <= 20) topPicks.push(q.a);
+    else if(v >= 80) topPicks.push(q.b);
+  });
+
+  function rowHtml(q, idx){
+    const v = answers[q.key];
+    const av = (v != null) ? v : 50;
+    const aWin = av < 50, bWin = av > 50;
+    return `
+      <div class="mte-row">
+        <span class="mte-num">${idx}</span>
+        <span class="mte-a ${aWin ? 'mte-win' : ''}">${escapeHtml(q.a)}</span>
+        <span class="mte-b ${bWin ? 'mte-win' : ''}">${escapeHtml(q.b)}</span>
+      </div>`;
+  }
+
+  const col1 = MYTYPE_QUESTIONS.slice(0, 25).map((q,i) => rowHtml(q, i+1)).join('');
+  const col2 = MYTYPE_QUESTIONS.slice(25).map((q,i) => rowHtml(q, i+26)).join('');
+
+  const topPickHtml = topPicks.length ? `
+    <div class="mte-toppick">
+      <div class="mte-toppick-label">Top pick</div>
+      <div class="mte-toppick-desc">These are the choices with the strongest lean, a preference of 80% or higher toward one side. They stand out as the most defining traits in this profile.</div>
+      <div class="mte-toppick-pills">${topPicks.map(w => `<span class="mte-pill">${escapeHtml(w)}</span>`).join('')}</div>
+    </div>` : '';
+
+  return `
+    <div class="mte-page">
+      <div class="mte-head">
+        <div>
+          <div class="mte-brand">WEZIDE — My Type Summary Sheet</div>
+          <div class="mte-desc">A snapshot of how ${escapeHtml(name)} sees the world: mindset, working style, and relationships. There is no right or wrong side here, just a clearer picture of who they are, useful for working and living well together.</div>
+        </div>
+        <div class="mte-date">Updated ${dateStr}</div>
+      </div>
+      <div class="mte-identity">
+        ${user.profile_image_url ? `<img class="mte-avatar" src="${escapeHtml(user.profile_image_url)}">` : `<div class="mte-avatar mte-avatar-fallback">${initial}</div>`}
+        <div class="mte-name">${escapeHtml(name)}</div>
+      </div>
+      ${topPickHtml}
+      <div class="mte-grid">
+        <div class="mte-col">${col1}</div>
+        <div class="mte-col">${col2}</div>
+      </div>
+      <div class="mte-foot">
+        <img class="mte-qr" src="${qrSrc}">
+        <span class="mte-powered">Powered by wezide.vercel.app</span>
+      </div>
+    </div>`;
+}
+
+function downloadMyTypePdf(){
+  document.getElementById('myTypeExportPrint').innerHTML = myTypeExportHtml();
+  window.print();
 }
 
 /* ================= INIT ================= */
