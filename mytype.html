@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Antonio:wght@100;400;700&family=Lexend:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <style>
   :root{
@@ -187,8 +188,8 @@
   #toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--text); color:#fff; padding:13px 20px; border-radius:12px; font-size:13.5px; opacity:0; pointer-events:none; transition:all .25s ease; z-index:300; max-width:min(92vw, 380px); width:max-content; text-align:left; line-height:1.5; box-shadow:var(--shadow); }
   #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
-  /* ===== My Type PDF export sheet (mte- prefix, print-only, isolated from rest of app CSS) ===== */
-  #myTypeExportPrint{ display:none; }
+  /* ===== My Type PDF export sheet (mte- prefix, off-screen render target for html2pdf.js — isolated from rest of app CSS) ===== */
+  #myTypeExportPrint{ position:absolute; left:-9999px; top:0; width:560px; }
   .mte-page{ font-family:'Inter',Arial,sans-serif; color:#1C1329; }
   .mte-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; border-bottom:1px solid #E6E2EF; padding-bottom:10px; margin-bottom:14px; }
   .mte-brand{ font-family:'Antonio',sans-serif; font-weight:700; font-size:16px; color:#5B2A9E; letter-spacing:0.5px; }
@@ -213,11 +214,6 @@
   .mte-foot{ display:flex; align-items:center; justify-content:space-between; border-top:1px solid #E6E2EF; margin-top:16px; padding-top:10px; }
   .mte-qr{ width:40px; height:40px; }
   .mte-powered{ font-size:9px; color:#6E6680; }
-  @media print{
-    body > *:not(#myTypeExportPrint){ display:none !important; }
-    #myTypeExportPrint{ display:block !important; }
-    @page{ size:A4; margin:14mm; }
-  }
 </style>
 </head>
 <body>
@@ -599,7 +595,7 @@ function gameSectionInnerHtml(mode){
     return `
       <div class="game-actions"><button class="btn btn-ghost full-btn" onclick="startGuessGame()">🎮 Let's Play</button></div>
       ${renderAnswerSliders(currentProfile.answers, false)}
-      <div class="btn-row" style="margin-top:16px;margin-bottom:0;"><button class="btn btn-ghost full-btn" onclick="downloadMyTypePdf()">⬇ Download (PDF)</button></div>
+      <div class="btn-row" style="margin-top:16px;margin-bottom:0;"><button class="btn btn-ghost full-btn" onclick="downloadMyTypePdf(this)">⬇ Download (PDF)</button></div>
     `;
   }
   if(mode === 'playing'){
@@ -742,7 +738,7 @@ function renderView(data){
     if(isOwner){
       // เจ้าของโปรไฟล์เห็นคำตอบตัวเองปกติ ไม่ต้องเล่นเกมทาย
       slidersHtml = `<div class="card"><div class="section-title">My Type</div>${renderAnswerSliders(data.answers, false)}
-        <div class="btn-row" style="margin-top:16px;margin-bottom:0;"><button class="btn btn-ghost full-btn" onclick="downloadMyTypePdf()">⬇ Download (PDF)</button></div>
+        <div class="btn-row" style="margin-top:16px;margin-bottom:0;"><button class="btn btn-ghost full-btn" onclick="downloadMyTypePdf(this)">⬇ Download (PDF)</button></div>
       </div>`;
     } else {
       // ผู้เยี่ยมชม (เช่นเพื่อนที่กด share link มา) เจอโหมดเกมทายแทน — ไม่เห็นตำแหน่งจุดจริงจนกว่าจะเล่น/กด Show Me
@@ -1048,8 +1044,8 @@ function myTypeExportHtml(){
   MYTYPE_QUESTIONS.forEach(q => {
     const v = answers[q.key];
     if(v == null) return;
-    if(v <= 20) topPicks.push(q.a);
-    else if(v >= 80) topPicks.push(q.b);
+    if(v <= 15) topPicks.push(q.a);
+    else if(v >= 85) topPicks.push(q.b);
   });
 
   function rowHtml(q, idx){
@@ -1070,7 +1066,7 @@ function myTypeExportHtml(){
   const topPickHtml = topPicks.length ? `
     <div class="mte-toppick">
       <div class="mte-toppick-label">Top pick</div>
-      <div class="mte-toppick-desc">These are the choices with the strongest lean, a preference of 80% or higher toward one side. They stand out as the most defining traits in this profile.</div>
+      <div class="mte-toppick-desc">These are the choices with the strongest lean, a preference of 85% or higher toward one side. They stand out as the most defining traits in this profile.</div>
       <div class="mte-toppick-pills">${topPicks.map(w => `<span class="mte-pill">${escapeHtml(w)}</span>`).join('')}</div>
     </div>` : '';
 
@@ -1099,9 +1095,28 @@ function myTypeExportHtml(){
     </div>`;
 }
 
-function downloadMyTypePdf(){
-  document.getElementById('myTypeExportPrint').innerHTML = myTypeExportHtml();
-  window.print();
+async function downloadMyTypePdf(btn){
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="btn-spinner"></span>Preparing...';
+  try{
+    const container = document.getElementById('myTypeExportPrint');
+    container.innerHTML = myTypeExportHtml();
+    const rawName = (currentProfile && currentProfile.user && currentProfile.user.username) || 'profile';
+    const safeName = rawName.replace(/[^a-zA-Z0-9_-]+/g, '-');
+    await html2pdf().set({
+      margin: 10,
+      filename: `WEZIDE-MyType-${safeName}.pdf`,
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).from(container.querySelector('.mte-page')).save();
+  }catch(err){
+    showToast('Could not create the PDF. Please try again.');
+  }finally{
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+  }
 }
 
 /* ================= INIT ================= */
