@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WEZIDE — Ask something people care about.</title>
+<title>WEZIDE — Opinion matter!</title>
 
 <!-- Open Graph (ค่า default — หน้ารายละเอียดหัวข้อที่แชร์จะใช้ meta แบบไดนามิกจากฝั่ง Apps Script แยกต่างหาก) -->
-<meta property="og:title" content="WEZIDE — Ask something people care about.">
+<meta property="og:title" content="WEZIDE — Opinion matter!">
 <meta property="og:description" content="เวทีความเห็น เลือกข้างที่ใช่ของคุณ">
 <meta property="og:type" content="website">
 
@@ -597,7 +597,7 @@
 </header>
 
 <section class="hero">
-  <p class="hero-title" data-i18n="heroTitle"><b>Ask</b> something people care about.</p>
+  <p class="hero-title" data-i18n="heroTitle"><b>Ask</b> Better. See Further.</p>
   <div class="hero-track-wrap" id="heroWrap">
     <div class="hero-track" id="heroTrack"></div>
   </div>
@@ -629,7 +629,7 @@
   <div class="footer-inner">
     <div class="footer-col footer-brand-col">
       <div class="f-brand">WEZIDE</div>
-      <p class="f-desc" data-i18n="footerDesc">Ask something people care about.</p>
+      <p class="f-desc" data-i18n="footerDesc">Ask Better. See Further.</p>
     </div>
     <div class="footer-col">
       <div class="f-heading" data-i18n="footerMenuHeading">เมนู</div>
@@ -958,7 +958,7 @@ const LANG_KEY = 'wz_lang';
 const I18N = {
   th: {
     createBtn: '＋ สร้างหัวข้อ', createBtn2: 'สร้างหัวข้อ', loginBtn: 'เข้าสู่ระบบ',
-    heroTitle: '<b>Ask</b> something people care about.',
+    heroTitle: '<b>Ask</b> Better. See Further.',
 
     loginTitle: 'อ่ะ! คุณลืม login', loginHint: 'กรอก 2 ช่องนี้แล้วกด login มาเลือกความคิดเห็นกันเลย',
     loginDirectTitle: 'เข้าสู่ระบบ WEZIDE', loginDirectHint: 'กรอกเบอร์โทรและ Passcode เพื่อเข้าสู่ระบบ',
@@ -975,7 +975,7 @@ const I18N = {
     createSuccessTitle: 'หัวข้อของคุณสร้างสำเร็จ และเผยแพร่แล้ว',
     createSuccessDesc: 'หัวข้อของคุณถูกเผยแพร่ขึ้นหน้าแรกเรียบร้อยแล้ว ไปดูกันเลย!',
     createSuccessCreateBtn: 'สร้างหัวข้อต่อ', homeToMyTopicsBtn: 'กลับไปหน้าหัวข้อของฉัน',
-    footerDesc: 'Ask something people care about.',
+    footerDesc: 'Ask Better. See Further.',
     footerMenuHeading: 'เมนู', footerHome: 'หน้าแรก', footerLoginLink: 'เข้าสู่ระบบ / สมัครสมาชิก',
     createModalTitle: 'สร้างหัวข้อใหม่', topicTypeLabel: 'รูปแบบหัวข้อ',
     typeTextBtn: 'ข้อความ', typeImageBtn: 'รูปภาพ',
@@ -1015,7 +1015,7 @@ const I18N = {
   },
   en: {
     createBtn: '＋ Create Topic', createBtn2: 'Create Topic', loginBtn: 'Log In',
-    heroTitle: '<b>Ask</b> something people care about.',
+    heroTitle: '<b>Ask</b> Better. See Further.',
     searchPlaceholder: 'Search topics, tags...', historyLink: '🕓 History',
     sortShuffle: 'Shuffle', sortLatest: 'Latest', sortPopular: 'Popular',
     loginTitle: 'Oops! You forgot to log in', loginHint: 'Fill in these 2 fields and log in to start voting',
@@ -1033,7 +1033,7 @@ const I18N = {
     createSuccessTitle: 'Your topic was created and published',
     createSuccessDesc: 'Your topic is now live on the homepage. Go check it out!',
     createSuccessCreateBtn: 'Create Another', homeToMyTopicsBtn: 'Back to My Topics',
-    footerDesc: 'Ask something people care about.',
+    footerDesc: 'Ask Better. See Further.',
     footerMenuHeading: 'Menu', footerHome: 'Home', footerLoginLink: 'Log In / Sign Up',
     createModalTitle: 'Create New Topic', topicTypeLabel: 'Topic Format',
     typeTextBtn: 'Text', typeImageBtn: 'Image',
@@ -2697,10 +2697,13 @@ function setupCommentObserver(){
 let pendingShareTopicId = '';
 
 function buildShareUrl(topicId){
-  // ใช้ endpoint ?share= ของ Apps Script (renderShareOgPage) เพื่อให้ LINE/Facebook ดึง OG image/title ของหัวข้อนั้นไปทำพรีวิวได้
-  // ฝั่งนั้นจะ redirect ผู้ใช้จริงเข้า Vercel ให้เองทันที — เหมาะกับ "แชร์ลิงก์" ที่จะไปโผล่ในแอปแชท (LINE/Facebook)
-  // ซึ่งต้องพึ่ง bot ของแอปแชทดึง og:image/og:title ไปทำการ์ดพรีวิว ไม่ใช่คนเปิดเบราว์เซอร์เองตรงๆ
-  return `${CONFIG.API_URL}?share=${topicId}`;
+  // เดิมใช้ endpoint ?share= ของ Apps Script ตรงๆ (script.google.com) แต่พบว่า in-app browser บางตัว
+  // (เช่น webview ของแอปแชท, iOS Link Preview) ค้าง URL bar ไว้ที่ script.google.com ไม่ยอมพาไปหน้าเว็บจริง
+  // ไม่ว่าจะ redirect ด้วยวิธีไหนก็ตาม เพราะเป็นพฤติกรรมของ webview นั้นเอง แก้จากฝั่ง Apps Script ไม่ได้จริงๆ
+  // -> เปลี่ยนมาใช้ Vercel serverless function (/api/share) แทน ซึ่งอยู่โดเมนเดียวกับเว็บจริง (wezide.vercel.app)
+  // เช็ค User-Agent เอง: เป็น bot ของแอปแชท/โซเชียล -> เสิร์ฟ og:tag ตรงๆ ให้ทำพรีวิว, เป็นคนจริง -> 302 redirect
+  // ตรงไปหน้าเว็บทันที ไม่มี sandbox/webview quirk ของ script.google.com มากวนใจอีกต่อไป
+  return `${CONFIG.FRONTEND_URL}/api/share?topic=${topicId}`;
 }
 
 // P0-fix (QR UX): เดิม QR code ใช้ buildShareUrl() ตัวเดียวกับปุ่ม "แชร์ลิงก์" ทำให้คนสแกน QR (เปิดเบราว์เซอร์ตรงๆ
