@@ -1125,6 +1125,14 @@ async function downloadMyTypePdf(btn){
   btn.disabled = true;
   btn.innerHTML = '<span class="btn-spinner"></span>Preparing...';
   document.getElementById('myTypeExportOverlay').classList.add('show');
+
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  // Safari/มือถือบล็อก window.open() เงียบๆ ถ้าเรียกหลังผ่าน await มาแล้ว (ไม่นับเป็นผลตรงจากการกดปุ่มอีกต่อไป)
+  // ต้องเปิดแท็บเปล่าไว้ตั้งแต่ตรงนี้ทันที ก่อน await ใดๆ ทั้งหมด (ยังนับเป็น user gesture สดๆ) แล้วค่อยเปลี่ยน
+  // location ของแท็บนั้นเป็นไฟล์ PDF จริงทีหลังตอนสร้างเสร็จ
+  let pendingTab = null;
+  if(isMobile) pendingTab = window.open('', '_blank');
+
   // บั๊กที่รู้จักกันดีของ html2canvas: capture element ที่เป็น position:fixed ผิดพลาด (ได้ภาพเปล่า)
   // ถ้าหน้าเว็บถูก scroll ลงมาตอนกดปุ่ม — บังคับกลับไปบนสุดก่อน capture (ปลอดภัยเพราะ overlay คลุมเต็มจอบังอยู่แล้ว)
   window.scrollTo(0, 0);
@@ -1148,12 +1156,17 @@ async function downloadMyTypePdf(btn){
     }).from(pageEl).outputPdf('blob');
 
     // html2pdf().save() ใช้ <a download> + blob URL ซึ่ง iOS Safari จัดการไม่ถูกต้อง (ผู้รับ share ต่อจะได้ข้อความ
-    // "blob:https://..." แทนไฟล์จริง) — บนมือถือเปิดไฟล์ในแท็บใหม่ให้ native PDF viewer จัดการแทน จะกด Share/Save
-    // ต่อจากตรงนั้นได้เป็นไฟล์ .pdf จริง ส่วนบนคอมยังคงใช้วิธี trigger download ปกติ ได้ผลลัพธ์เหมือนเดิม
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    // "blob:https://..." แทนไฟล์จริง) — บนมือถือเปิดไฟล์ในแท็บที่เปิดค้างไว้แล้วให้ native PDF viewer จัดการแทน
+    // จะกด Share/Save ต่อจากตรงนั้นได้เป็นไฟล์ .pdf จริง ส่วนบนคอมยังคงใช้วิธี trigger download ปกติ ได้ผลลัพธ์เหมือนเดิม
     const blobUrl = URL.createObjectURL(pdfBlob);
     if(isMobile){
-      window.open(blobUrl, '_blank');
+      if(pendingTab && !pendingTab.closed){
+        pendingTab.location.href = blobUrl;
+      } else {
+        // แท็บเปล่าโดนบล็อกไปแล้วตั้งแต่ตอนต้น (ตั้งค่าเบราว์เซอร์เข้มงวดมาก) — เปิดในแท็บปัจจุบันแทน ไม่ปล่อยให้หาไฟล์ไม่เจอ
+        showToast('Opening your PDF...');
+        window.location.href = blobUrl;
+      }
     } else {
       const a = document.createElement('a');
       a.href = blobUrl;
@@ -1164,6 +1177,7 @@ async function downloadMyTypePdf(btn){
     }
     setTimeout(()=> URL.revokeObjectURL(blobUrl), 60000);
   }catch(err){
+    if(pendingTab && !pendingTab.closed) pendingTab.close();
     showToast('Could not create the PDF. Please try again.');
   }finally{
     document.getElementById('myTypeExportPrint').innerHTML = '';
