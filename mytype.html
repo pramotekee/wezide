@@ -899,7 +899,9 @@ async function saveMyType(){
 
 /* ================= SHARE ================= */
 function shareProfileLink(){
-  const url = `${CONFIG.FRONTEND_URL}/mytype.html?id=${profileId}`;
+  // ชี้ผ่าน backend endpoint (?mytype_share=) ก่อน ไม่ชี้ตรงไป Vercel URL — เพื่อให้ LINE/Facebook bot
+  // ดึง og:image (รูปโปรไฟล์จริง) ไปทำการ์ดพรีวิวได้ เหมือน pattern buildShareUrl() ของหัวข้อโหวตใน index.html
+  const url = `${CONFIG.API_URL}?mytype_share=${profileId}`;
   const name = (currentProfile && currentProfile.user && currentProfile.user.username) || '';
   // hardcode EN ตายตัวตาม copy ที่ Pop กำหนด (ไม่ผูก TH/EN toggle เหมือนข้อความ system อื่นๆ ในโปรเจกต์นี้)
   const shareText = `This is ${name}'s My Type. How much are we alike? Tap and see. 😏\n${url}`;
