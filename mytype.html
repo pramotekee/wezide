@@ -1144,6 +1144,14 @@ async function downloadMyTypePdf(btn){
     const safeName = rawName.replace(/[^a-zA-Z0-9_-]+/g, '-');
     const filename = `WEZIDE-MyType-${safeName}.pdf`;
     const pageEl = container.querySelector('.mte-page');
+
+    // รอให้ font (Antonio, Inter) โหลดเสร็จสมบูรณ์ก่อน capture — ถ้า capture เร็วเกินไปตอน font ยังโหลดไม่เสร็จ
+    // (โดยเฉพาะเน็ตมือถือช้า) browser จะ fallback ไปใช้ font สำรองชั่วคราวแทน แล้วภาพที่ capture ออกมาจะติด font ผิด
+    // แบบถาวรในไฟล์ (สาเหตุของอาการตัวหนังสือเว้นวรรคแปลก/ขนาดดูเพี้ยนที่เจอ) — มี timeout กันไว้เผื่อ font โหลดไม่สำเร็จเลย
+    try{
+      await Promise.race([ document.fonts.ready, new Promise(r => setTimeout(r, 2000)) ]);
+    }catch(e){ /* เบราว์เซอร์เก่าบางตัวไม่มี document.fonts — ข้ามไปเลย ไม่ทำให้ทั้งฟังก์ชันพัง */ }
+
     // ใช้ค่าคงที่อิงตามขนาดจริงของกระดาษ (560px) ไม่อิงขนาดจอเครื่อง user — มือถือจอแคบกว่ากระดาษ (390px < 560px)
     // ถ้าอิงจอเครื่องจะทำให้ html2canvas สร้าง virtual window แคบเกินไปจนตัดเนื้อหาออก (สาเหตุที่ทำให้ได้ 2 หน้าบนมือถือ)
     const captureWidth = 620;
