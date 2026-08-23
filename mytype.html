@@ -1156,29 +1156,41 @@ async function downloadMyTypePdf(btn){
     }).from(pageEl).outputPdf('blob');
 
     // html2pdf().save() ใช้ <a download> + blob URL ซึ่ง iOS Safari จัดการไม่ถูกต้อง (ผู้รับ share ต่อจะได้ข้อความ
-    // "blob:https://..." แทนไฟล์จริง) — บนมือถือเปิดไฟล์ในแท็บที่เปิดค้างไว้แล้วให้ native PDF viewer จัดการแทน
-    // จะกด Share/Save ต่อจากตรงนั้นได้เป็นไฟล์ .pdf จริง ส่วนบนคอมยังคงใช้วิธี trigger download ปกติ ได้ผลลัพธ์เหมือนเดิม
-    const blobUrl = URL.createObjectURL(pdfBlob);
-    if(isMobile){
+    // "blob:https://..." แทนไฟล์จริง) — บนมือถือใช้ navigator.share() พร้อมไฟล์ที่ตั้งชื่อเองตรงๆ แทน วิธีนี้ระบบ
+    // จะเปิด Share Sheet ให้เห็นแค่ไฟล์ PDF ชื่อถูกต้องอย่างเดียว ไม่มีลิงก์ blob แถมมา และไม่เจอปัญหาไฟล์ชื่อ "Unknown"
+    // (บั๊กที่เกิดจาก blob URL ไม่มี metadata ชื่อไฟล์ติดไปตอนเปิดในแท็บ PDF viewer เฉยๆ)
+    const file = new File([pdfBlob], filename, { type: 'application/pdf' });
+
+    if(isMobile && navigator.canShare && navigator.canShare({ files: [file] })){
+      if(pendingTab && !pendingTab.closed) pendingTab.close(); // ไม่ต้องใช้แท็บเปล่าที่เผื่อไว้แล้ว ใช้ native share แทน
+      await navigator.share({ files: [file], title: filename });
+    } else if(isMobile){
+      // fallback สำหรับ browser ที่ไม่รองรับ Web Share API แบบไฟล์ (เช่น Android WebView บางตัว) — เปิด blob ในแท็บที่เตรียมไว้
+      const blobUrl = URL.createObjectURL(pdfBlob);
       if(pendingTab && !pendingTab.closed){
         pendingTab.location.href = blobUrl;
       } else {
-        // แท็บเปล่าโดนบล็อกไปแล้วตั้งแต่ตอนต้น (ตั้งค่าเบราว์เซอร์เข้มงวดมาก) — เปิดในแท็บปัจจุบันแทน ไม่ปล่อยให้หาไฟล์ไม่เจอ
         showToast('Opening your PDF...');
         window.location.href = blobUrl;
       }
+      setTimeout(()=> URL.revokeObjectURL(blobUrl), 60000);
     } else {
+      const blobUrl = URL.createObjectURL(pdfBlob);
       const a = document.createElement('a');
       a.href = blobUrl;
       a.download = filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+      setTimeout(()=> URL.revokeObjectURL(blobUrl), 60000);
     }
-    setTimeout(()=> URL.revokeObjectURL(blobUrl), 60000);
   }catch(err){
     if(pendingTab && !pendingTab.closed) pendingTab.close();
-    showToast('Could not create the PDF. Please try again.');
+    if(err && err.name === 'AbortError'){
+      // user กด Cancel เองใน native share sheet — ไม่ใช่ error จริง ไม่ต้องฟ้อง toast
+    } else {
+      showToast('Could not create the PDF. Please try again.');
+    }
   }finally{
     document.getElementById('myTypeExportPrint').innerHTML = '';
     document.getElementById('myTypeExportOverlay').classList.remove('show');
