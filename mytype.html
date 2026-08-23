@@ -1038,7 +1038,7 @@ function renderMatchWall(results, mode){
 }
 
 /* ================= MY TYPE PDF EXPORT (mte-, print-only, self-contained — does not touch any existing render/game logic) ================= */
-function myTypeExportHtml(){
+async function myTypeExportHtml(){
   const user = (currentProfile && currentProfile.user) || {};
   const answers = (currentProfile && currentProfile.answers) || {};
   const name = user.username || '';
@@ -1046,6 +1046,16 @@ function myTypeExportHtml(){
   const dateStr = new Date().toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
   const profileUrl = `${CONFIG.FRONTEND_URL}/mytype.html?id=${profileId}`;
   const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(profileUrl)}`;
+
+  // lh3.googleusercontent.com ไม่ส่ง CORS header ให้ html2canvas อ่านรูปข้าม origin ได้ตรงๆ
+  // ต้อง proxy ผ่าน backend ให้แปลงเป็น base64 data URI ก่อน ถ้า proxy พลาดก็ fallback เป็นตัวอักษรย่อ ไม่ทำให้ PDF พังทั้งใบ
+  let avatarSrc = '';
+  if(user.profile_image_url){
+    try{
+      const proxied = await api('proxyImage', { url: user.profile_image_url });
+      if(proxied && proxied.success) avatarSrc = proxied.dataUri;
+    }catch(e){ /* เงียบไว้ ใช้ fallback ตัวอักษรย่อแทน */ }
+  }
 
   const topPicks = [];
   MYTYPE_QUESTIONS.forEach(q => {
@@ -1073,7 +1083,7 @@ function myTypeExportHtml(){
   const topPickHtml = topPicks.length ? `
     <div class="mte-toppick">
       <div class="mte-toppick-label">Top pick</div>
-      <div class="mte-toppick-desc">These are the choices with the strongest lean, a preference of 85% or higher toward one side. They stand out as the most defining traits in this profile.</div>
+      <div class="mte-toppick-desc">Traits with an 85%+ lean — the most defining choices in this profile.</div>
       <div class="mte-toppick-pills">${topPicks.map(w => `<span class="mte-pill">${escapeHtml(w)}</span>`).join('')}</div>
     </div>` : '';
 
@@ -1087,7 +1097,7 @@ function myTypeExportHtml(){
         <div class="mte-date">Updated ${dateStr}</div>
       </div>
       <div class="mte-identity">
-        ${user.profile_image_url ? `<img class="mte-avatar" src="${escapeHtml(user.profile_image_url)}">` : `<div class="mte-avatar mte-avatar-fallback">${initial}</div>`}
+        ${avatarSrc ? `<img class="mte-avatar" src="${avatarSrc}">` : `<div class="mte-avatar mte-avatar-fallback">${initial}</div>`}
         <div class="mte-name">${escapeHtml(name)}</div>
       </div>
       ${topPickHtml}
@@ -1113,7 +1123,7 @@ async function downloadMyTypePdf(btn){
   await new Promise(r => setTimeout(r, 60)); // เผื่อเวลาให้ browser reflow/paint ก่อนเริ่ม capture
   try{
     const container = document.getElementById('myTypeExportPrint');
-    container.innerHTML = myTypeExportHtml();
+    container.innerHTML = await myTypeExportHtml();
     const rawName = (currentProfile && currentProfile.user && currentProfile.user.username) || 'profile';
     const safeName = rawName.replace(/[^a-zA-Z0-9_-]+/g, '-');
     await html2pdf().set({
