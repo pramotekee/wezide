@@ -194,7 +194,7 @@
   #myTypeExportPrint{ position:fixed; top:0; left:0; width:560px; z-index:9000; background:#fff; }
   #myTypeExportOverlay{ display:none; position:fixed; inset:0; background:var(--bg); z-index:9500; align-items:center; justify-content:center; flex-direction:column; gap:14px; color:#fff; }
   #myTypeExportOverlay.show{ display:flex; }
-  .mte-page{ font-family:'Inter',Arial,sans-serif; color:#1C1329; }
+  .mte-page{ font-family:'Inter',Arial,sans-serif; color:#1C1329; background:#fff; padding:26px 30px; box-sizing:border-box; }
   .mte-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; border-bottom:1px solid #E6E2EF; padding-bottom:10px; margin-bottom:14px; }
   .mte-brand{ font-family:'Antonio',sans-serif; font-weight:700; font-size:16px; color:#5B2A9E; letter-spacing:0.5px; }
   .mte-desc{ font-size:10px; color:#6E6680; max-width:420px; margin-top:4px; line-height:1.5; }
@@ -1107,6 +1107,10 @@ async function downloadMyTypePdf(btn){
   btn.disabled = true;
   btn.innerHTML = '<span class="btn-spinner"></span>Preparing...';
   document.getElementById('myTypeExportOverlay').classList.add('show');
+  // บั๊กที่รู้จักกันดีของ html2canvas: capture element ที่เป็น position:fixed ผิดพลาด (ได้ภาพเปล่า)
+  // ถ้าหน้าเว็บถูก scroll ลงมาตอนกดปุ่ม — บังคับกลับไปบนสุดก่อน capture (ปลอดภัยเพราะ overlay คลุมเต็มจอบังอยู่แล้ว)
+  window.scrollTo(0, 0);
+  await new Promise(r => setTimeout(r, 60)); // เผื่อเวลาให้ browser reflow/paint ก่อนเริ่ม capture
   try{
     const container = document.getElementById('myTypeExportPrint');
     container.innerHTML = myTypeExportHtml();
@@ -1116,7 +1120,7 @@ async function downloadMyTypePdf(btn){
       margin: 10,
       filename: `WEZIDE-MyType-${safeName}.pdf`,
       image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, useCORS: true },
+      html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0, windowWidth: document.documentElement.clientWidth, windowHeight: document.documentElement.clientHeight },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }).from(container.querySelector('.mte-page')).save();
   }catch(err){
