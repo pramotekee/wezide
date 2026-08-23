@@ -1045,17 +1045,25 @@ async function myTypeExportHtml(){
   const initial = name ? name.charAt(0).toUpperCase() : '?';
   const dateStr = new Date().toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
   const profileUrl = `${CONFIG.FRONTEND_URL}/mytype.html?id=${profileId}`;
-  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(profileUrl)}`;
 
-  // lh3.googleusercontent.com ไม่ส่ง CORS header ให้ html2canvas อ่านรูปข้าม origin ได้ตรงๆ
-  // ต้อง proxy ผ่าน backend ให้แปลงเป็น base64 data URI ก่อน ถ้า proxy พลาดก็ fallback เป็นตัวอักษรย่อ ไม่ทำให้ PDF พังทั้งใบ
-  let avatarSrc = '';
-  if(user.profile_image_url){
+  // lh3.googleusercontent.com และ api.qrserver.com ไม่ส่ง CORS header ที่ครบพอให้ html2canvas วาดลง canvas ได้เสถียร
+  // (เจอปัญหานี้ชัดกว่าบนมือถือ) ต้อง proxy ผ่าน backend แปลงเป็น base64 data URI ทั้งคู่ ถ้า proxy พลาดก็ไม่ใส่ img เลย ไม่ปล่อยไอคอนรูปหักโชว์
+  async function proxyImg(url, label){
     try{
-      const proxied = await api('proxyImage', { url: user.profile_image_url });
-      if(proxied && proxied.success) avatarSrc = proxied.dataUri;
-    }catch(e){ /* เงียบไว้ ใช้ fallback ตัวอักษรย่อแทน */ }
+      const res = await api('proxyImage', { url });
+      if(res && res.success) return res.dataUri;
+      console.warn(`[myTypeExport] proxyImage(${label}) failed:`, res && res.message);
+    }catch(e){
+      console.warn(`[myTypeExport] proxyImage(${label}) threw:`, e);
+    }
+    return '';
   }
+
+  let avatarSrc = '';
+  if(user.profile_image_url) avatarSrc = await proxyImg(user.profile_image_url, 'avatar');
+
+  const qrRawSrc = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(profileUrl)}`;
+  const qrSrc = await proxyImg(qrRawSrc, 'qr');
 
   const topPicks = [];
   MYTYPE_QUESTIONS.forEach(q => {
@@ -1106,7 +1114,7 @@ async function myTypeExportHtml(){
         <div class="mte-col">${col2}</div>
       </div>
       <div class="mte-foot">
-        <img class="mte-qr" src="${qrSrc}">
+        ${qrSrc ? `<img class="mte-qr" src="${qrSrc}">` : '<div class="mte-qr"></div>'}
         <span class="mte-powered">Powered by wezide.vercel.app</span>
       </div>
     </div>`;
@@ -1126,13 +1134,35 @@ async function downloadMyTypePdf(btn){
     container.innerHTML = await myTypeExportHtml();
     const rawName = (currentProfile && currentProfile.user && currentProfile.user.username) || 'profile';
     const safeName = rawName.replace(/[^a-zA-Z0-9_-]+/g, '-');
-    await html2pdf().set({
+    const filename = `WEZIDE-MyType-${safeName}.pdf`;
+    const pageEl = container.querySelector('.mte-page');
+    // ใช้ค่าคงที่อิงตามขนาดจริงของกระดาษ (560px) ไม่อิงขนาดจอเครื่อง user — มือถือจอแคบกว่ากระดาษ (390px < 560px)
+    // ถ้าอิงจอเครื่องจะทำให้ html2canvas สร้าง virtual window แคบเกินไปจนตัดเนื้อหาออก (สาเหตุที่ทำให้ได้ 2 หน้าบนมือถือ)
+    const captureWidth = 620;
+    const captureHeight = Math.max(pageEl.scrollHeight + 100, 900);
+    const pdfBlob = await html2pdf().set({
       margin: 10,
-      filename: `WEZIDE-MyType-${safeName}.pdf`,
       image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0, windowWidth: document.documentElement.clientWidth, windowHeight: document.documentElement.clientHeight },
+      html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0, windowWidth: captureWidth, windowHeight: captureHeight },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).from(container.querySelector('.mte-page')).save();
+    }).from(pageEl).outputPdf('blob');
+
+    // html2pdf().save() ใช้ <a download> + blob URL ซึ่ง iOS Safari จัดการไม่ถูกต้อง (ผู้รับ share ต่อจะได้ข้อความ
+    // "blob:https://..." แทนไฟล์จริง) — บนมือถือเปิดไฟล์ในแท็บใหม่ให้ native PDF viewer จัดการแทน จะกด Share/Save
+    // ต่อจากตรงนั้นได้เป็นไฟล์ .pdf จริง ส่วนบนคอมยังคงใช้วิธี trigger download ปกติ ได้ผลลัพธ์เหมือนเดิม
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const blobUrl = URL.createObjectURL(pdfBlob);
+    if(isMobile){
+      window.open(blobUrl, '_blank');
+    } else {
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+    setTimeout(()=> URL.revokeObjectURL(blobUrl), 60000);
   }catch(err){
     showToast('Could not create the PDF. Please try again.');
   }finally{
