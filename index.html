@@ -1180,6 +1180,9 @@ function setLang(lang){
   // label ในการ์ด mini-dash (เพศ/ช่วงอายุ) เป็น dynamic HTML ที่ generate ผ่าน t() ตอน render
   // ไม่ผ่าน [data-i18n] loop ของ applyLang() จึงต้อง re-render ใหม่ทุกครั้งที่สลับภาษา — ใช้ cache ไม่ยิง API ใหม่
   rerenderLoadedDashboards();
+  // เดือนใน birthday select ก็เป็นชื่อภาษาเหมือนกัน ไม่ผ่าน [data-i18n] เพราะ generate ด้วย JS ตอน loadBirthdaySelects()
+  // ต้อง rebuild ใหม่ทุกครั้งที่สลับภาษาด้วย ไม่งั้นจะค้างเป็นภาษาตอนโหลดหน้าครั้งแรก (บั๊กที่เจอ)
+  if(document.getElementById('suBirthMonth')) populateBirthMonths();
 }
 document.querySelectorAll('.lang-toggle button').forEach(b=>{
   b.addEventListener('click', ()=> setLang(b.dataset.lang));
@@ -1731,6 +1734,7 @@ function toggleCountryFields(country){
 }
 
 const THAI_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const EN_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 function loadBirthdaySelects(){
   const daySel = document.getElementById('suBirthDay');
@@ -1739,12 +1743,7 @@ function loadBirthdaySelects(){
     opt.value = String(d).padStart(2,'0'); opt.textContent = d;
     daySel.appendChild(opt);
   }
-  const monthSel = document.getElementById('suBirthMonth');
-  THAI_MONTHS.forEach((m, i)=>{
-    const opt = document.createElement('option');
-    opt.value = String(i+1).padStart(2,'0'); opt.textContent = m;
-    monthSel.appendChild(opt);
-  });
+  populateBirthMonths();
   const yearSel = document.getElementById('suBirthYear');
   const thisYear = new Date().getFullYear();
   for(let y = thisYear - 13; y >= thisYear - 90; y--){
@@ -1752,6 +1751,22 @@ function loadBirthdaySelects(){
     opt.value = String(y); opt.textContent = y; // ค.ศ. (Gregorian) ล้วนๆ ไม่มี พ.ศ. ปนเลย เพื่อไม่ให้สับสน
     yearSel.appendChild(opt);
   }
+}
+
+// เดือนเป็นชื่อภาษา (ต่างจาก day/year ที่เป็นตัวเลขล้วน ไม่ผูกภาษา) จึงต้อง rebuild option ใหม่ทุกครั้งที่สลับ EN/TH
+// เดิมบั๊กคือ hardcode เป็น THAI_MONTHS ตายตัว ทำให้ตอนสลับไป EN ทั้งหน้า เดือนกลับยังเป็นไทยอยู่ (ตลกอย่างที่ Pop ทัก)
+function populateBirthMonths(){
+  const monthSel = document.getElementById('suBirthMonth');
+  const prevValue = monthSel.value;
+  // ลบเฉพาะ option ที่ JS สร้างเอง (value ไม่ว่าง) เหลือ placeholder ตัวแรกจาก HTML (value="", data-i18n="monthOpt") ไว้เหมือนเดิม
+  Array.from(monthSel.options).forEach(opt=>{ if(opt.value !== '') opt.remove(); });
+  const monthNames = getLang() === 'th' ? THAI_MONTHS : EN_MONTHS;
+  monthNames.forEach((m, i)=>{
+    const opt = document.createElement('option');
+    opt.value = String(i+1).padStart(2,'0'); opt.textContent = m;
+    monthSel.appendChild(opt);
+  });
+  if(prevValue) monthSel.value = prevValue; // คงค่าที่ user เลือกไว้แล้ว ไม่ต้องเลือกใหม่ตอนสลับภาษา
 }
 
 async function loadCategories(){
