@@ -1451,10 +1451,12 @@ document.getElementById('loginSubmitBtn').addEventListener('click', async ()=>{
   saveSession(res);
   closeModal('loginModal');
   showToast(`ยินดีต้อนรับ ${res.username}`);
+  // เดิม flow นี้เคย auto-vote ให้เงียบๆ เหมือนกับฝั่ง signup (บั๊กเดียวกัน) — แก้ตามหลักการเดียวกัน:
+  // ไม่โหวตให้ แค่พา user กลับไปที่การ์ดหัวข้อที่ตั้งใจโหวตไว้ก่อน login ให้เขากดโหวตเองอีกครั้ง
   if(STATE.pendingVote){
-    const { topicId, side } = STATE.pendingVote;
+    const { topicId } = STATE.pendingVote;
     STATE.pendingVote = null;
-    castVote(topicId, side);
+    scrollToTopicCard(topicId);
   }
 });
 
@@ -1465,6 +1467,16 @@ document.getElementById('loginSubmitBtn').addEventListener('click', async ()=>{
 const SU_TOTAL_STEPS = 5;
 let suCurrentStep = 1;
 let lastVotedTopicId = null; // เก็บ topicId ที่ user ตั้งใจโหวตไว้ก่อน signup เพื่อใช้พา user กลับไปที่การ์ดนั้นตอนกด "กลับไปโหวต"
+
+// ใช้ร่วมกันทั้ง flow signup และ login resume: พาผู้ใช้กลับไปที่การ์ดหัวข้อที่ตั้งใจโหวตไว้ตอนแรก
+// (ไม่ได้โหวตให้ — user ต้องกดโหวตเองอีกครั้งที่การ์ดนั้น เพื่อความชัดเจน ไม่มี action ใดๆ เกิดขึ้นแบบเงียบๆ)
+function scrollToTopicCard(topicId){
+  if(!topicId) return;
+  setTimeout(()=>{ // รอเฟรมถัดไปกันเคส modal ปิดแอนิเมชันชนกับ scroll ทันที
+    const card = document.querySelector(`.topic-card[data-card-id="${topicId}"]`);
+    if(card) card.scrollIntoView({ behavior:'smooth', block:'center' });
+  }, 150);
+}
 
 function resetSignupWizard(){
   suCurrentStep = 1;
@@ -1588,15 +1600,13 @@ document.getElementById('suNextBtn').addEventListener('click', async ()=>{
   closeModal('signupModal');
   document.getElementById('welcomeUsername').textContent = res.username;
 
-  // ถ้า user ตั้งใจโหวตไว้ก่อนสมัคร (pendingVote) โหวตให้อัตโนมัติแบบเงียบๆ (ไม่เด้ง popup ซ้อนทับ welcomeModal
-  // เพราะ welcomeModal ที่กำลังจะเปิดคือคำยืนยันอยู่แล้วในตัว) แล้วโชว์ปุ่ม "กลับไปโหวต" ให้กด
-  // ถ้าไม่มี pendingVote (สมัครตรงๆ) โชว์ปุ่มเดียวชวนสร้างหัวข้อแรกแทน
+  // ไม่ auto-vote ให้ user แล้ว (เดิมเคยแอบโหวตให้เงียบๆ ตอนสมัครเสร็จ — พบว่า user งง เพราะไม่รู้ว่าระบบ
+  // โหวตไปให้แล้วหรือยัง ไม่มี feedback อะไรเลยระหว่าง journey สมัครสมาชิก) เปลี่ยนเป็นแค่ "จำ" topicId ที่ตั้งใจโหวตไว้
+  // ให้ user กดโหวตเองอีกครั้งตอนกด "กลับไปโหวต" — ชัดเจน ตรงไปตรงมา ไม่มีอะไรเกิดขึ้นโดยที่ user ไม่รู้ตัว
   const hadPendingVote = !!STATE.pendingVote;
   if(hadPendingVote){
-    const { topicId, side } = STATE.pendingVote;
+    lastVotedTopicId = STATE.pendingVote.topicId;
     STATE.pendingVote = null;
-    lastVotedTopicId = topicId;
-    castVoteSilent(topicId, side);
   }
   document.getElementById('welcomeActionsVote').style.display = hadPendingVote ? 'flex' : 'none';
   document.getElementById('welcomeCreateFirstBtn').style.display = hadPendingVote ? 'none' : 'block';
@@ -1605,14 +1615,7 @@ document.getElementById('suNextBtn').addEventListener('click', async ()=>{
 
 document.getElementById('welcomeVoteBtn').addEventListener('click', ()=>{
   closeModal('welcomeModal');
-  const topicId = lastVotedTopicId;
-  if(topicId){
-    // รอเฟรมถัดไปกันเคส modal ปิดแอนิเมชันชนกับ scroll ทันที
-    setTimeout(()=>{
-      const card = document.querySelector(`.topic-card[data-card-id="${topicId}"]`);
-      if(card) card.scrollIntoView({ behavior:'smooth', block:'center' });
-    }, 150);
-  }
+  scrollToTopicCard(lastVotedTopicId); // แค่พาไปที่การ์ด ไม่ได้โหวตให้ — user ต้องกดโหวตเองที่การ์ดนั้นอีกที
 });
 document.getElementById('welcomeCreateBtn').addEventListener('click', ()=>{
   closeModal('welcomeModal');
@@ -2762,19 +2765,6 @@ async function castVote(topicId, side, btnEl){
     t18n('okBtn')
   );
   loadTopics().then(loadDashboards);
-}
-
-/* ใช้กับ flow "โหวตค้างไว้ก่อนสมัครสมาชิก แล้ว resume อัตโนมัติหลังสมัครสำเร็จ" เท่านั้น
-   ต่างจาก castVote() ตรงที่ "ไม่" เปิด voteConfirmModal (showInfoPopup) ซ้ำ เพราะ ณ จุดนี้ welcomeModal
-   (การ์ดยินดีต้อนรับ + ปุ่ม "กลับไปโหวต") กำลังเปิดค้างอยู่แล้ว ถ้าให้ voteConfirmModal เด้งซ้อนขึ้นมาอีกใบ
-   จะกลายเป็น modal ซ้อน modal งงๆ ทั้งที่ welcomeModal ทำหน้าที่ยืนยันให้ในตัวอยู่แล้ว */
-async function castVoteSilent(topicId, side){
-  const res = await api('vote', {
-    session_token: STATE.session.session_token,
-    topic_id: topicId,
-    side
-  }, 'POST');
-  if(res.success) loadTopics().then(loadDashboards);
 }
 
 /* ================= Comment Modal (public, anonymous, อ่านความคิดเห็นแยกฝั่ง A/B) =================
