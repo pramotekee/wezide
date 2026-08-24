@@ -11,7 +11,13 @@ const DEFAULT_APPSCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwUBBRSKV
 const FRONTEND_URL = 'https://wezide.vercel.app';
 
 const BOT_UA_PATTERNS = [
-  'facebookexternalhit', 'facebot', 'line/', 'twitterbot', 'slackbot',
+  // หมายเหตุสำคัญ: ไม่ใส่ 'line/' ในลิสต์นี้โดยตั้งใจ — LINE ไม่มี user-agent แยกระหว่าง "บอทดึงพรีวิว"
+  // กับ "in-app browser ที่คนจริงใช้เปิดลิงก์" ทั้งคู่มีคำว่า "Line/" ติดมาเหมือนกันหมด ถ้าใส่ไว้จะทำให้
+  // คนจริงที่กดลิงก์ในแอป LINE โดนเข้าใจผิดว่าเป็นบอท แล้วได้หน้า og:tag เปล่า (body ว่าง) แทนที่จะถูก
+  // redirect ไปหน้าเว็บจริง — เป็นสาเหตุของบั๊ก "กดลิงก์แล้วเจอหน้าขาว" ที่เจอไปก่อนหน้านี้
+  // (แลกกับ trade-off: รูปพรีวิวใน LINE อาจไม่การันตีว่าจะขึ้นเสมอ เพราะตรวจจับบอทของ LINE ไม่ได้แม่นยำ
+  // — แต่การกดลิงก์แล้วไปหน้าเว็บถูกต้องสำคัญกว่า)
+  'facebookexternalhit', 'facebot', 'twitterbot', 'slackbot',
   'discordbot', 'whatsapp', 'telegrambot', 'linkedinbot', 'pinterest', 'googlebot',
   'bingbot', 'embedly', 'quora link preview', 'showyoubot', 'outbrain', 'redditbot',
   'applebot', 'skypeuripreview', 'vkshare', 'w3c_validator', 'iframely', 'tumblr'
