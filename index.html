@@ -418,6 +418,38 @@
   .field-error{ color:#D64545; font-size:12px; margin-top:4px; display:none; }
   .field-hint{ font-weight:400; color:var(--text-muted); }
 
+  /* ===== Signup wizard (step-by-step) ===== */
+  .su-progress{ margin-bottom:22px; }
+  .su-progress-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:9px; }
+  .su-progress-label{ font-size:12.5px; font-weight:600; color:var(--primary); }
+  .su-progress-pct{ font-size:12.5px; font-weight:700; color:var(--primary); }
+  .su-progress-track{ height:6px; border-radius:3px; background:var(--line); overflow:hidden; }
+  .su-progress-fill{ height:100%; width:0%; background:var(--primary); border-radius:3px; transition:width .35s ease; }
+  .su-dots{ display:flex; justify-content:space-between; margin-top:14px; }
+  .su-dot{ display:flex; flex-direction:column; align-items:center; gap:5px; flex:1; }
+  .su-dot-circle{
+    width:26px; height:26px; border-radius:50%; border:2px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700;
+    color:var(--text-muted); background:var(--surface); transition:all .2s ease;
+  }
+  .su-dot.done .su-dot-circle{ background:var(--primary); border-color:var(--primary); color:#fff; }
+  .su-dot.active .su-dot-circle{ border-color:var(--primary); color:var(--primary); }
+  .su-dot-label{ font-size:9px; color:var(--text-muted); text-align:center; line-height:1.2; }
+  .su-dot.active .su-dot-label, .su-dot.done .su-dot-label{ color:var(--primary); font-weight:600; }
+  .su-step{ display:none; animation:slideUp .2s ease; }
+  .su-step.active{ display:block; }
+  .su-passcode-note{
+    background:color-mix(in srgb, var(--accent) 18%, white); border:1px solid color-mix(in srgb, var(--accent) 45%, white);
+    border-radius:10px; padding:10px 12px; font-size:12.5px; color:var(--primary-dark); margin-top:10px;
+    line-height:1.5; display:flex; gap:8px; align-items:flex-start;
+  }
+  .su-nav{ display:flex; gap:10px; margin-top:6px; }
+  .su-nav .btn{ flex:1; padding:13px; border-radius:12px; font-size:15px; font-weight:600; }
+  .welcome-check{
+    width:60px; height:60px; border-radius:50%; background:var(--primary); color:#fff;
+    font-size:28px; font-weight:700; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;
+  }
+
   /* create-topic form */
   .type-toggle{ display:flex; gap:8px; }
   .type-toggle button{
@@ -681,52 +713,92 @@
       <button class="modal-close" data-close="signupModal">✕</button>
     </div>
 
-    <div class="field" style="text-align:center;">
-      <label data-i18n="avatarLabel">รูปโปรไฟล์</label>
-      <div class="creator-avatar" id="signupAvatarPreview" style="width:72px;height:72px;margin:0 auto;font-size:24px;" onclick="document.getElementById('signupAvatarFile').click()">＋</div>
-      <input type="file" accept="image/*" id="signupAvatarFile" style="display:none;">
-    </div>
-    <div class="field"><label>Username</label><input type="text" id="suUsername"></div>
-    <div class="field"><label>Email</label><input type="email" id="suEmail" placeholder="you@email.com"></div>
-    <div class="field"><label data-i18n="phoneLabel">เบอร์โทรศัพท์</label><input type="tel" id="suPhone" placeholder="08xxxxxxxx"></div>
-    <div class="field">
-      <label><span data-i18n="setPasscodeLabel">ตั้ง Passcode</span> <span class="field-hint" data-i18n="passcodeHint">(อย่างน้อย 6 หลัก)</span></label>
-      <div class="passcode-wrap">
-        <input type="text" id="suPasscode" minlength="6" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
-        <button type="button" class="passcode-toggle" data-target="suPasscode" aria-label="แสดง/ซ่อน Passcode">👁️</button>
+    <!-- Progress: เลื่อนทีละ 20% ต่อ step (0→20→40→60→80) เต็ม 100% ตอนสมัครสำเร็จ (แสดงผลเป็น welcomeModal) -->
+    <div class="su-progress">
+      <div class="su-progress-top">
+        <span class="su-progress-label" id="suProgressLabel"></span>
+        <span class="su-progress-pct" id="suProgressPct">0%</span>
+      </div>
+      <div class="su-progress-track"><div class="su-progress-fill" id="suProgressFill"></div></div>
+      <div class="su-dots">
+        <div class="su-dot active" data-dot="1"><div class="su-dot-circle">1</div><div class="su-dot-label" data-i18n="suDotProfile">โปรไฟล์</div></div>
+        <div class="su-dot" data-dot="2"><div class="su-dot-circle">2</div><div class="su-dot-label" data-i18n="suDotContact">ติดต่อ</div></div>
+        <div class="su-dot" data-dot="3"><div class="su-dot-circle">3</div><div class="su-dot-label" data-i18n="suDotSecurity">รหัสผ่าน</div></div>
+        <div class="su-dot" data-dot="4"><div class="su-dot-circle">4</div><div class="su-dot-label" data-i18n="suDotPersonal">ส่วนตัว</div></div>
+        <div class="su-dot" data-dot="5"><div class="su-dot-circle">5</div><div class="su-dot-label" data-i18n="suDotLocation">ที่อยู่</div></div>
       </div>
     </div>
-    <div class="field">
-      <label><span data-i18n="birthdayLabel">วันเกิด</span> <span class="field-hint">(ค.ศ.)</span></label>
-      <div class="dob-row">
-        <select id="suBirthDay"><option value="" data-i18n="dayOpt">วัน</option></select>
-        <select id="suBirthMonth"><option value="" data-i18n="monthOpt">เดือน</option></select>
-        <select id="suBirthYear"><option value="" data-i18n="yearOpt">ปี</option></select>
+
+    <!-- Step 1: รูปโปรไฟล์ + Username -->
+    <div class="su-step active" data-step="1">
+      <div class="field" style="text-align:center;">
+        <label data-i18n="avatarLabel">รูปโปรไฟล์</label>
+        <div class="creator-avatar" id="signupAvatarPreview" style="width:72px;height:72px;margin:0 auto;font-size:24px;" onclick="document.getElementById('signupAvatarFile').click()">＋</div>
+        <input type="file" accept="image/*" id="signupAvatarFile" style="display:none;">
+      </div>
+      <div class="field"><label>Username</label><input type="text" id="suUsername"></div>
+    </div>
+
+    <!-- Step 2: Email + Phone -->
+    <div class="su-step" data-step="2">
+      <div class="field"><label>Email</label><input type="email" id="suEmail" placeholder="you@email.com"></div>
+      <div class="field"><label data-i18n="phoneLabel">เบอร์โทรศัพท์</label><input type="tel" id="suPhone" placeholder="08xxxxxxxx"></div>
+    </div>
+
+    <!-- Step 3: Passcode -->
+    <div class="su-step" data-step="3">
+      <div class="field">
+        <label><span data-i18n="setPasscodeLabel">ตั้ง Passcode</span> <span class="field-hint" data-i18n="passcodeHint">(อย่างน้อย 6 หลัก)</span></label>
+        <div class="passcode-wrap">
+          <input type="text" id="suPasscode" minlength="6" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+          <button type="button" class="passcode-toggle" data-target="suPasscode" aria-label="แสดง/ซ่อน Passcode">👁️</button>
+        </div>
+        <div class="su-passcode-note"><span>🔐</span><span data-i18n="suPasscodeNote">อย่าลืมนะ! โปรดจดจำหรือจัดเก็บ Passcode นี้ไว้ให้ดี เพราะต้องใช้คู่กับเบอร์โทรศัพท์ทุกครั้งที่เข้าสู่ระบบ</span></div>
       </div>
     </div>
-    <div class="field">
-      <label data-i18n="genderLabel">เพศ</label>
-      <select id="suGender">
-        <option value="" data-i18n="genderChoose">เลือกเพศ</option>
-        <option value="ชาย" data-i18n="genderMale">ชาย</option>
-        <option value="หญิง" data-i18n="genderFemale">หญิง</option>
-        <option value="อื่นๆ" data-i18n="genderOther">อื่นๆ</option>
-      </select>
+
+    <!-- Step 4: Birthday + Gender -->
+    <div class="su-step" data-step="4">
+      <div class="field">
+        <label><span data-i18n="birthdayLabel">วันเกิด</span> <span class="field-hint">(ค.ศ.)</span></label>
+        <div class="dob-row">
+          <select id="suBirthDay"><option value="" data-i18n="dayOpt">วัน</option></select>
+          <select id="suBirthMonth"><option value="" data-i18n="monthOpt">เดือน</option></select>
+          <select id="suBirthYear"><option value="" data-i18n="yearOpt">ปี</option></select>
+        </div>
+      </div>
+      <div class="field">
+        <label data-i18n="genderLabel">เพศ</label>
+        <select id="suGender">
+          <option value="" data-i18n="genderChoose">เลือกเพศ</option>
+          <option value="ชาย" data-i18n="genderMale">ชาย</option>
+          <option value="หญิง" data-i18n="genderFemale">หญิง</option>
+          <option value="อื่นๆ" data-i18n="genderOther">อื่นๆ</option>
+        </select>
+      </div>
     </div>
-    <div class="field">
-      <label data-i18n="countryLabel">ประเทศ</label>
-      <select id="suCountry"></select>
+
+    <!-- Step 5: Country + Province/City -->
+    <div class="su-step" data-step="5">
+      <div class="field">
+        <label data-i18n="countryLabel">ประเทศ</label>
+        <select id="suCountry"></select>
+      </div>
+      <div class="field" id="suProvinceField">
+        <label data-i18n="provinceLabel">จังหวัด</label>
+        <select id="suProvince"><option value="" data-i18n="provinceChoose">เลือกจังหวัด</option></select>
+      </div>
+      <div class="field" id="suCityStateField" style="display:none;">
+        <label>City / State <span style="color:var(--danger);">*</span></label>
+        <input type="text" id="suCityState" maxlength="100" placeholder="e.g. Tokyo, New York, Osaka">
+      </div>
     </div>
-    <div class="field" id="suProvinceField">
-      <label data-i18n="provinceLabel">จังหวัด</label>
-      <select id="suProvince"><option value="" data-i18n="provinceChoose">เลือกจังหวัด</option></select>
-    </div>
-    <div class="field" id="suCityStateField" style="display:none;">
-      <label>City / State <span style="color:var(--danger);">*</span></label>
-      <input type="text" id="suCityState" maxlength="100" placeholder="e.g. Tokyo, New York, Osaka">
-    </div>
+
     <div class="field-error" id="signupError"></div>
-    <button class="btn btn-primary full-btn" id="signupSubmitBtn" data-i18n="signupSubmitBtn">สมัครสมาชิก</button>
+    <div class="su-nav">
+      <button type="button" class="btn btn-ghost" id="suBackBtn" data-i18n="suBackBtn" style="display:none;">ย้อนกลับ</button>
+      <button type="button" class="btn btn-primary" id="suNextBtn" data-i18n="suNextBtn">ถัดไป</button>
+    </div>
   </div>
 </div>
 
@@ -734,12 +806,16 @@
 <div class="modal-overlay" id="welcomeModal">
   <div class="modal-box" style="text-align:center;">
     <button class="modal-close" data-close="welcomeModal" style="margin-left:auto;display:block;">✕</button>
+    <div class="welcome-check">✓</div>
     <h3 style="margin:0 0 10px;"><span data-i18n="welcomeTitlePre">ยินดีต้อนรับคุณ</span> <span id="welcomeUsername" style="color:var(--primary)"></span> <span data-i18n="welcomeTitlePost">เข้าสู่ WEZIDE</span></h3>
     <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 22px;line-height:1.6;" data-i18n="welcomeDesc">การตั้งคำถามและความขี้สงสัย คือทักษะที่สำคัญของคนยุคใหม่</p>
-    <div style="display:flex;gap:10px;">
-      <button class="btn btn-primary full-btn" id="welcomeCreateBtn" data-i18n="welcomeCreateBtn">สร้างคำถาม</button>
-      <button class="btn btn-ghost full-btn" id="welcomeHomeBtn" data-i18n="homeBtn">กลับหน้าแรก</button>
+    <!-- กรณีสมัครจาก pendingVote (กดโหวตตอนยังไม่ login มาก่อน): แสดง 2 ปุ่ม กลับไปโหวต / สร้างหัวข้อ -->
+    <div style="display:flex;gap:10px;" id="welcomeActionsVote">
+      <button class="btn btn-primary full-btn" id="welcomeVoteBtn" data-i18n="welcomeVoteBtn">กลับไปโหวต</button>
+      <button class="btn btn-ghost full-btn" id="welcomeCreateBtn" data-i18n="welcomeCreateBtn">สร้างคำถาม</button>
     </div>
+    <!-- กรณีสมัครตรงๆ ไม่ได้มาจากการกดโหวต: เหลือปุ่มเดียว ชวนสร้างหัวข้อแรก -->
+    <button class="btn btn-primary full-btn" id="welcomeCreateFirstBtn" data-i18n="welcomeCreateFirstBtn" style="display:none;">มาสร้างหัวข้อแรกของคุณกันเลย! 🚀</button>
   </div>
 </div>
 
@@ -969,9 +1045,12 @@ const I18N = {
     dayOpt: 'วัน', monthOpt: 'เดือน', yearOpt: 'ปี', genderLabel: 'เพศ',
     genderChoose: 'เลือกเพศ', genderMale: 'ชาย', genderFemale: 'หญิง', genderOther: 'อื่นๆ',
     provinceLabel: 'จังหวัด', provinceChoose: 'เลือกจังหวัด', signupSubmitBtn: 'สมัครสมาชิก', countryLabel: 'ประเทศ',
+    suStepLabel: 'ขั้นตอนที่ {n} จาก {total}', suBackBtn: 'ย้อนกลับ', suNextBtn: 'ถัดไป',
+    suDotProfile: 'โปรไฟล์', suDotContact: 'ติดต่อ', suDotSecurity: 'รหัสผ่าน', suDotPersonal: 'ส่วนตัว', suDotLocation: 'ที่อยู่',
+    suPasscodeNote: 'อย่าลืมนะ! โปรดจดจำหรือจัดเก็บ Passcode นี้ไว้ให้ดี เพราะต้องใช้คู่กับเบอร์โทรศัพท์ทุกครั้งที่เข้าสู่ระบบ',
     welcomeTitlePre: 'ยินดีต้อนรับคุณ', welcomeTitlePost: 'เข้าสู่ WEZIDE',
     welcomeDesc: 'การตั้งคำถามและความขี้สงสัย คือทักษะที่สำคัญของคนยุคใหม่',
-    welcomeCreateBtn: 'สร้างคำถาม', homeBtn: 'กลับหน้าแรก',
+    welcomeCreateBtn: 'สร้างคำถาม', homeBtn: 'กลับหน้าแรก', welcomeVoteBtn: 'กลับไปโหวต', welcomeCreateFirstBtn: 'มาสร้างหัวข้อแรกของคุณกันเลย! 🚀',
     createSuccessTitle: 'หัวข้อของคุณสร้างสำเร็จ และเผยแพร่แล้ว',
     createSuccessDesc: 'หัวข้อของคุณถูกเผยแพร่ขึ้นหน้าแรกเรียบร้อยแล้ว ไปดูกันเลย!',
     createSuccessCreateBtn: 'สร้างหัวข้อต่อ', homeToMyTopicsBtn: 'กลับไปหน้าหัวข้อของฉัน',
@@ -1027,9 +1106,12 @@ const I18N = {
     dayOpt: 'Day', monthOpt: 'Month', yearOpt: 'Year', genderLabel: 'Gender',
     genderChoose: 'Select Gender', genderMale: 'Male', genderFemale: 'Female', genderOther: 'Other',
     provinceLabel: 'Province', provinceChoose: 'Select Province', signupSubmitBtn: 'Sign Up', countryLabel: 'Country',
+    suStepLabel: 'Step {n} of {total}', suBackBtn: 'Back', suNextBtn: 'Next',
+    suDotProfile: 'Profile', suDotContact: 'Contact', suDotSecurity: 'Security', suDotPersonal: 'Personal', suDotLocation: 'Location',
+    suPasscodeNote: "Don't forget! Please remember or save this Passcode — you'll need it together with your phone number every time you log in.",
     welcomeTitlePre: 'Welcome', welcomeTitlePost: 'to WEZIDE',
     welcomeDesc: 'Asking questions and staying curious is a key skill for the modern world',
-    welcomeCreateBtn: 'Create a Topic', homeBtn: 'Back to Home',
+    welcomeCreateBtn: 'Create a Topic', homeBtn: 'Back to Home', welcomeVoteBtn: 'Back to Vote', welcomeCreateFirstBtn: "Let's create your first topic! 🚀",
     createSuccessTitle: 'Your topic was created and published',
     createSuccessDesc: 'Your topic is now live on the homepage. Go check it out!',
     createSuccessCreateBtn: 'Create Another', homeToMyTopicsBtn: 'Back to My Topics',
@@ -1340,6 +1422,7 @@ function handleCreateClick(){
 
 document.getElementById('openSignupBtn').addEventListener('click', ()=>{
   closeModal('loginModal');
+  resetSignupWizard();
   openModal('signupModal');
 });
 
@@ -1372,20 +1455,115 @@ document.getElementById('loginSubmitBtn').addEventListener('click', async ()=>{
   }
 });
 
-document.getElementById('signupSubmitBtn').addEventListener('click', async ()=>{
-  const errEl = document.getElementById('signupError');
-  errEl.style.display = 'none';
+/* ---------- Signup Wizard (5 steps: Photo+Username / Email+Phone / Passcode / Birthday+Gender / Location) ----------
+   เดิมฟอร์มนี้เป็นฟอร์มยาวหน้าเดียว 8 จังหวะ user เห็นพรืดเดียวทั้งหมดจนรู้สึกหนัก เปลี่ยนมาทีละ step แทน
+   validate เฉพาะ field ของ step ปัจจุบันก่อนปล่อยให้กด Next ไป step ถัดไป (บล็อคจนกว่าจะถูกต้อง)
+   progress bar ขยับ 0/20/40/60/80% ตาม step ที่ "ผ่านแล้ว" และเต็ม 100% ตอนสมัครสำเร็จ (แสดงผลต่อใน welcomeModal) */
+const SU_TOTAL_STEPS = 5;
+let suCurrentStep = 1;
+let lastVotedTopicId = null; // เก็บ topicId ที่ user ตั้งใจโหวตไว้ก่อน signup เพื่อใช้พา user กลับไปที่การ์ดนั้นตอนกด "กลับไปโหวต"
 
+function resetSignupWizard(){
+  suCurrentStep = 1;
+  document.getElementById('signupError').style.display = 'none';
+  renderSuStep();
+}
+
+function renderSuStep(){
+  document.querySelectorAll('.su-step').forEach(el=>{
+    el.classList.toggle('active', Number(el.dataset.step) === suCurrentStep);
+  });
+  document.querySelectorAll('.su-dot').forEach(el=>{
+    const n = Number(el.dataset.dot);
+    el.classList.toggle('done', n < suCurrentStep);
+    el.classList.toggle('active', n === suCurrentStep);
+  });
+  // % คิดจากจำนวน step ที่ผ่านมาแล้ว (ไม่รวม step ปัจจุบันที่ยังกรอกไม่เสร็จ) เพื่อให้ผู้ใช้เห็นความคืบหน้าที่ "สำเร็จแล้วจริง"
+  const pct = Math.round(((suCurrentStep - 1) / SU_TOTAL_STEPS) * 100);
+  document.getElementById('suProgressFill').style.width = pct + '%';
+  document.getElementById('suProgressPct').textContent = pct + '%';
+  document.getElementById('suProgressLabel').textContent = t('suStepLabel').replace('{n}', suCurrentStep).replace('{total}', SU_TOTAL_STEPS);
+  document.getElementById('suBackBtn').style.display = suCurrentStep === 1 ? 'none' : 'block';
+  document.getElementById('suNextBtn').textContent = suCurrentStep === SU_TOTAL_STEPS ? t('signupSubmitBtn') : t('suNextBtn');
+  document.getElementById('signupError').style.display = 'none';
+}
+
+// validate เฉพาะ field ของ step ที่ระบุ คืนค่า true/false — เจอ error แรกจุดไหนหยุดจุดนั้นทันที (ตามลำดับบนลงล่างของ step นั้น)
+function validateSuStep(step){
+  const errEl = document.getElementById('signupError');
+  const showErr = (msg)=>{ errEl.textContent = msg; errEl.style.display = 'block'; };
+
+  if(step === 1){
+    if(!signupAvatarUrl){ showErr(t('errSignupAvatarRequired')); return false; }
+    if(!document.getElementById('suUsername').value.trim()){ showErr(t('errSignupUsernameRequired')); return false; }
+    return true;
+  }
+  if(step === 2){
+    const email = document.getElementById('suEmail').value.trim();
+    if(!email){ showErr(t('errSignupEmailRequired')); return false; }
+    if(email.indexOf('@') === -1){ showErr(t('errSignupEmailInvalid')); return false; }
+    if(!document.getElementById('suPhone').value.trim()){ showErr(t('errSignupPhoneRequired')); return false; }
+    return true;
+  }
+  if(step === 3){
+    const pc = document.getElementById('suPasscode').value.trim();
+    if(!pc){ showErr(t('errSignupPasscodeRequired')); return false; }
+    if(pc.length < 6){ showErr(t('errSignupPasscodeTooShort')); return false; }
+    return true;
+  }
+  if(step === 4){
+    const bDay = document.getElementById('suBirthDay').value;
+    const bMonth = document.getElementById('suBirthMonth').value;
+    const bYear = document.getElementById('suBirthYear').value;
+    if(!bDay || !bMonth || !bYear){ showErr(t('errSignupBirthdayRequired')); return false; }
+    const today = new Date();
+    const birthDate = new Date(parseInt(bYear,10), parseInt(bMonth,10)-1, parseInt(bDay,10));
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const hasHadBirthdayThisYear = (today.getMonth() > birthDate.getMonth()) ||
+      (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
+    if(!hasHadBirthdayThisYear) age--;
+    if(age < 13){ showErr(t('errAgeMinimum')); return false; }
+    if(!document.getElementById('suGender').value){ showErr(t('errSignupGenderRequired')); return false; }
+    return true;
+  }
+  if(step === 5){
+    const country = document.getElementById('suCountry').value;
+    if(!country){ showErr(t('errSignupCountryRequired')); return false; }
+    if(country === 'Thailand' && !document.getElementById('suProvince').value){ showErr(t('errSignupProvinceRequired')); return false; }
+    // ข้อความนี้ EN ตายตัว (ไม่ผูกกับ toggle) เพราะ error นี้เจอเฉพาะคนที่เลือกประเทศไม่ใช่ Thailand เท่านั้น
+    // การล็อก EN ไว้ตรงนี้ยังเป็นทางเลือกที่ปลอดภัยที่สุด แม้ default lang ของเว็บจะเป็น EN แล้วก็ตาม
+    if(country !== 'Thailand' && !document.getElementById('suCityState').value.trim()){ showErr('Please enter your city/state'); return false; }
+    return true;
+  }
+  return true;
+}
+
+document.getElementById('suBackBtn').addEventListener('click', ()=>{
+  if(suCurrentStep > 1){
+    suCurrentStep--;
+    renderSuStep();
+  }
+});
+
+document.getElementById('suNextBtn').addEventListener('click', async ()=>{
+  if(!validateSuStep(suCurrentStep)) return;
+
+  if(suCurrentStep < SU_TOTAL_STEPS){
+    suCurrentStep++;
+    renderSuStep();
+    return;
+  }
+
+  // step สุดท้ายผ่านแล้ว = กดสมัครสมาชิกจริง
   const bDay = document.getElementById('suBirthDay').value;
   const bMonth = document.getElementById('suBirthMonth').value;
   const bYear = document.getElementById('suBirthYear').value;
-
   const payload = {
     username: document.getElementById('suUsername').value.trim(),
     email: document.getElementById('suEmail').value.trim(),
     phone: document.getElementById('suPhone').value.trim(),
     passcode: document.getElementById('suPasscode').value.trim(),
-    birthday: (bDay && bMonth && bYear) ? `${bYear}-${bMonth}-${bDay}` : '',
+    birthday: `${bYear}-${bMonth}-${bDay}`,
     gender: document.getElementById('suGender').value,
     country: document.getElementById('suCountry').value,
     province: document.getElementById('suProvince').value,
@@ -1393,111 +1571,53 @@ document.getElementById('signupSubmitBtn').addEventListener('click', async ()=>{
     profile_image_url: signupAvatarUrl || ''
   };
 
-  // เช็คทีละช่องเรียงตามลำดับที่ฟิลด์ปรากฏบนหน้าจอจริง (บนลงล่าง) เพื่อให้ error message ที่เด้งขึ้นมา
-  // ตรงกับช่องแรกที่ user ข้ามไปเสมอ ไม่ใช่ไล่เช็คตามลำดับที่เขียนในโค้ดซึ่งอาจไม่ตรงกับ DOM (บั๊กเดิม)
-  if(!payload.profile_image_url){
-    errEl.textContent = t('errSignupAvatarRequired');
-    errEl.style.display = 'block';
-    return;
-  }
-  if(!payload.username){
-    errEl.textContent = t('errSignupUsernameRequired');
-    errEl.style.display = 'block';
-    return;
-  }
-  if(!payload.email){
-    errEl.textContent = t('errSignupEmailRequired');
-    errEl.style.display = 'block';
-    return;
-  }
-  if(payload.email.indexOf('@') === -1){
-    errEl.textContent = t('errSignupEmailInvalid');
-    errEl.style.display = 'block';
-    return;
-  }
-  if(!payload.phone){
-    errEl.textContent = t('errSignupPhoneRequired');
-    errEl.style.display = 'block';
-    return;
-  }
-  if(!payload.passcode){
-    errEl.textContent = t('errSignupPasscodeRequired');
-    errEl.style.display = 'block';
-    return;
-  }
-  if(payload.passcode.length < 6){
-    errEl.textContent = t('errSignupPasscodeTooShort');
-    errEl.style.display = 'block';
-    return;
-  }
-  if(!payload.birthday){
-    errEl.textContent = t('errSignupBirthdayRequired');
-    errEl.style.display = 'block';
-    return;
-  }
-  {
-    const today = new Date();
-    const birthDate = new Date(parseInt(bYear,10), parseInt(bMonth,10)-1, parseInt(bDay,10));
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const hasHadBirthdayThisYear = (today.getMonth() > birthDate.getMonth()) ||
-      (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
-    if(!hasHadBirthdayThisYear) age--;
-    if(age < 13){
-      errEl.textContent = t('errAgeMinimum');
-      errEl.style.display = 'block';
-      return;
-    }
-  }
-  if(!payload.gender){
-    errEl.textContent = t('errSignupGenderRequired');
-    errEl.style.display = 'block';
-    return;
-  }
-  if(!payload.country){
-    errEl.textContent = t('errSignupCountryRequired');
-    errEl.style.display = 'block';
-    return;
-  }
-  if(payload.country === 'Thailand' && !payload.province){
-    errEl.textContent = t('errSignupProvinceRequired');
-    errEl.style.display = 'block';
-    return;
-  }
-  // ข้อความนี้ EN ตายตัว (ไม่ผูกกับ toggle) เพราะ error นี้เจอเฉพาะคนที่เลือกประเทศไม่ใช่ Thailand เท่านั้น
-  // การล็อก EN ไว้ตรงนี้ยังเป็นทางเลือกที่ปลอดภัยที่สุด แม้ default lang ของเว็บจะเป็น EN แล้วก็ตาม
-  // เผื่อกรณีคนไทยที่อยู่ต่างประเทศ toggle กลับไปเป็น TH เอง แต่ต้องกรอกฟิลด์นี้เพราะเลือกประเทศไม่ใช่ Thailand
-  if(payload.country !== 'Thailand' && !payload.city_state){
-    errEl.textContent = 'Please enter your city/state';
-    errEl.style.display = 'block';
-    return;
-  }
-
-  const btn = document.getElementById('signupSubmitBtn');
+  const btn = document.getElementById('suNextBtn');
   setBtnLoading(btn, true, t('signingUpText'));
   const res = await api('signup', payload, 'POST');
   setBtnLoading(btn, false);
   if(!res.success){
-    errEl.textContent = res.message;
-    errEl.style.display = 'block';
+    document.getElementById('signupError').textContent = res.message;
+    document.getElementById('signupError').style.display = 'block';
     return;
   }
+
   saveSession(res);
   closeModal('signupModal');
   document.getElementById('welcomeUsername').textContent = res.username;
-  openModal('welcomeModal');
-  if(STATE.pendingVote){
+
+  // ถ้า user ตั้งใจโหวตไว้ก่อนสมัคร (pendingVote) โหวตให้อัตโนมัติแบบเงียบๆ (ไม่เด้ง popup ซ้อนทับ welcomeModal
+  // เพราะ welcomeModal ที่กำลังจะเปิดคือคำยืนยันอยู่แล้วในตัว) แล้วโชว์ปุ่ม "กลับไปโหวต" ให้กด
+  // ถ้าไม่มี pendingVote (สมัครตรงๆ) โชว์ปุ่มเดียวชวนสร้างหัวข้อแรกแทน
+  const hadPendingVote = !!STATE.pendingVote;
+  if(hadPendingVote){
     const { topicId, side } = STATE.pendingVote;
     STATE.pendingVote = null;
-    castVote(topicId, side);
+    lastVotedTopicId = topicId;
+    castVoteSilent(topicId, side);
   }
+  document.getElementById('welcomeActionsVote').style.display = hadPendingVote ? 'flex' : 'none';
+  document.getElementById('welcomeCreateFirstBtn').style.display = hadPendingVote ? 'none' : 'block';
+  openModal('welcomeModal');
 });
 
+document.getElementById('welcomeVoteBtn').addEventListener('click', ()=>{
+  closeModal('welcomeModal');
+  const topicId = lastVotedTopicId;
+  if(topicId){
+    // รอเฟรมถัดไปกันเคส modal ปิดแอนิเมชันชนกับ scroll ทันที
+    setTimeout(()=>{
+      const card = document.querySelector(`.topic-card[data-card-id="${topicId}"]`);
+      if(card) card.scrollIntoView({ behavior:'smooth', block:'center' });
+    }, 150);
+  }
+});
 document.getElementById('welcomeCreateBtn').addEventListener('click', ()=>{
   closeModal('welcomeModal');
   openModal('createModal');
 });
-document.getElementById('welcomeHomeBtn').addEventListener('click', ()=>{
+document.getElementById('welcomeCreateFirstBtn').addEventListener('click', ()=>{
   closeModal('welcomeModal');
+  openModal('createModal');
 });
 
 /* ---------- Image upload (profile & cover) ---------- */
@@ -2627,6 +2747,19 @@ async function castVote(topicId, side, btnEl){
     t18n('okBtn')
   );
   loadTopics().then(loadDashboards);
+}
+
+/* ใช้กับ flow "โหวตค้างไว้ก่อนสมัครสมาชิก แล้ว resume อัตโนมัติหลังสมัครสำเร็จ" เท่านั้น
+   ต่างจาก castVote() ตรงที่ "ไม่" เปิด voteConfirmModal (showInfoPopup) ซ้ำ เพราะ ณ จุดนี้ welcomeModal
+   (การ์ดยินดีต้อนรับ + ปุ่ม "กลับไปโหวต") กำลังเปิดค้างอยู่แล้ว ถ้าให้ voteConfirmModal เด้งซ้อนขึ้นมาอีกใบ
+   จะกลายเป็น modal ซ้อน modal งงๆ ทั้งที่ welcomeModal ทำหน้าที่ยืนยันให้ในตัวอยู่แล้ว */
+async function castVoteSilent(topicId, side){
+  const res = await api('vote', {
+    session_token: STATE.session.session_token,
+    topic_id: topicId,
+    side
+  }, 'POST');
+  if(res.success) loadTopics().then(loadDashboards);
 }
 
 /* ================= Comment Modal (public, anonymous, อ่านความคิดเห็นแยกฝั่ง A/B) =================
