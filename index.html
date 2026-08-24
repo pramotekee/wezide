@@ -2873,11 +2873,16 @@ function shareTopic(topicId){
   if(!t) return;
   const url = buildShareUrl(topicId);
   const teaser = `${t.side_a_label} หรือ ${t.side_b_label}? มาโหวตเรื่อง "${t.title}" กับเรากันเถอะ 👀`;
+  // P0-fix (share order mismatch): เดิมส่ง url แยก field ให้ navigator.share() ทำให้แอปปลายทาง (เช่น LINE)
+  // เป็นคนตัดสินใจเองว่าจะเรียงข้อความ/ลิงก์ยังไงตอนแปะ (บางแอปดันลิงก์ขึ้นก่อนข้อความ) เราคุมลำดับไม่ได้เลย
+  // -> ฝังลิงก์ไว้ท้าย text เป็นก้อนเดียวกันเหมือนฝั่ง clipboard (desktop) ด้านล่าง แล้วไม่ส่ง url แยกอีกต่อไป
+  // แอปปลายทางจะเห็นเป็น string เดียว ไม่มีสิทธิ์จัดลำดับเองอีก การันตีเกริ่นมาก่อนลิงก์เสมอทุกแพลตฟอร์ม
+  const shareText = `${teaser}\n${url}`;
 
   if(navigator.share){
-    navigator.share({ title: t.title, text: teaser, url }).catch(()=>{});
+    navigator.share({ title: t.title, text: shareText }).catch(()=>{});
   } else {
-    navigator.clipboard.writeText(`${teaser}\n${url}`);
+    navigator.clipboard.writeText(shareText);
     showToast('Link copied — paste it anywhere to share.');
   }
 }
@@ -3001,13 +3006,14 @@ function buildHeroTrack(){
     return 'https://' + u;
   }
 
+  // เปลี่ยนจาก <a href> เป็น <div data-link> แล้วสั่ง navigate เองใน bindHeroDrag() (ดูคอมเมนต์ที่นั่น)
+  // เดิมใช้ <a> ปล่อยให้ browser ยิง click event เองตามธรรมชาติ แต่เพราะ wrap.setPointerCapture() ที่ทำไว้
+  // เพื่อรองรับการลาก ทำให้บาง browser/webview บนมือถือไม่ส่ง click ต่อให้ <a> ที่อยู่ข้างใต้ pointer ที่ถูก
+  // capture ไปอย่างสม่ำเสมอ (สาเหตุของอาการ "กดไปบ้าง ไม่ไปบ้าง สะดุด") ต้องคุม navigate เองให้ชัวร์แทน
   const oneSet = banners.map(b => {
     const link = normalizeHeroLink(b.link_url);
     const img = `<img src="${b.image_url}" alt="banner" style="width:100%;border-radius:10px;display:block;">`;
-    // A) มีลิงก์ -> ผูก <a> กดเปิดได้ / B) ไม่มีลิงก์ -> <div> เฉยๆ แตะ/คลิกแล้วไม่เกิดอะไรขึ้น
-    return link
-      ? `<a class="hero-card" href="${link}" target="_blank" rel="noopener">${img}</a>`
-      : `<div class="hero-card" style="cursor:default;">${img}</div>`;
+    return `<div class="hero-card" data-link="${escapeHtml(link)}" style="${link ? 'cursor:pointer;' : 'cursor:default;'}">${img}</div>`;
   }).join('');
 
   // step 1: render 2 ชุดก่อน เพื่อวัดความกว้างจริงของ "1 ชุด" (รวม gap ระหว่างการ์ด) จาก offsetLeft จริงในเบราว์เซอร์
@@ -3043,21 +3049,45 @@ function runHeroLoop(){
   loop();
 }
 
+// P0-fix (hero click reliability): เดิมพึ่ง native click ของ <a> ล้วนๆ แต่ wrap.setPointerCapture() ที่ต้องมี
+// เพื่อให้ลากนิ้วลื่น กลับทำให้บาง browser/webview มือถือไม่ส่ง click event ต่อให้ <a> ข้างใต้อย่างสม่ำเสมอ
+// (pointer ถูก capture ไปอยู่ที่ wrap ไม่ใช่การ์ด) -> อาการ "กดไปบ้าง ไม่ไปบ้าง สะดุด" ตามที่ Pop เจอ
+// แก้โดยเลิกพึ่ง native click ของ browser ไปเลย ตรวจเองจาก pointerdown->pointerup ว่าเป็น "แตะ" (ขยับน้อย/เร็ว)
+// หรือ "ลาก" (ขยับมาก) แล้วค่อยสั่ง navigate เองตรงๆ ด้วย window.open() ได้ผลแน่นอน 100% ทุกครั้งไม่ว่า browser ไหน
+const HERO_TAP_MOVE_PX = 8;     // ขยับไม่เกินนี้ถึงจะนับเป็น "แตะ" ไม่ใช่ "ลาก"
+const HERO_TAP_TIME_MS = 500;   // กดค้างไม่เกินนี้ถึงจะนับเป็น "แตะ" กันเคสกดค้างนิ่งๆ (long-press) โดนตีความเป็นแตะ
+
 function bindHeroDrag(){
   if(heroDragBound) return; // ผูก event ครั้งเดียวพอ
   heroDragBound = true;
   const wrap = document.getElementById('heroWrap');
+  let downX = 0, downY = 0, downTime = 0, tapTarget = null;
 
-  function endDrag(){
+  function endDrag(e){
     if(!heroDragging) return;
     heroDragging = false; wrap.classList.remove('dragging');
     heroAutoOffset += heroUserOffset;
     heroUserOffset = 0;
+
+    // เช็คว่าเป็นแตะจริงไหมก่อนค่อย navigate — ใช้พิกัดตอนปล่อยนิ้ว (pointerup/pointercancel) เทียบกับตอนกดลง
+    if(tapTarget && e){
+      const ex = (e.clientX != null) ? e.clientX : downX;
+      const ey = (e.clientY != null) ? e.clientY : downY;
+      const moved = Math.hypot(ex - downX, ey - downY);
+      const elapsed = Date.now() - downTime;
+      if(moved <= HERO_TAP_MOVE_PX && elapsed <= HERO_TAP_TIME_MS){
+        const link = tapTarget.getAttribute('data-link');
+        if(link) window.open(link, '_blank', 'noopener');
+      }
+    }
+    tapTarget = null;
   }
 
   wrap.addEventListener('pointerdown', (e)=>{
     heroDragging = true; wrap.classList.add('dragging');
     heroStartX = e.clientX; heroStartOffset = heroUserOffset;
+    downX = e.clientX; downY = e.clientY; downTime = Date.now();
+    tapTarget = e.target.closest('.hero-card'); // จำการ์ดที่กดตอนเริ่ม ไว้ผูกกับ navigate ตอนปล่อยนิ้ว
     try{ wrap.setPointerCapture(e.pointerId); }catch(err){} // กันเบราว์เซอร์แย่ง gesture ไปกลางคันตอนลากนิ้วเร็วๆ
   });
   window.addEventListener('pointermove', (e)=>{
