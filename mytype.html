@@ -190,8 +190,14 @@
 
   /* ===== My Type PDF export sheet (mte- prefix, on-screen render target for html2pdf.js — isolated from rest of app CSS)
      หมายเหตุ: ห้ามใช้ left:-9999px / display:none / visibility:hidden ซ่อน element นี้ เพราะ html2canvas
-     capture element เหล่านี้ไม่ได้ (ได้ canvas เปล่า/หน้าขาว) — ใช้วิธีวางไว้ในจอจริงแต่บังด้วย overlay แทน */
-  #myTypeExportPrint{ position:fixed; top:0; left:0; width:560px; z-index:9000; background:#fff; }
+     capture element เหล่านี้ไม่ได้ (ได้ canvas เปล่า/หน้าขาว) — ใช้วิธีวางไว้ในจอจริงแต่บังด้วย overlay แทน
+     P0-fix (PDF cropped/ตกขอบ): เดิมใช้ position:fixed ซึ่งเป็นบั๊กที่มีคนรายงานไว้เยอะฝั่ง html2canvas เอง
+     (รากคือ WebKit bug เก่า — ธาตุ position:fixed ที่อยู่ใน stacking context ที่มี overflow จะถูกคำนวณ
+     ตำแหน่ง/ขอบเขต crop ผิดพลาด) เมื่อผสมกับ windowWidth ที่ตั้งไว้ไม่ตรงกับความกว้างจริงของ element (620 vs 560)
+     ยิ่งทำให้ capture หลุด offset ไปตัดภาพซ้าย-ขวาเท่าๆ กันแบบที่เจอ -> เปลี่ยนเป็น position:absolute แทน
+     ยังคง "อยู่บนจอจริง ไม่ซ่อน" เหมือนเดิม (html2canvas capture ได้ปกติ) แค่ไม่ใช่ fixed พ้นบั๊กกลุ่มนี้ไปเลย
+     ส่วนการบังไม่ให้ user เห็นตอน render ยังทำงานเหมือนเดิมเพราะ overlay (z-index:9500) คลุมเต็มจออยู่แล้ว */
+  #myTypeExportPrint{ position:absolute; top:0; left:0; width:560px; z-index:9000; background:#fff; }
   #myTypeExportOverlay{ display:none; position:fixed; inset:0; background:var(--bg); z-index:9500; align-items:center; justify-content:center; flex-direction:column; gap:14px; color:#fff; }
   #myTypeExportOverlay.show{ display:flex; }
   .mte-page{ font-family:'Inter',Arial,sans-serif; color:#1C1329; background:#fff; padding:20px 26px; box-sizing:border-box; }
@@ -904,9 +910,13 @@ async function saveMyType(){
 
 /* ================= SHARE ================= */
 function shareProfileLink(){
-  // ชี้ผ่าน backend endpoint (?mytype_share=) ก่อน ไม่ชี้ตรงไป Vercel URL — เพื่อให้ LINE/Facebook bot
-  // ดึง og:image (รูปโปรไฟล์จริง) ไปทำการ์ดพรีวิวได้ เหมือน pattern buildShareUrl() ของหัวข้อโหวตใน index.html
-  const url = `${CONFIG.API_URL}?mytype_share=${profileId}`;
+  // P0-fix (script.google.com UX): เดิมชี้ตรงไป Apps Script /exec (?mytype_share=) ทำให้คนกดลิงก์เจอ
+  // interstitial ของ Google เอง ("This application was created by a Google Apps Script user") หรือค้างที่
+  // script.google.com ในบาง in-app browser (ปัญหาเดียวกับที่หัวข้อโหวตเจอมาก่อน) -> เปลี่ยนมาใช้ Vercel
+  // serverless function /api/share (share.js) แบบเดียวกับ buildShareUrl() ของหัวข้อโหวตใน index.html แทน
+  // share.js อ่าน user id จาก query param ชื่อ "mytype" (ดู getQueryParam(req,'mytype') ในไฟล์นั้น) แล้วเช็ค
+  // user-agent เอง: บอทของแอปแชท/โซเชียล -> เสิร์ฟ og:tag ให้ทำพรีวิว, คนจริง -> 302 ตรงเข้า mytype.html ทันที
+  const url = `${CONFIG.FRONTEND_URL}/api/share?mytype=${profileId}`;
   const name = (currentProfile && currentProfile.user && currentProfile.user.username) || '';
   // hardcode EN ตายตัวตาม copy ที่ Pop กำหนด (ไม่ผูก TH/EN toggle เหมือนข้อความ system อื่นๆ ในโปรเจกต์นี้)
   const shareText = `This is ${name}'s My Type. How much are we alike? Tap and see. 😏\n${url}`;
@@ -1156,10 +1166,21 @@ async function downloadMyTypePdf(btn){
     // ถ้าอิงจอเครื่องจะทำให้ html2canvas สร้าง virtual window แคบเกินไปจนตัดเนื้อหาออก (สาเหตุที่ทำให้ได้ 2 หน้าบนมือถือ)
     const captureWidth = 620;
     const captureHeight = Math.max(pageEl.scrollHeight + 100, 900);
+    // P0-fix (PDF cropped/ตกขอบ) ต่อจากการเปลี่ยน position:fixed -> absolute ด้านบน: ระบุ width/x/y ให้
+    // html2canvas ตรงๆ ตามกล่องจริงของ pageEl (ไม่ปล่อยให้เดาเอง) กัน capture region หลุด offset ไปจาก
+    // windowWidth/Height ที่เป็นแค่ viewport จำลองไว้กันข้อความห่อบรรทัดผิดบนจอแคบ (คนละเรื่องกับขนาด capture จริง)
+    const pageWidth = pageEl.scrollWidth;
+    const pageHeight = pageEl.scrollHeight;
     const pdfBlob = await html2pdf().set({
       margin: 10,
       image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0, windowWidth: captureWidth, windowHeight: captureHeight },
+      html2canvas: {
+        scale: 2, useCORS: true,
+        scrollX: 0, scrollY: 0,
+        windowWidth: captureWidth, windowHeight: captureHeight,
+        width: pageWidth, height: pageHeight,
+        x: 0, y: 0
+      },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }).from(pageEl).outputPdf('blob');
 
