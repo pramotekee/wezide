@@ -3124,7 +3124,7 @@ document.getElementById('footerLoginLink').addEventListener('click', (e)=>{
   // เดิม: 3 await เรียงคิว (categories -> card colors -> topics) แล้ว hero banner ค่อยเริ่มโหลดทีหลังสุด
   // ทำให้ต้องรอ 3 round-trip ไป Apps Script ก่อน hero banner จะเริ่มขยับ
   // ใหม่: ยิง hero banner / categories / topics พร้อมกันตั้งแต่ต้น เพราะไม่ได้พึ่งพากัน
-  loadHeroBanners();
+  const heroBannersPromise = loadHeroBanners();
   const categoriesPromise = loadCategories();
   const topicsPromise = loadTopics();
 
@@ -3137,10 +3137,23 @@ document.getElementById('footerLoginLink').addEventListener('click', (e)=>{
   const params = new URLSearchParams(location.search);
   const focusId = params.get('topic');
   if(focusId){
-    setTimeout(()=>{
-      const el = document.querySelector(`[data-topic="${focusId}"]`);
-      if(el) el.closest('.topic-card').scrollIntoView({behavior:'smooth', block:'center'});
-    }, 500);
+    // P0-fix (มือถือ share link เด้งกลับ home ไม่ไปที่การ์ด): เดิมรอ setTimeout คงที่ 500ms แล้ว scrollIntoView
+    // เลย โดยไม่รอ hero banner (โหลดแบบ fire-and-forget ไม่ await ตั้งแต่ต้น เพื่อไม่บล็อกส่วนอื่น) ให้ render
+    // เสร็จก่อน — .hero-track เริ่มต้นสูง 0px ว่างเปล่า พอโหลดเสร็จทีหลัง (ช้ากว่าบนเน็ตมือถือ เทียบกับ wifi คอม
+    // ที่มักเสร็จทัน 500ms) จะดันความสูงของหน้าทั้งหมดที่อยู่เหนือ feed ทำให้ตำแหน่งที่เพิ่ง scrollIntoView ไป
+    // แล้วเลื่อนหลุดจากการ์ดเป้าหมายทันที มองจากมุมคนใช้เหมือนโดนเด้งกลับไปหน้า home ทั้งที่จริงๆ เลื่อนไปแล้ว
+    // แค่โดนดันตำแหน่งทับซ้ำ -> แก้โดยรอ hero banner ให้เสร็จก่อน (มี timeout 3 วิกันค้างถ้า hero banner ล่ม/
+    // ช้าเกินไป ไม่งั้นการเลื่อนจะไม่เกิดขึ้นเลย) แล้วรอ 2 เฟรมให้ browser reflow เสร็จจริงๆ ก่อนค่อย scroll
+    await Promise.race([
+      heroBannersPromise.catch(()=>{}),
+      new Promise(resolve => setTimeout(resolve, 3000))
+    ]);
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        const el = document.querySelector(`[data-topic="${focusId}"]`);
+        if(el) el.closest('.topic-card').scrollIntoView({behavior:'smooth', block:'center'});
+      });
+    });
   }
 
   // มาจากปุ่ม "+ สร้างหัวข้อ" ในหน้า "หัวข้อของฉัน" (profile.html) — เปิด modal สร้างหัวข้อให้อัตโนมัติ
