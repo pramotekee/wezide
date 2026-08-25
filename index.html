@@ -72,6 +72,7 @@
     font-family:'Antonio', sans-serif; font-weight:700; font-size:28px;
     letter-spacing:1px; color:var(--primary);
   }
+  .logo-wrap a.brand{ text-decoration:none; cursor:pointer; } /* กด WEZIDE มุมซ้ายบนแล้วพากลับหน้า home */
   .logo-wrap .tagline{
     font-family:'Antonio', sans-serif; font-weight:100; font-size:14px;
     color:var(--accent); text-transform:uppercase; letter-spacing:2px;
@@ -616,7 +617,7 @@
 
 <header class="site-header">
   <div class="logo-wrap">
-    <span class="brand">WEZIDE</span>
+    <a class="brand" href="index.html">WEZIDE</a>
   </div>
   <div class="header-actions" id="headerActions">
     <div class="lang-toggle" id="langToggle">
@@ -3127,7 +3128,7 @@ async function initFocusMode(topicId){
   const res = await api('getTopicDetail', { topic_id: topicId });
   if(!res.success || !res.topic){
     feed.innerHTML = `<div class="empty-state"><div class="emoji">🌫️</div>ไม่พบหัวข้อนี้ (อาจถูกลบหรือหมดอายุไปแล้ว)<br>
-      <a class="btn btn-primary" href="index.html" style="margin-top:14px;display:inline-block;">ดูหัวข้ออื่นๆ ทั้งหมด →</a></div>`;
+      <a class="btn btn-primary" href="index.html" style="margin-top:14px;display:inline-block;">See all topics →</a></div>`;
     return;
   }
 
@@ -3136,7 +3137,7 @@ async function initFocusMode(topicId){
   STATE.topics = [res.topic];
   feed.innerHTML = topicCardHTML(res.topic)
     + `<div style="text-align:center;padding:24px 20px 8px;">
-        <a class="btn btn-ghost" href="index.html">ดูหัวข้ออื่นๆ ทั้งหมด →</a>
+        <a class="btn btn-ghost" href="index.html">See all topics →</a>
       </div>`;
   bindCardEvents(feed);
   setupDescMoreButtons();
