@@ -3113,6 +3113,35 @@ document.getElementById('footerLoginLink').addEventListener('click', (e)=>{
   if(isLoggedIn()) logout(); else openLoginModal('direct');
 });
 
+// โหมด "focus" — แสดงแค่การ์ดหัวข้อเดียวที่ถูกแชร์มา (ดูคอมเมนต์ยาวใน init() ด้านล่างว่าทำไมเปลี่ยนมาแบบนี้)
+// ซ่อน hero banner / ช่องค้นหา+filter/sort / pagination ทิ้งไปเลยเพราะไม่เกี่ยวกับโหมดนี้ เหลือแค่การ์ดเดียว
+// ที่ขอมา + ปุ่มลิงก์กลับไปดูหัวข้ออื่นๆ ทั้งหมด (index.html เปล่าๆ ไม่มี query จะกลับไปโหมดฟีดปกติ)
+async function initFocusMode(topicId){
+  document.querySelector('.hero').style.display = 'none';
+  document.querySelector('.filter-bar').style.display = 'none';
+  document.getElementById('paginationRow').style.display = 'none';
+
+  const feed = document.getElementById('feed');
+  feed.innerHTML = `<div class="area-loading"><div class="area-spinner"></div>Loading topic...</div>`;
+
+  const res = await api('getTopicDetail', { topic_id: topicId });
+  if(!res.success || !res.topic){
+    feed.innerHTML = `<div class="empty-state"><div class="emoji">🌫️</div>ไม่พบหัวข้อนี้ (อาจถูกลบหรือหมดอายุไปแล้ว)<br>
+      <a class="btn btn-primary" href="index.html" style="margin-top:14px;display:inline-block;">ดูหัวข้ออื่นๆ ทั้งหมด →</a></div>`;
+    return;
+  }
+
+  // เก็บไว้ใน STATE.topics (แค่ 1 รายการ) เพราะฟังก์ชันเดิมของการ์ด (แชร์/แปลภาษา/อ่านเพิ่มเติม ฯลฯ) ทุกอันหา
+  // ข้อมูลหัวข้อจาก STATE.topics.find(...) อยู่แล้ว ทำแบบนี้จะได้ไม่ต้องแก้ฟังก์ชันพวกนั้นเลยสักตัว ใช้ต่อได้ทันที
+  STATE.topics = [res.topic];
+  feed.innerHTML = topicCardHTML(res.topic)
+    + `<div style="text-align:center;padding:24px 20px 8px;">
+        <a class="btn btn-ghost" href="index.html">ดูหัวข้ออื่นๆ ทั้งหมด →</a>
+      </div>`;
+  bindCardEvents(feed);
+  setupDescMoreButtons();
+}
+
 /* ---------- Init ---------- */
 (async function init(){
   renderHeaderAuth();
@@ -3121,39 +3150,30 @@ document.getElementById('footerLoginLink').addEventListener('click', (e)=>{
   loadBirthdaySelects();
   const sessionCheckPromise = validateSessionOnLoad(); // เช็คความถูกต้องของ session กับ server แบบไม่ block การโหลดหน้าอื่น
 
-  // เดิม: 3 await เรียงคิว (categories -> card colors -> topics) แล้ว hero banner ค่อยเริ่มโหลดทีหลังสุด
-  // ทำให้ต้องรอ 3 round-trip ไป Apps Script ก่อน hero banner จะเริ่มขยับ
-  // ใหม่: ยิง hero banner / categories / topics พร้อมกันตั้งแต่ต้น เพราะไม่ได้พึ่งพากัน
-  const heroBannersPromise = loadHeroBanners();
-  const categoriesPromise = loadCategories();
-  const topicsPromise = loadTopics();
-
-  await categoriesPromise;
-  loadCreateFormOptions(); // เติม dropdown ของ modal สร้างหัวข้อเท่านั้น ไม่ใช่สิ่งที่เห็นตอนเปิดหน้าแรก ไม่ต้อง block
-
-  await topicsPromise;
-
-  // ถ้าเปิดมาจากลิงก์แชร์ ?topic=ID ให้เลื่อนไปหาการ์ดนั้น
   const params = new URLSearchParams(location.search);
   const focusId = params.get('topic');
+
+  // P0-feature (hero banner -> การ์ดหัวข้อเดียว แม่นยำ 100%, ไอเดียของ Pop): เดิมโหลดฟีดทั้งหน้า + hero banner
+  // แล้วค่อย scrollIntoView หาการ์ดทีหลัง ต้องแข่งกับเวลาโหลดของหลายอย่างพร้อมกัน ต่อให้จูนจังหวะ (รอ hero banner
+  // + 2 rAF) ดีขึ้นแล้วก็ยังมีโอกาสสะดุด/ไม่ชัวร์ 100% อยู่ดีถ้าเน็ตช้าผิดปกติ หรือ hero banner ใช้เวลาเกิน 3 วิ
+  // -> เปลี่ยนแนวทางไปเลย: ถ้ามี ?topic=ID เข้ามาโหมด "focus" ทันที ไม่โหลดฟีดทั้งหมด/hero banner/pagination
+  // อะไรเลย ยิง getTopicDetail ดึงมาแค่หัวข้อเดียวที่ต้องการ แล้ว render การ์ดเดียวตรงนั้นด้วย topicCardHTML()
+  // (ฟังก์ชันเดิมที่ฟีดปกติใช้ ไม่ต้องเขียนใหม่) ไม่มี race condition ให้ลุ้นอีกต่อไป เร็วขึ้นด้วยเพราะยิง API
+  // แค่ 1 ครั้งแทนที่จะโหลดทั้งฟีด+hero banner+categories
   if(focusId){
-    // P0-fix (มือถือ share link เด้งกลับ home ไม่ไปที่การ์ด): เดิมรอ setTimeout คงที่ 500ms แล้ว scrollIntoView
-    // เลย โดยไม่รอ hero banner (โหลดแบบ fire-and-forget ไม่ await ตั้งแต่ต้น เพื่อไม่บล็อกส่วนอื่น) ให้ render
-    // เสร็จก่อน — .hero-track เริ่มต้นสูง 0px ว่างเปล่า พอโหลดเสร็จทีหลัง (ช้ากว่าบนเน็ตมือถือ เทียบกับ wifi คอม
-    // ที่มักเสร็จทัน 500ms) จะดันความสูงของหน้าทั้งหมดที่อยู่เหนือ feed ทำให้ตำแหน่งที่เพิ่ง scrollIntoView ไป
-    // แล้วเลื่อนหลุดจากการ์ดเป้าหมายทันที มองจากมุมคนใช้เหมือนโดนเด้งกลับไปหน้า home ทั้งที่จริงๆ เลื่อนไปแล้ว
-    // แค่โดนดันตำแหน่งทับซ้ำ -> แก้โดยรอ hero banner ให้เสร็จก่อน (มี timeout 3 วิกันค้างถ้า hero banner ล่ม/
-    // ช้าเกินไป ไม่งั้นการเลื่อนจะไม่เกิดขึ้นเลย) แล้วรอ 2 เฟรมให้ browser reflow เสร็จจริงๆ ก่อนค่อย scroll
-    await Promise.race([
-      heroBannersPromise.catch(()=>{}),
-      new Promise(resolve => setTimeout(resolve, 3000))
-    ]);
-    requestAnimationFrame(()=>{
-      requestAnimationFrame(()=>{
-        const el = document.querySelector(`[data-topic="${focusId}"]`);
-        if(el) el.closest('.topic-card').scrollIntoView({behavior:'smooth', block:'center'});
-      });
-    });
+    await initFocusMode(focusId);
+  } else {
+    // เดิม: 3 await เรียงคิว (categories -> card colors -> topics) แล้ว hero banner ค่อยเริ่มโหลดทีหลังสุด
+    // ทำให้ต้องรอ 3 round-trip ไป Apps Script ก่อน hero banner จะเริ่มขยับ
+    // ใหม่: ยิง hero banner / categories / topics พร้อมกันตั้งแต่ต้น เพราะไม่ได้พึ่งพากัน
+    loadHeroBanners();
+    const categoriesPromise = loadCategories();
+    const topicsPromise = loadTopics();
+
+    await categoriesPromise;
+    loadCreateFormOptions(); // เติม dropdown ของ modal สร้างหัวข้อเท่านั้น ไม่ใช่สิ่งที่เห็นตอนเปิดหน้าแรก ไม่ต้อง block
+
+    await topicsPromise;
   }
 
   // มาจากปุ่ม "+ สร้างหัวข้อ" ในหน้า "หัวข้อของฉัน" (profile.html) — เปิด modal สร้างหัวข้อให้อัตโนมัติ
