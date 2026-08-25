@@ -204,7 +204,9 @@
   .mte-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; border-bottom:1px solid #E6E2EF; padding-bottom:8px; margin-bottom:10px; }
   .mte-brand{ font-family:'Antonio',sans-serif; font-weight:700; font-size:16px; color:#5B2A9E; letter-spacing:0.5px; }
   .mte-desc{ font-size:10px; color:#6E6680; max-width:420px; margin-top:4px; line-height:1.4; }
+  .mte-head-right{ display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0; }
   .mte-date{ font-size:10px; color:#6E6680; white-space:nowrap; }
+  .mte-qr{ width:40px; height:40px; }
   .mte-identity{ display:flex; align-items:center; gap:12px; margin-bottom:10px; }
   .mte-avatar{ width:44px; height:44px; border-radius:50%; object-fit:cover; }
   .mte-avatar-fallback{ background:#5B2A9E; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:17px; }
@@ -221,8 +223,7 @@
   .mte-a{ flex:1; text-align:right; color:#6E6680; }
   .mte-b{ flex:1; color:#6E6680; }
   .mte-a.mte-win, .mte-b.mte-win{ font-weight:700; color:#1C1329; }
-  .mte-foot{ display:flex; align-items:center; justify-content:space-between; border-top:1px solid #E6E2EF; margin-top:12px; padding-top:8px; }
-  .mte-qr{ width:40px; height:40px; }
+  .mte-foot{ display:flex; align-items:center; justify-content:flex-end; border-top:1px solid #E6E2EF; margin-top:10px; padding-top:6px; }
   .mte-powered{ font-size:9px; color:#6E6680; }
 </style>
 </head>
@@ -1112,7 +1113,10 @@ async function myTypeExportHtml(){
           <div class="mte-brand">WEZIDE — My Type Summary Sheet</div>
           <div class="mte-desc">A snapshot of how ${escapeHtml(name)} sees the world: mindset, working style, and relationships. There is no right or wrong side here, just a clearer picture of who they are, useful for working and living well together.</div>
         </div>
-        <div class="mte-date">Updated ${dateStr}</div>
+        <div class="mte-head-right">
+          <div class="mte-date">Updated ${dateStr}</div>
+          ${qrSrc ? `<img class="mte-qr" src="${qrSrc}">` : ''}
+        </div>
       </div>
       <div class="mte-identity">
         ${avatarSrc ? `<img class="mte-avatar" src="${avatarSrc}">` : `<div class="mte-avatar mte-avatar-fallback">${initial}</div>`}
@@ -1124,7 +1128,6 @@ async function myTypeExportHtml(){
         <div class="mte-col">${col2}</div>
       </div>
       <div class="mte-foot">
-        ${qrSrc ? `<img class="mte-qr" src="${qrSrc}">` : '<div class="mte-qr"></div>'}
         <span class="mte-powered">Powered by wezide.vercel.app</span>
       </div>
     </div>`;
@@ -1162,13 +1165,13 @@ async function downloadMyTypePdf(btn){
       await Promise.race([ document.fonts.ready, new Promise(r => setTimeout(r, 2000)) ]);
     }catch(e){ /* เบราว์เซอร์เก่าบางตัวไม่มี document.fonts — ข้ามไปเลย ไม่ทำให้ทั้งฟังก์ชันพัง */ }
 
-    // ใช้ค่าคงที่อิงตามขนาดจริงของกระดาษ (560px) ไม่อิงขนาดจอเครื่อง user — มือถือจอแคบกว่ากระดาษ (390px < 560px)
-    // ถ้าอิงจอเครื่องจะทำให้ html2canvas สร้าง virtual window แคบเกินไปจนตัดเนื้อหาออก (สาเหตุที่ทำให้ได้ 2 หน้าบนมือถือ)
-    const captureWidth = 620;
-    const captureHeight = Math.max(pageEl.scrollHeight + 100, 900);
-    // P0-fix (PDF cropped/ตกขอบ) ต่อจากการเปลี่ยน position:fixed -> absolute ด้านบน: ระบุ width/x/y ให้
-    // html2canvas ตรงๆ ตามกล่องจริงของ pageEl (ไม่ปล่อยให้เดาเอง) กัน capture region หลุด offset ไปจาก
-    // windowWidth/Height ที่เป็นแค่ viewport จำลองไว้กันข้อความห่อบรรทัดผิดบนจอแคบ (คนละเรื่องกับขนาด capture จริง)
+    // P0-fix (PDF ตัดขอบขวา): เดิม windowWidth คงที่ 620 ไม่ตรงกับ width:pageWidth(560) ที่บังคับไว้รอบก่อน —
+    // html2pdf คำนวณ scale-to-fit-width จาก windowWidth (620) แต่เนื้อหาจริงกว้างแค่ 560 ทำให้สเกลผิดสัดส่วน
+    // เนื้อหาเลยล้นขวาไปเกินขอบกระดาษ (เห็นข้อความคอลัมน์ขวาถูกตัดครึ่งคำ) -> รวมเป็นค่าเดียวกันทั้งหมดไม่มีเลข
+    // คงที่ 620 ให้ขัดแย้งอีก ใช้ขนาดจริงของ pageEl ทั้ง width/height และ windowWidth/windowHeight เหมือนกันหมด
+    // (ค่าคงที่ 620 เดิมตั้งใจไว้กันข้อความห่อบรรทัดผิดตอน capture จากจอมือถือแคบ แต่ #myTypeExportPrint กำหนด
+    // width:560px ตายตัวใน CSS อยู่แล้ว ไม่ยืดหด/ห่อบรรทัดใหม่ตามความกว้างจอเครื่องอยู่แล้วตั้งแต่ต้น ไม่จำเป็นต้อง
+    // แยกค่าให้ต่างจาก width จริงเลย)
     const pageWidth = pageEl.scrollWidth;
     const pageHeight = pageEl.scrollHeight;
     const pdfBlob = await html2pdf().set({
@@ -1177,7 +1180,7 @@ async function downloadMyTypePdf(btn){
       html2canvas: {
         scale: 2, useCORS: true,
         scrollX: 0, scrollY: 0,
-        windowWidth: captureWidth, windowHeight: captureHeight,
+        windowWidth: pageWidth, windowHeight: pageHeight,
         width: pageWidth, height: pageHeight,
         x: 0, y: 0
       },
