@@ -200,7 +200,15 @@
   #myTypeExportPrint{ position:absolute; top:0; left:0; width:560px; z-index:9000; background:#fff; }
   #myTypeExportOverlay{ display:none; position:fixed; inset:0; background:var(--bg); z-index:9500; align-items:center; justify-content:center; flex-direction:column; gap:14px; color:#fff; }
   #myTypeExportOverlay.show{ display:flex; }
-  .mte-page{ font-family:'Inter',Arial,sans-serif; color:#1C1329; background:#fff; padding:20px 26px; box-sizing:border-box; }
+  .mte-page{
+    font-family:'Inter',Arial,sans-serif; color:#1C1329; background:#fff; padding:20px 26px; box-sizing:border-box;
+    /* P0-fix (ตัวจริงของปัญหาตัดขอบขวา): html2pdf.js clone element นี้ไปใส่ container ของมันเอง (กว้าง 190mm ~718px
+       ตามขนาดกระดาษ, ดู toContainer() ใน src/worker.js) โดยไม่ติด #myTypeExportPrint (พ่อเดิมที่เคยให้ width:560px)
+       ไปด้วย — เดิม .mte-page ไม่มี width เป็นของตัวเอง (ได้ 560px มาจากพ่อเฉยๆ) พอถูก clone ไปอยู่ผิดที่ก็ยืดเต็ม
+       718px ทันที แต่เรายังสั่ง capture แค่ 560px จาก x:0 (วัดตอนอยู่ในหน้าเว็บจริงก่อน clone) เลยโดนตัดขวา ~158px
+       ทิ้งไปทุกรอบ -> ใส่ width ให้ตัวเองตรงนี้เลย ไม่ต้องพึ่งพ่อ จะได้ขนาดคงที่ไม่ว่าโดน clone ไปไว้ที่ไหนก็ตาม */
+    width:560px;
+  }
   .mte-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; border-bottom:1px solid #E6E2EF; padding-bottom:8px; margin-bottom:10px; }
   .mte-brand{ font-family:'Antonio',sans-serif; font-weight:700; font-size:16px; color:#5B2A9E; letter-spacing:0.5px; }
   .mte-desc{ font-size:10px; color:#6E6680; max-width:420px; margin-top:4px; line-height:1.4; }
