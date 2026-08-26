@@ -215,7 +215,9 @@
   .mte-head-right{ display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0; }
   .mte-date{ font-size:10px; color:#6E6680; white-space:nowrap; }
   .mte-qr{ width:40px; height:40px; }
-  .mte-identity{ display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .mte-identity{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
+  .mte-identity-left{ display:flex; align-items:center; gap:12px; }
+  .mte-powered{ font-size:9px; color:#6E6680; white-space:nowrap; }
   .mte-avatar{ width:44px; height:44px; border-radius:50%; object-fit:cover; }
   .mte-avatar-fallback{ background:#5B2A9E; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:17px; }
   .mte-name{ font-size:17px; font-weight:700; }
@@ -235,8 +237,6 @@
   .mte-a{ flex:1; text-align:right; color:#6E6680; }
   .mte-b{ flex:1; color:#6E6680; }
   .mte-a.mte-win, .mte-b.mte-win{ font-weight:700; color:#1C1329; }
-  .mte-foot{ display:flex; align-items:center; justify-content:flex-end; border-top:1px solid #E6E2EF; margin-top:10px; padding-top:6px; }
-  .mte-powered{ font-size:9px; color:#6E6680; }
 </style>
 </head>
 <body>
@@ -1133,16 +1133,16 @@ async function myTypeExportHtml(){
         </div>
       </div>
       <div class="mte-identity">
-        ${avatarSrc ? `<img class="mte-avatar" src="${avatarSrc}">` : `<div class="mte-avatar mte-avatar-fallback">${initial}</div>`}
-        <div class="mte-name">${escapeHtml(name)}</div>
+        <div class="mte-identity-left">
+          ${avatarSrc ? `<img class="mte-avatar" src="${avatarSrc}">` : `<div class="mte-avatar mte-avatar-fallback">${initial}</div>`}
+          <div class="mte-name">${escapeHtml(name)}</div>
+        </div>
+        <span class="mte-powered">Powered by wezide.vercel.app</span>
       </div>
       ${topPickHtml}
       <div class="mte-grid">
         <div class="mte-col">${col1}</div>
         <div class="mte-col">${col2}</div>
-      </div>
-      <div class="mte-foot">
-        <span class="mte-powered">Powered by wezide.vercel.app</span>
       </div>
     </div>`;
 }
