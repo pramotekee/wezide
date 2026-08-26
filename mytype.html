@@ -1147,8 +1147,34 @@ async function myTypeExportHtml(){
     </div>`;
 }
 
+let _mytypePendingShareFile = null; // เก็บไฟล์ PDF ที่สร้างเสร็จแล้ว รอปุ่มถูกกดรอบสองเพื่อแชร์ต่อ (ดูคอมเมนต์ยาวด้านล่าง)
+
 async function downloadMyTypePdf(btn){
+  // P0-fix (blob:... text + "Unknown.pdf"): รอบก่อนแก้จอขาวด้วยการเลิกใช้ navigator.share() แล้วเปิด blob URL
+  // ใน tab ให้ user share ต่อเองจาก native PDF viewer แทน — แต่ blob URL ไม่มีชื่อไฟล์ติดไปด้วยและใช้ได้แค่ในเครื่อง/
+  // แท็บที่สร้างมันเท่านั้น พอ user share ต่อจาก viewer นั้น ปลายทางเลยได้ทั้งไฟล์ชื่อ "Unknown.pdf" และ/หรือข้อความ
+  // "blob:https://..." ดิบๆ ที่ผู้รับกดแล้วเจอ 404 (ใช้ข้ามเครื่อง/session ไม่ได้ตั้งแต่ต้น ไม่ใช่เรื่องที่แก้ที่คำบรรยาย
+  // ได้) -> ทางแก้คือกลับไปใช้ navigator.share({files}) ซึ่งแชร์ไฟล์จริงมีชื่อถูกต้อง ไม่มี blob link แถมมาเลย แต่ตัวนั้น
+  // เคยพังเพราะเรียกหลัง await หลายชั้น (สร้าง HTML/รอ font/html2canvas) จน user gesture เดิมหมดอายุไปแล้ว
+  // แก้โดยแยกเป็น "2 จังหวะกดปุ่มเดิม": กดครั้งแรก -> สร้าง PDF + เปิด preview ให้เห็นก่อน (UX แบบ Aug23 ที่ Pop ชอบ)
+  // เสร็จแล้วปุ่มเปลี่ยนข้อความเป็น "Tap to Share"; กดรอบสอง (ที่ปุ่มเดิม) = user gesture สดใหม่ล้วนๆ ไม่ผ่าน await
+  // ใดๆ มาก่อนเลย -> เรียก navigator.share({files}) ตรงนั้นได้ชัวร์ ไม่มีทางโดน browser ปฏิเสธเงียบๆ อีก
+  if(_mytypePendingShareFile){
+    const file = _mytypePendingShareFile;
+    _mytypePendingShareFile = null;
+    const restoreHtml = btn.dataset.originalHtml || btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-spinner"></span>Sharing...';
+    try{
+      await navigator.share({ files: [file], title: file.name });
+    }catch(e){ /* user กด Cancel เอง หรือ share ไม่สำเร็จ — ไม่ใช่ error ที่ต้อง toast ฟ้อง */ }
+    btn.disabled = false;
+    btn.innerHTML = restoreHtml;
+    return;
+  }
+
   const originalHtml = btn.innerHTML;
+  btn.dataset.originalHtml = originalHtml; // เก็บไว้ใช้ตอนกดรอบสอง (ฟังก์ชันถูกเรียกใหม่ ตัวแปรโลคอลเดิมหายไปแล้ว)
   btn.disabled = true;
   btn.innerHTML = '<span class="btn-spinner"></span>Preparing...';
   document.getElementById('myTypeExportOverlay').classList.add('show');
@@ -1201,24 +1227,30 @@ async function downloadMyTypePdf(btn){
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }).from(pageEl).outputPdf('blob');
 
-    // P0-fix (มือถือกดโหลดแล้วเจอจอขาว): เดิมเช็ค navigator.canShare({files}) ก่อน ถ้ารองรับ (มือถือรุ่นใหม่ๆ
-    // ส่วนใหญ่รองรับ) จะปิดแท็บที่เปิดรอไว้แล้วเรียก navigator.share({files}) ตรงๆ — แต่ตรงนี้มาถึงหลังผ่าน await
-    // มาหลายชั้นแล้ว (สร้าง HTML, รอ font, html2canvas capture) พอถึงจุดนี้ user gesture เดิมมักหมดอายุไปแล้ว
-    // browser เลยปฏิเสธ navigator.share() เงียบๆ (reject โดยไม่โยน error ที่ catch จับได้ชัดเจนเสมอไป) เหลือแค่
-    // แท็บเปล่าที่เปิดไว้ค้างเป็น about:blank ตามที่ Pop เจอ -> กลับไปใช้วิธีเดิมที่เคยทำงานดี (Aug 23): เปิดไฟล์ PDF
-    // ที่สร้างเสร็จแล้วใส่ในแท็บที่เปิดรอไว้ตรงๆ ให้ user เห็น preview หน้าตาจริงก่อน (native PDF viewer ของเบราว์เซอร์
-    // มีปุ่ม share ของตัวเองอยู่แล้ว) ไม่ต้องพึ่ง navigator.share() ที่มีปัญหาเรื่องจังหวะ user gesture หมดอายุอีก
-    // ข้อควรทราบ: วิธีนี้ถ้า user กด share ต่อจาก native PDF viewer เอง ปลายทางบางแอปอาจได้เป็นข้อความ "blob:https://…"
-    // แทนไฟล์จริง (ข้อจำกัดเดิมของ blob URL บน iOS Safari ที่เคยเจอมาก่อน) แต่ยังดีกว่าจอขาวที่ใช้งานไม่ได้เลยตอนนี้
     const blobUrl = URL.createObjectURL(pdfBlob);
     if(isMobile){
+      // เปิด preview ให้เห็นหน้าตาไฟล์จริงก่อน (Aug23 UX ที่ Pop ชอบ) — ส่วนการแชร์ต่อจริงๆ ให้รอกดปุ่มรอบสอง
+      // (ดูคอมเมนต์ยาวด้านบนสุดของฟังก์ชัน) ไม่ใช้ share ของ native PDF viewer เองอีกต่อไป กัน blob text/Unknown.pdf
       if(pendingTab && !pendingTab.closed){
         pendingTab.location.href = blobUrl;
       } else {
         showToast('Opening your PDF...');
         window.location.href = blobUrl;
       }
-      setTimeout(()=> URL.revokeObjectURL(blobUrl), 60000);
+      setTimeout(()=> URL.revokeObjectURL(blobUrl), 5 * 60000);
+
+      if(navigator.canShare && navigator.share){
+        const file = new File([pdfBlob], filename, { type: 'application/pdf' });
+        if(navigator.canShare({ files: [file] })){
+          _mytypePendingShareFile = file;
+          btn.innerHTML = '📤 Tap to Share';
+        } else {
+          btn.innerHTML = originalHtml;
+        }
+      } else {
+        btn.innerHTML = originalHtml; // browser เก่าไม่รองรับ Web Share API แบบไฟล์เลย — ให้ preview เฉยๆ พอ
+      }
+      btn.disabled = false;
     } else {
       const a = document.createElement('a');
       a.href = blobUrl;
@@ -1227,15 +1259,17 @@ async function downloadMyTypePdf(btn){
       a.click();
       document.body.removeChild(a);
       setTimeout(()=> URL.revokeObjectURL(blobUrl), 60000);
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
     }
   }catch(err){
     if(pendingTab && !pendingTab.closed) pendingTab.close();
     showToast('Could not create the PDF. Please try again.');
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
   }finally{
     document.getElementById('myTypeExportPrint').innerHTML = '';
     document.getElementById('myTypeExportOverlay').classList.remove('show');
-    btn.disabled = false;
-    btn.innerHTML = originalHtml;
   }
 }
 
