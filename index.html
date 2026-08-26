@@ -3164,17 +3164,19 @@ async function initFocusMode(topicId){
   if(focusId){
     await initFocusMode(focusId);
   } else {
-    // เดิม: 3 await เรียงคิว (categories -> card colors -> topics) แล้ว hero banner ค่อยเริ่มโหลดทีหลังสุด
-    // ทำให้ต้องรอ 3 round-trip ไป Apps Script ก่อน hero banner จะเริ่มขยับ
-    // ใหม่: ยิง hero banner / categories / topics พร้อมกันตั้งแต่ต้น เพราะไม่ได้พึ่งพากัน
-    loadHeroBanners();
-    const categoriesPromise = loadCategories();
-    const topicsPromise = loadTopics();
-
-    await categoriesPromise;
-    loadCreateFormOptions(); // เติม dropdown ของ modal สร้างหัวข้อเท่านั้น ไม่ใช่สิ่งที่เห็นตอนเปิดหน้าแรก ไม่ต้อง block
-
-    await topicsPromise;
+    // P0-fix (home โหลดช้า/ค้าง/error เป็นพักๆ): โค้ดเดิม (มีมาก่อนบทสนทนานี้แล้ว ไม่ใช่ที่เพิ่งเพิ่ม) ยิง
+    // hero banner / categories / topics พร้อมกันตั้งแต่ต้น ตอนนั้นตั้งใจไว้เพื่อให้ hero banner โหลดทันจังหวะ
+    // scrollIntoView หาการ์ดที่แชร์มา — แต่ตอนนี้ปัญหานั้นหมดไปแล้วเพราะเปลี่ยนไปใช้ initFocusMode() (ข้างบน)
+    // แทนทั้งหมด ไม่มีการ scroll-search อีกต่อไป เหตุผลเดิมที่ต้องยิงพร้อมกันเลยไม่มีความจำเป็นแล้ว
+    // ยิง 3 คำขอพร้อมกันไปที่ Apps Script (เว็บแอปเดียว, ไม่มี dedicated server) มีความเสี่ยงจริงที่ทำให้ช้าลง/error
+    // มากกว่าเดิม: Apps Script ต้องปลุก instance ใหม่ทุกครั้งที่ไม่มี instance ว่างพอ (cold start กินเวลาหลายวิ)
+    // ถ้ายิง 3 คำขอชนกันตอน cold ทั้งหมดต้องแบกต้นทุน cold-start พร้อมกันหมด แทนที่จะมีแค่คำขอแรกที่จ่ายราคานั้น
+    // แล้วคำขอถัดไปได้ใช้ instance ที่อุ่นแล้ว (เร็วกว่ามาก) -> เรียงคิวใหม่ตามลำดับความสำคัญที่ user รอดู:
+    // topics (เนื้อหาหลักที่ user จ้องรออยู่) ก่อน แล้วค่อย hero banner แล้วค่อย categories (แค่ปุ่ม filter เสริม)
+    await loadTopics();
+    await loadHeroBanners();
+    await loadCategories();
+    loadCreateFormOptions(); // เติม dropdown ของ modal สร้างหัวข้อเท่านั้น ไม่ใช่สิ่งที่เห็นตอนเปิดหน้าแรก
   }
 
   // มาจากปุ่ม "+ สร้างหัวข้อ" ในหน้า "หัวข้อของฉัน" (profile.html) — เปิด modal สร้างหัวข้อให้อัตโนมัติ
