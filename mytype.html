@@ -219,14 +219,17 @@
   .mte-avatar{ width:44px; height:44px; border-radius:50%; object-fit:cover; }
   .mte-avatar-fallback{ background:#5B2A9E; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:17px; }
   .mte-name{ font-size:17px; font-weight:700; }
-  .mte-toppick{ background:#FFF8E5; border:1px solid #FFC93C; border-radius:8px; padding:10px 14px; margin-bottom:12px; }
-  .mte-toppick-label{ font-size:9px; font-weight:700; color:#8A6A10; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:4px; }
-  .mte-toppick-desc{ font-size:10px; color:#6E6680; line-height:1.4; margin-bottom:8px; }
-  .mte-toppick-pills{ display:flex; flex-wrap:wrap; gap:6px; }
+  .mte-toppick{ background:#FFF8E5; border:1px solid #FFC93C; border-radius:8px; padding:8px 12px; margin-bottom:9px; }
+  .mte-toppick-label{ font-size:9px; font-weight:700; color:#8A6A10; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:3px; }
+  .mte-toppick-desc{ font-size:10px; color:#6E6680; line-height:1.35; margin-bottom:6px; }
+  .mte-toppick-pills{ display:flex; flex-wrap:wrap; gap:5px; }
   .mte-pill{ background:#fff; border:1px solid #FFC93C; color:#1C1329; font-size:11px; font-weight:700; padding:3px 10px; border-radius:100px; }
   .mte-grid{ display:flex; gap:20px; }
   .mte-col{ flex:1; }
-  .mte-row{ display:flex; align-items:center; gap:6px; font-size:9.5px; padding:4px 0; border-bottom:1px solid #F1EDF9; }
+  /* P0-fix (ล้นไปหน้า 2): เดิม padding:4px 0 ต่อแถว x 25 แถว กินพื้นที่ไปเยอะ ลดเหลือ 2px 0 ประหยัดได้ ~100px
+     รวม (2px x 2 x 25) — เลือกทางนี้แทนการลด font-size ตามที่ Pop เสนอ (option B) เพราะลด font 30% จะทำให้
+     ตัวเลข/คำที่ 9.5px อยู่แล้วอ่านแทบไม่ออกเวลาพิมพ์จริง ส่วนการลด padding แถวแทบไม่กระทบสายตาเลย */
+  .mte-row{ display:flex; align-items:center; gap:6px; font-size:9.5px; padding:2px 0; border-bottom:1px solid #F1EDF9; }
   .mte-num{ width:16px; flex-shrink:0; color:#B4ACC7; font-size:8.5px; }
   .mte-a{ flex:1; text-align:right; color:#6E6680; }
   .mte-b{ flex:1; color:#6E6680; }
@@ -1195,18 +1198,17 @@ async function downloadMyTypePdf(btn){
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }).from(pageEl).outputPdf('blob');
 
-    // html2pdf().save() ใช้ <a download> + blob URL ซึ่ง iOS Safari จัดการไม่ถูกต้อง (ผู้รับ share ต่อจะได้ข้อความ
-    // "blob:https://..." แทนไฟล์จริง) — บนมือถือใช้ navigator.share() พร้อมไฟล์ที่ตั้งชื่อเองตรงๆ แทน วิธีนี้ระบบ
-    // จะเปิด Share Sheet ให้เห็นแค่ไฟล์ PDF ชื่อถูกต้องอย่างเดียว ไม่มีลิงก์ blob แถมมา และไม่เจอปัญหาไฟล์ชื่อ "Unknown"
-    // (บั๊กที่เกิดจาก blob URL ไม่มี metadata ชื่อไฟล์ติดไปตอนเปิดในแท็บ PDF viewer เฉยๆ)
-    const file = new File([pdfBlob], filename, { type: 'application/pdf' });
-
-    if(isMobile && navigator.canShare && navigator.canShare({ files: [file] })){
-      if(pendingTab && !pendingTab.closed) pendingTab.close(); // ไม่ต้องใช้แท็บเปล่าที่เผื่อไว้แล้ว ใช้ native share แทน
-      await navigator.share({ files: [file], title: filename });
-    } else if(isMobile){
-      // fallback สำหรับ browser ที่ไม่รองรับ Web Share API แบบไฟล์ (เช่น Android WebView บางตัว) — เปิด blob ในแท็บที่เตรียมไว้
-      const blobUrl = URL.createObjectURL(pdfBlob);
+    // P0-fix (มือถือกดโหลดแล้วเจอจอขาว): เดิมเช็ค navigator.canShare({files}) ก่อน ถ้ารองรับ (มือถือรุ่นใหม่ๆ
+    // ส่วนใหญ่รองรับ) จะปิดแท็บที่เปิดรอไว้แล้วเรียก navigator.share({files}) ตรงๆ — แต่ตรงนี้มาถึงหลังผ่าน await
+    // มาหลายชั้นแล้ว (สร้าง HTML, รอ font, html2canvas capture) พอถึงจุดนี้ user gesture เดิมมักหมดอายุไปแล้ว
+    // browser เลยปฏิเสธ navigator.share() เงียบๆ (reject โดยไม่โยน error ที่ catch จับได้ชัดเจนเสมอไป) เหลือแค่
+    // แท็บเปล่าที่เปิดไว้ค้างเป็น about:blank ตามที่ Pop เจอ -> กลับไปใช้วิธีเดิมที่เคยทำงานดี (Aug 23): เปิดไฟล์ PDF
+    // ที่สร้างเสร็จแล้วใส่ในแท็บที่เปิดรอไว้ตรงๆ ให้ user เห็น preview หน้าตาจริงก่อน (native PDF viewer ของเบราว์เซอร์
+    // มีปุ่ม share ของตัวเองอยู่แล้ว) ไม่ต้องพึ่ง navigator.share() ที่มีปัญหาเรื่องจังหวะ user gesture หมดอายุอีก
+    // ข้อควรทราบ: วิธีนี้ถ้า user กด share ต่อจาก native PDF viewer เอง ปลายทางบางแอปอาจได้เป็นข้อความ "blob:https://…"
+    // แทนไฟล์จริง (ข้อจำกัดเดิมของ blob URL บน iOS Safari ที่เคยเจอมาก่อน) แต่ยังดีกว่าจอขาวที่ใช้งานไม่ได้เลยตอนนี้
+    const blobUrl = URL.createObjectURL(pdfBlob);
+    if(isMobile){
       if(pendingTab && !pendingTab.closed){
         pendingTab.location.href = blobUrl;
       } else {
@@ -1215,7 +1217,6 @@ async function downloadMyTypePdf(btn){
       }
       setTimeout(()=> URL.revokeObjectURL(blobUrl), 60000);
     } else {
-      const blobUrl = URL.createObjectURL(pdfBlob);
       const a = document.createElement('a');
       a.href = blobUrl;
       a.download = filename;
@@ -1226,11 +1227,7 @@ async function downloadMyTypePdf(btn){
     }
   }catch(err){
     if(pendingTab && !pendingTab.closed) pendingTab.close();
-    if(err && err.name === 'AbortError'){
-      // user กด Cancel เองใน native share sheet — ไม่ใช่ error จริง ไม่ต้องฟ้อง toast
-    } else {
-      showToast('Could not create the PDF. Please try again.');
-    }
+    showToast('Could not create the PDF. Please try again.');
   }finally{
     document.getElementById('myTypeExportPrint').innerHTML = '';
     document.getElementById('myTypeExportOverlay').classList.remove('show');
