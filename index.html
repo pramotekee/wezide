@@ -1773,9 +1773,10 @@ function populateBirthMonths(){
   if(prevValue) monthSel.value = prevValue; // คงค่าที่ user เลือกไว้แล้ว ไม่ต้องเลือกใหม่ตอนสลับภาษา
 }
 
-async function loadCategories(){
-  const res = await api('getCategories');
-  STATE.categories = res.success ? res.categories : [];
+// P0-fix (หน้าแรกโหลดช้า/error บ่อย): แยกส่วน render ออกจากส่วนยิง api() เพื่อให้ loadHomeFeed() (ดูด้านล่าง)
+// เอา categories ที่ได้มาจากคำขอ getHomeFeed คำขอเดียวมา render ตรงนี้ซ้ำได้ ไม่ต้องยิง getCategories แยก
+function renderCategoryPills(categories){
+  STATE.categories = categories || [];
   const wrap = document.getElementById('categoryPills');
   wrap.innerHTML = '';
   const allPill = document.createElement('button');
@@ -1791,6 +1792,10 @@ async function loadCategories(){
     pill.addEventListener('click', ()=> selectCategory(cat, pill));
     wrap.appendChild(pill);
   });
+}
+async function loadCategories(){
+  const res = await api('getCategories');
+  renderCategoryPills(res.success ? res.categories : []);
 }
 
 function selectCategory(cat, el){
@@ -2048,6 +2053,34 @@ async function loadTopics(){
   // dashboard (สรุปเพศ/อายุ) โหลดแบบ lazy ตอน user กดเปิดเองเท่านั้น (ดู toggleDashSummary) — ไม่ preload
   // ทั้งฟีดอัตโนมัติอีกต่อไปแล้ว เพราะเดิมทำให้ยิง API ต่อเนื่อง 20-100 ครั้งทุกครั้งที่โหลดหน้า ซึ่งเป็นสาเหตุหลัก
   // ที่ทำให้หน้าโหลดช้า/ค้าง (ดู commit note)
+}
+
+// P0-fix (หน้าแรกโหลดช้า/ค้าง/ขึ้น error ให้ลองใหม่บ่อยมาก — feedback ของ Pop): เดิม init() ยิงแยก 3 คำขอ
+// เรียงคิวกัน (loadTopics -> loadHeroBanners -> loadCategories) ทุกครั้งที่เปิดหน้าแรก แต่ละคำขอมีโอกาสต้อง
+// แบก cold-start ของ Apps Script เองแยกกันได้ + มี timeout/retry budget ของตัวเอง (worst case ~30 วิ/คำขอ)
+// รวมกันแล้วอาจกินเวลารวมสูงถึง ~90 วิ กว่าจะเห็นหน้าแรกครบ หรือพังก่อนครบเพราะคำขอใดคำขอหนึ่งช้าเกิน
+// -> ใช้ endpoint รวม getHomeFeed (คืน topics+banners+categories มาในคำขอเดียว) แทน ตอนโหลดหน้าแรกเท่านั้น
+// ส่วนการ fetch topics รอบถัดๆ ไป (เปลี่ยนหน้า/หมวดหมู่/ค้นหา/เรียงลำดับ) ยังใช้ loadTopics() เดิมตามปกติ
+// เพราะไม่จำเป็นต้องโหลด banners/categories ซ้ำทุกครั้ง
+async function loadHomeFeed(){
+  document.getElementById('feed').innerHTML = `<div class="area-loading"><div class="area-spinner"></div>Loading topics...</div>`;
+  const params = { page: STATE.page, page_size: STATE.pageSize, sort: STATE.sortMode };
+  if(STATE.sortMode === 'shuffle') params.shuffle_seed = STATE.shuffleSeed;
+  if(STATE.activeCategory) params.category = STATE.activeCategory;
+  if(STATE.searchQuery) params.search = STATE.searchQuery;
+  const res = await api('getHomeFeed', params);
+
+  STATE.feedLoadError = res.success ? '' : (res.message || t('apiErrorMsg'));
+  STATE.topics = res.success ? res.topics : [];
+  STATE.totalCount = res.success ? (res.count || 0) : 0;
+  STATE.totalPages = res.success ? (res.total_pages || 1) : 1;
+  if(res.success && res.page) STATE.page = res.page;
+  renderFeed();
+  renderResultCount();
+  renderPagination();
+
+  renderCategoryPills(res.success ? res.categories : []);
+  initHeroBanners(res.success ? res.banners : []);
 }
 
 function renderResultCount(){
@@ -2976,9 +3009,10 @@ let heroPeriod = 0; // ความกว้างของ banner "1 ชุด"
 let heroDragging = false, heroStartX = 0, heroStartOffset = 0, heroUserOffset = 0, heroAutoOffset = 0;
 let heroRafStarted = false, heroDragBound = false;
 
-async function loadHeroBanners(){
-  const res = await api('getHeroBanners');
-  STATE.heroBanners = res.success ? res.banners : [];
+// P0-fix (หน้าแรกโหลดช้า/error บ่อย): แยกส่วน render/init ออกจากส่วนยิง api() เหมือน renderCategoryPills()
+// ด้านบน ให้ loadHomeFeed() เอา banners ที่ได้จากคำขอ getHomeFeed คำขอเดียวมาสร้าง track ตรงนี้ซ้ำได้
+function initHeroBanners(banners){
+  STATE.heroBanners = banners || [];
   buildHeroTrack();
   bindHeroDrag();
   runHeroLoop();
@@ -2989,6 +3023,10 @@ async function loadHeroBanners(){
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(buildHeroTrack, 200);
   });
+}
+async function loadHeroBanners(){
+  const res = await api('getHeroBanners');
+  initHeroBanners(res.success ? res.banners : []);
 }
 
 // สร้าง/คำนวณจำนวนชุดของ track ใหม่ ให้กว้างพอสำหรับวนลูปแบบไม่มีรอยต่อ ไม่ว่าจะมี banner กี่ใบ หรือจอกว้างแค่ไหน
@@ -3173,9 +3211,18 @@ async function initFocusMode(topicId){
     // ถ้ายิง 3 คำขอชนกันตอน cold ทั้งหมดต้องแบกต้นทุน cold-start พร้อมกันหมด แทนที่จะมีแค่คำขอแรกที่จ่ายราคานั้น
     // แล้วคำขอถัดไปได้ใช้ instance ที่อุ่นแล้ว (เร็วกว่ามาก) -> เรียงคิวใหม่ตามลำดับความสำคัญที่ user รอดู:
     // topics (เนื้อหาหลักที่ user จ้องรออยู่) ก่อน แล้วค่อย hero banner แล้วค่อย categories (แค่ปุ่ม filter เสริม)
-    await loadTopics();
-    await loadHeroBanners();
-    await loadCategories();
+    // P0-fix (home โหลดช้า/ค้าง/error เป็นพักๆ — feedback ล่าสุดของ Pop): คอมเมนต์ด้านบน (มีมาก่อนหน้านี้) อธิบาย
+    // เหตุผลที่เปลี่ยนจากยิง 3 คำขอพร้อมกัน -> เรียงคิวทีละคำขอ (topics -> hero banner -> categories) ไปแล้ว
+    // แต่การเรียงคิวเองก็ยังมีปัญหาอยู่ดี: แต่ละคำขอเป็น HTTP round-trip แยกกันไปยัง Apps Script คนละครั้ง ต่อให้
+    // ไม่ชนกันแล้ว แต่ละคำขอก็ยังมีโอกาสต้องแบก cold-start ของตัวเองแยกกันได้อยู่ดี (Apps Script ไม่ได้การันตี
+    // ว่า container ที่เพิ่ง "อุ่น" จากคำขอก่อนหน้าจะถูกใช้ซ้ำกับคำขอถัดไปเสมอ) ยิ่งเรียงคิว 3 คำขอต่อกัน เวลารอ
+    // รวมสูงสุดยิ่งบวกกันเป็นทวีคูณ (แต่ละคำขอมี timeout 15 วิ + retry 1 ครั้ง = worst case ~30 วิ/คำขอ รวม 3
+    // คำขอ อาจถึง ~90 วิ กว่าจะเห็นหน้าแรกครบ) ตรงกับที่ Pop เจอ: โหลดค้างนาน แล้วจบด้วย error ให้ลองใหม่บ่อย
+    // -> รวม 3 endpoint เป็นคำขอเดียว (action=getHomeFeed, ดู actionGetHomeFeed ฝั่ง Apps Script) ยิงแค่ครั้งเดียว
+    // ตอนโหลดหน้าแรก ลด round-trip เหลือ 1 ครั้ง (จากเดิมสูงสุด 3 ครั้ง) โดยข้อมูลแต่ละก้อนข้างในยัง cache แยกกัน
+    // เหมือนเดิมทุกประการ ไม่กระทบความสดของข้อมูล — การ fetch topics รอบถัดๆ ไป (เปลี่ยนหน้า/หมวดหมู่/ค้นหา/
+    // เรียงลำดับ) ยังใช้ loadTopics() เดิมตามปกติ เพราะไม่ต้องโหลด banners/categories ซ้ำทุกครั้งอยู่แล้ว
+    await loadHomeFeed();
     loadCreateFormOptions(); // เติม dropdown ของ modal สร้างหัวข้อเท่านั้น ไม่ใช่สิ่งที่เห็นตอนเปิดหน้าแรก
   }
 
