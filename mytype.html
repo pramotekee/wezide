@@ -200,6 +200,16 @@
   #myTypeExportPrint{ position:absolute; top:0; left:0; width:560px; z-index:9000; background:#fff; }
   #myTypeExportOverlay{ display:none; position:fixed; inset:0; background:var(--bg); z-index:9500; align-items:center; justify-content:center; flex-direction:column; gap:14px; color:#fff; }
   #myTypeExportOverlay.show{ display:flex; }
+  /* ===== My Type PDF in-page preview (แทนที่การเปิด blob: เต็มหน้า/แท็บใหม่ — ดูคอมเมนต์ยาวใน downloadMyTypePdf) =====
+     .mte-preview-wrap วาง position:absolute เทียบกับ overlay (ตัวมันเอง position:fixed) ตั้งใจไม่พึ่ง flex
+     centering ของ overlay parent (align-items/justify-content:center) เพราะอันนั้นจะบีบให้ wrap หดเหลือขนาด
+     เนื้อหาแทนที่จะเต็มจอ — abs positioning ทำให้ไม่ต้องข้องเกี่ยวกับ flex layout ของ parent เลย */
+  .mte-preview-wrap{ position:absolute; inset:0; display:flex; flex-direction:column; }
+  .mte-preview-topbar{ display:flex; justify-content:flex-end; padding:10px 14px; flex-shrink:0; }
+  .mte-preview-close{ width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,0.15); color:#fff; font-size:15px; display:flex; align-items:center; justify-content:center; }
+  .mte-preview-frame{ flex:1; width:100%; border:none; background:#525659; }
+  .mte-preview-actions{ flex-shrink:0; padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px)); background:var(--bg); }
+  .mte-preview-actions .btn{ display:block; width:100%; box-sizing:border-box; text-align:center; }
   .mte-page{
     font-family:'Inter',Arial,sans-serif; color:#1C1329; background:#fff; padding:20px 26px; box-sizing:border-box;
     /* P0-fix (ตัวจริงของปัญหาตัดขอบขวา): html2pdf.js clone element นี้ไปใส่ container ของมันเอง (กว้าง 190mm ~718px
@@ -1147,44 +1157,19 @@ async function myTypeExportHtml(){
     </div>`;
 }
 
-let _mytypePendingShareFile = null; // เก็บไฟล์ PDF ที่สร้างเสร็จแล้ว รอปุ่มถูกกดรอบสองเพื่อแชร์ต่อ (ดูคอมเมนต์ยาวด้านล่าง)
-
 async function downloadMyTypePdf(btn){
-  // P0-fix (blob:... text + "Unknown.pdf"): รอบก่อนแก้จอขาวด้วยการเลิกใช้ navigator.share() แล้วเปิด blob URL
-  // ใน tab ให้ user share ต่อเองจาก native PDF viewer แทน — แต่ blob URL ไม่มีชื่อไฟล์ติดไปด้วยและใช้ได้แค่ในเครื่อง/
-  // แท็บที่สร้างมันเท่านั้น พอ user share ต่อจาก viewer นั้น ปลายทางเลยได้ทั้งไฟล์ชื่อ "Unknown.pdf" และ/หรือข้อความ
-  // "blob:https://..." ดิบๆ ที่ผู้รับกดแล้วเจอ 404 (ใช้ข้ามเครื่อง/session ไม่ได้ตั้งแต่ต้น ไม่ใช่เรื่องที่แก้ที่คำบรรยาย
-  // ได้) -> ทางแก้คือกลับไปใช้ navigator.share({files}) ซึ่งแชร์ไฟล์จริงมีชื่อถูกต้อง ไม่มี blob link แถมมาเลย แต่ตัวนั้น
-  // เคยพังเพราะเรียกหลัง await หลายชั้น (สร้าง HTML/รอ font/html2canvas) จน user gesture เดิมหมดอายุไปแล้ว
-  // แก้โดยแยกเป็น "2 จังหวะกดปุ่มเดิม": กดครั้งแรก -> สร้าง PDF + เปิด preview ให้เห็นก่อน (UX แบบ Aug23 ที่ Pop ชอบ)
-  // เสร็จแล้วปุ่มเปลี่ยนข้อความเป็น "Tap to Share"; กดรอบสอง (ที่ปุ่มเดิม) = user gesture สดใหม่ล้วนๆ ไม่ผ่าน await
-  // ใดๆ มาก่อนเลย -> เรียก navigator.share({files}) ตรงนั้นได้ชัวร์ ไม่มีทางโดน browser ปฏิเสธเงียบๆ อีก
-  if(_mytypePendingShareFile){
-    const file = _mytypePendingShareFile;
-    _mytypePendingShareFile = null;
-    const restoreHtml = btn.dataset.originalHtml || btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<span class="btn-spinner"></span>Sharing...';
-    try{
-      await navigator.share({ files: [file], title: file.name });
-    }catch(e){ /* user กด Cancel เอง หรือ share ไม่สำเร็จ — ไม่ใช่ error ที่ต้อง toast ฟ้อง */ }
-    btn.disabled = false;
-    btn.innerHTML = restoreHtml;
-    return;
-  }
-
   const originalHtml = btn.innerHTML;
-  btn.dataset.originalHtml = originalHtml; // เก็บไว้ใช้ตอนกดรอบสอง (ฟังก์ชันถูกเรียกใหม่ ตัวแปรโลคอลเดิมหายไปแล้ว)
+  const overlay = document.getElementById('myTypeExportOverlay');
+  const resetOverlay = () => {
+    overlay.innerHTML = '<div class="state-box"><div class="spinner"></div><div class="msg">Preparing your PDF...</div></div>';
+  };
+  resetOverlay();
   btn.disabled = true;
   btn.innerHTML = '<span class="btn-spinner"></span>Preparing...';
-  document.getElementById('myTypeExportOverlay').classList.add('show');
+  overlay.classList.add('show');
 
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  // Safari/มือถือบล็อก window.open() เงียบๆ ถ้าเรียกหลังผ่าน await มาแล้ว (ไม่นับเป็นผลตรงจากการกดปุ่มอีกต่อไป)
-  // ต้องเปิดแท็บเปล่าไว้ตั้งแต่ตรงนี้ทันที ก่อน await ใดๆ ทั้งหมด (ยังนับเป็น user gesture สดๆ) แล้วค่อยเปลี่ยน
-  // location ของแท็บนั้นเป็นไฟล์ PDF จริงทีหลังตอนสร้างเสร็จ
-  let pendingTab = null;
-  if(isMobile) pendingTab = window.open('', '_blank');
+  let blobUrl = null;
 
   // บั๊กที่รู้จักกันดีของ html2canvas: capture element ที่เป็น position:fixed ผิดพลาด (ได้ภาพเปล่า)
   // ถ้าหน้าเว็บถูก scroll ลงมาตอนกดปุ่ม — บังคับกลับไปบนสุดก่อน capture (ปลอดภัยเพราะ overlay คลุมเต็มจอบังอยู่แล้ว)
@@ -1227,30 +1212,56 @@ async function downloadMyTypePdf(btn){
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }).from(pageEl).outputPdf('blob');
 
-    const blobUrl = URL.createObjectURL(pdfBlob);
-    if(isMobile){
-      // เปิด preview ให้เห็นหน้าตาไฟล์จริงก่อน (Aug23 UX ที่ Pop ชอบ) — ส่วนการแชร์ต่อจริงๆ ให้รอกดปุ่มรอบสอง
-      // (ดูคอมเมนต์ยาวด้านบนสุดของฟังก์ชัน) ไม่ใช้ share ของ native PDF viewer เองอีกต่อไป กัน blob text/Unknown.pdf
-      if(pendingTab && !pendingTab.closed){
-        pendingTab.location.href = blobUrl;
-      } else {
-        showToast('Opening your PDF...');
-        window.location.href = blobUrl;
-      }
-      setTimeout(()=> URL.revokeObjectURL(blobUrl), 5 * 60000);
+    blobUrl = URL.createObjectURL(pdfBlob);
 
-      if(navigator.canShare && navigator.share){
-        const file = new File([pdfBlob], filename, { type: 'application/pdf' });
-        if(navigator.canShare({ files: [file] })){
-          _mytypePendingShareFile = file;
-          btn.innerHTML = '📤 Tap to Share';
-        } else {
-          btn.innerHTML = originalHtml;
-        }
+    if(isMobile){
+      // P1-fix (blob:... text + "Unknown.pdf" ที่ยังหลุดออกไปได้ แม้ navigator.share({files}) เองถูกต้องอยู่แล้ว):
+      // ต้นตอจริงไม่ใช่ navigator.share — แต่เป็นเพราะรอบก่อน "นำทั้งหน้า/แท็บไปที่ blobUrl ตรงๆ" เพื่อเปิด preview
+      // (pendingTab.location.href / window.location.href) พอทำแบบนั้น browser จะโชว์ blob: อยู่ที่ address bar ของ
+      // แท็บนั้นเอง แล้ว user (เข้าใจว่าปุ่ม Tap to Share ในแอปหายไปเพราะสลับแท็บ/หน้าไปแล้ว) ไปกดปุ่ม share ของตัว
+      // browser เอง (ไม่ใช่ปุ่มในแอป) ซึ่งแชร์ "ที่อยู่หน้านั้น" เป็นข้อความ blob: ดิบๆ บวกไฟล์ที่ไม่มี metadata ชื่อ
+      // (=Unknown.pdf) — ไม่เกี่ยวกับ navigator.share({files}) ในแอปเลยสักบรรทัด แก้ที่คำบรรยายปุ่มไม่ได้จริงๆ
+      // -> ทางแก้เด็ดขาดคือห้าม navigate ทั้งหน้า/เปิดแท็บไปที่ blob: อีกเลย ให้ preview ด้วย <iframe> ฝังอยู่ใน
+      // overlay เดิมแทน (address bar ของแอปไม่เปลี่ยนเป็น blob: เลย ไม่มีปุ่ม share ของ browser เองให้กดผิดอีก)
+      // ปุ่ม Share/Download ตัวจริงอยู่ใน overlay นี้เท่านั้น กด 1 ครั้งจบ ไม่ต้องมี "รอบสอง" ที่ปุ่มเดิมอีกต่อไป
+      const file = new File([pdfBlob], filename, { type: 'application/pdf' });
+      const canShareFile = !!(navigator.canShare && navigator.share && navigator.canShare({ files: [file] }));
+
+      overlay.innerHTML = `
+        <div class="mte-preview-wrap">
+          <div class="mte-preview-topbar"><button class="mte-preview-close" id="myTypePreviewClose" type="button">✕</button></div>
+          <iframe class="mte-preview-frame" src="${blobUrl}" title="${filename}"></iframe>
+          <div class="mte-preview-actions">
+            ${canShareFile
+              ? `<button class="btn btn-primary full-btn" id="myTypePreviewShareBtn" type="button">📤 Tap to Share</button>`
+              : `<a class="btn btn-primary full-btn" id="myTypePreviewDownloadLink" href="${blobUrl}" download="${filename}">⬇️ Download PDF</a>`}
+          </div>
+        </div>`;
+
+      const cleanup = () => {
+        overlay.classList.remove('show');
+        resetOverlay();
+        if(blobUrl){ URL.revokeObjectURL(blobUrl); blobUrl = null; }
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      };
+      document.getElementById('myTypePreviewClose').onclick = cleanup;
+
+      if(canShareFile){
+        document.getElementById('myTypePreviewShareBtn').onclick = async (ev) => {
+          const shareBtn = ev.currentTarget;
+          shareBtn.disabled = true;
+          shareBtn.innerHTML = '<span class="btn-spinner"></span>Sharing...';
+          try{
+            await navigator.share({ files: [file], title: filename });
+          }catch(e){ /* user กด Cancel เอง หรือ share ไม่สำเร็จ — ไม่ใช่ error ที่ต้อง toast ฟ้อง */ }
+          cleanup();
+        };
       } else {
-        btn.innerHTML = originalHtml; // browser เก่าไม่รองรับ Web Share API แบบไฟล์เลย — ให้ preview เฉยๆ พอ
+        // browser เก่าไม่รองรับ Web Share API แบบไฟล์เลย — ให้กด download ตรงๆ จาก preview นี้แทน แล้วปิด overlay
+        // หลังจากปล่อยให้ browser เริ่ม download ไปก่อน (ไม่ revoke blob ทันทีจนโหลดยังไม่ทันเสร็จ)
+        document.getElementById('myTypePreviewDownloadLink').addEventListener('click', () => setTimeout(cleanup, 300));
       }
-      btn.disabled = false;
     } else {
       const a = document.createElement('a');
       a.href = blobUrl;
@@ -1259,17 +1270,18 @@ async function downloadMyTypePdf(btn){
       a.click();
       document.body.removeChild(a);
       setTimeout(()=> URL.revokeObjectURL(blobUrl), 60000);
+      overlay.classList.remove('show');
       btn.disabled = false;
       btn.innerHTML = originalHtml;
     }
   }catch(err){
-    if(pendingTab && !pendingTab.closed) pendingTab.close();
+    if(blobUrl) URL.revokeObjectURL(blobUrl);
+    overlay.classList.remove('show');
     showToast('Could not create the PDF. Please try again.');
     btn.disabled = false;
     btn.innerHTML = originalHtml;
   }finally{
     document.getElementById('myTypeExportPrint').innerHTML = '';
-    document.getElementById('myTypeExportOverlay').classList.remove('show');
   }
 }
 
