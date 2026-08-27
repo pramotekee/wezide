@@ -1152,13 +1152,19 @@ async function uploadImageFile(file){
   return res.image_url;
 }
 
+// P1-fix (รูปโปรไฟล์ไม่มา ค้างแล้วกลายเป็นตัวอักษร W): เดิมรอ 4 รอบๆ ละ 1.5 วิ (~4.5 วิ) ก่อนค่อยยอมแพ้ ทำให้
+// ทุกจุดที่ใช้ฟังก์ชันนี้ (avatar, preview ตอนอัพโหลดรูป) ค้างนานเกินจำเป็น -> ลดเหลือ 2 รอบๆ ละ 800ms (worst-case
+// ~0.8 วิ ก่อนเรียก onFail แทนที่จะเป็น ~4.5 วิ) ยัง"คง semantics เดิมไว้ทั้งหมด (onFail = ลองครบทุกรอบแล้วจริงๆ
+// ไม่สำเร็จ) เพราะ caller บางจุด (ตอนอัพโหลดรูป) ใช้ onFail เป็นสัญญาณ error จริงที่ต้องฟ้อง toast ให้ user รู้
+// เรียกก่อนเวลาไม่ได้ — จุดที่ใช้แค่แสดงผล avatar เฉยๆ (renderProfileHead) ให้ผู้เรียกโชว์ placeholder ทันทีเอง
+// ก่อนเรียกฟังก์ชันนี้แทน (ดูคอมเมนต์ตรงนั้น) ไม่ใช่พึ่งฟังก์ชันนี้ทำให้
 function loadImageWithRetry(url, onSuccess, onFail, attempt = 0){
-  const MAX_ATTEMPTS = 4;
+  const MAX_ATTEMPTS = 2;
   const testImg = new Image();
   testImg.onload = ()=> onSuccess(url);
   testImg.onerror = ()=>{
     if(attempt < MAX_ATTEMPTS - 1){
-      setTimeout(()=> loadImageWithRetry(url, onSuccess, onFail, attempt + 1), 1500);
+      setTimeout(()=> loadImageWithRetry(url, onSuccess, onFail, attempt + 1), 800);
       return;
     }
     onFail();
@@ -1255,9 +1261,12 @@ function renderProfileHead(){
   const u = STATE.profile;
   const avatarEl = document.getElementById('profileAvatar');
   if(u.profile_image_url){
+    // โชว์ตัวอักษรไปก่อนเป็น placeholder ทันที (ไม่ต้องรอ loadImageWithRetry ลองจนครบก่อน) แล้วค่อยสลับเป็นรูปจริง
+    // แทนถ้าโหลดสำเร็จ — จุดนี้แค่แสดงผล ไม่ใช่จุดที่ต้องฟ้อง error ให้ user รู้เหมือนตอนอัพโหลดรูปใหม่
+    avatarEl.textContent = (u.username||'?').charAt(0).toUpperCase();
     loadImageWithRetry(u.profile_image_url,
       (url)=>{ avatarEl.innerHTML = `<img src="${url}">`; },
-      ()=>{ avatarEl.textContent = (u.username||'?').charAt(0).toUpperCase(); }
+      ()=>{ /* ยังเป็นตัวอักษรอยู่แล้วตั้งแต่ต้น ไม่ต้องทำอะไรเพิ่ม */ }
     );
   } else {
     avatarEl.textContent = (u.username||'?').charAt(0).toUpperCase();
