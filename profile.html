@@ -889,6 +889,13 @@ const I18N = {
 };
 function getLang(){ return localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'th'; }
 function t(key){ const lang = getLang(); return (I18N[lang] && I18N[lang][key] !== undefined) ? I18N[lang][key] : (I18N.th[key] || ''); }
+// backend ส่งข้อความบางจุดมาเป็น "ไทย / English" คู่กัน (pattern เดียวกับ index.html) — เลือกฝั่งที่ตรงกับ
+// ภาษาปัจจุบันของ user ให้ ถ้าไม่มี " / " ก็ส่งข้อความเดิมกลับไปเฉยๆ (กันเคส message เก่าที่ยังไม่ bilingual)
+function pickLang(msg){
+  if(!msg || msg.indexOf(' / ') === -1) return msg;
+  const [th, en] = msg.split(' / ');
+  return getLang() === 'en' ? (en || msg) : th;
+}
 // alias ของ t() ไว้ใช้ในจุดที่มีตัวแปร local ชื่อ t ทับอยู่แล้ว (เช่น renderMyTopics: sorted.map(t=>...))
 // กันเรียก t('key') แล้วดันไปชนกับ topic object แทนฟังก์ชันแปลภาษา (pattern เดียวกับ index.html/history.html)
 const t18n = t;
@@ -1673,7 +1680,9 @@ document.getElementById('etSaveBtn').addEventListener('click', async ()=>{
     return;
   }
   closeModal('editTopicModal');
-  showInfoPopup(res.message, 'ตกลง');
+  // แก้ตาม feedback ของ Pop: หัวข้อ popup เดิม default เป็น "แจ้งให้ทราบ" ทุกจุด กว้างไป ไม่สื่อว่าคือผลของ
+  // การกดบันทึกแก้ไขหัวข้อ -> ใส่หัวข้อเฉพาะเจาะจงตรงนี้แทน (bilingual ตาม pickLang เหมือน res.message)
+  showInfoPopup(pickLang(res.message), 'ตกลง', pickLang('แก้ไขสำเร็จ / Edit Successful'));
   loadMyTopics();
 });
 
