@@ -10,6 +10,17 @@
 <meta property="og:description" content="เวทีความเห็น เลือกข้างที่ใช่ของคุณ">
 <meta property="og:type" content="website">
 
+<!-- P0-fix (footer flash on load): ปิด auto scroll-restoration ของ browser ตั้งแต่ต้น ก่อน layout/paint ใดๆ
+     เกิดขึ้น — ต้นเหตุคือ Safari (โดยเฉพาะ reload/สลับกลับมาที่แท็บ) จะพยายาม restore scroll position เดิมที่ผู้ใช้
+     เคยอยู่ แต่ตอน paint แรกสุด #heroTrack กับ #feed ยังว่างเปล่า (รอ loadHomeFeed() ยิง API ซึ่งอาจช้าเพราะ Apps
+     Script cold start) หน้าเว็บเลยเตี้ยผิดปกติชั่วขณะ -> พิกัด scroll เดิมที่ browser พยายาม restore ตกไปอยู่แถว
+     footer พอดี ผู้ใช้เลยเห็น footer มาก่อนเป็นบางครั้ง ปิดพฤติกรรมนี้แล้วบังคับ scroll ไปบนสุดเองแทน (ดูตอนท้าย
+     <script> หลักด้านล่าง) เพื่อให้พิกัดเริ่มต้นชัวร์ 100% ไม่ว่าหน้าจะสูงเท่าไหร่ตอน paint แรก -->
+<script>
+  if('scrollRestoration' in history){ history.scrollRestoration = 'manual'; }
+  window.scrollTo(0, 0);
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Antonio:wght@100;400;700&family=Lexend:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -124,6 +135,9 @@
   .hero-track{
     display:flex; gap:14px; width:max-content; padding:0 20px;
     will-change:transform;
+    min-height:146px; /* P0-fix (footer flash on load): กันหน้าเว็บเตี้ยวูบเดียวก่อน hero cards โหลดเสร็จ
+      (146px = ความสูงการ์ด 260px กว้าง x 16/9) ความสูงตอน paint แรกจะใกล้เคียงตอนโหลดเสร็จ ลดโอกาสที่
+      scroll-restoration ของ browser จะไปเทียบพิกัดกับหน้าที่สั้นผิดปกติแล้วตกไปโผล่แถว footer */
   }
   .hero-card{
     width:260px; flex-shrink:0; border-radius:14px; overflow:hidden;
@@ -202,7 +216,10 @@
   }
 
   /* ===== Feed ===== */
-  .feed{ max-width:640px; margin:0 auto; padding:20px 16px 60px; display:flex; flex-direction:column; gap:20px; }
+  .feed{ max-width:640px; margin:0 auto; padding:20px 16px 60px; display:flex; flex-direction:column; gap:20px;
+    min-height:60vh; /* P0-fix (footer flash on load): เหตุผลเดียวกับ .hero-track ด้านบน — กันหน้าเว็บเตี้ยวูบเดียว
+      ระหว่างรอ loadHomeFeed() ยิง API (cold start ของ Apps Script อาจกินเวลาหลายวิ) ก่อนการ์ดหัวข้อจะถูก render เข้ามา */
+  }
   .empty-state{ text-align:center; padding:60px 20px; color:var(--text-muted); }
   .empty-state .emoji{ font-size:40px; margin-bottom:10px; }
 
@@ -3183,6 +3200,10 @@ async function initFocusMode(topicId){
 
 /* ---------- Init ---------- */
 (async function init(){
+  // P0-fix (footer flash on load) — การ์ดคู่กับ history.scrollRestoration='manual' ใน <head> ด้านบน:
+  // บาง browser/webview restore scroll position แบบ async หลัง paint ไปแล้ว ไม่ใช่ตอน parse แค่จุดเดียว
+  // กันไว้อีกชั้นตรงนี้ให้ชัวร์ว่า user เห็นบนสุดของหน้าเสมอตอนเปิดเว็บ ไม่ว่า browser จะพยายาม restore เมื่อไหร่
+  window.scrollTo(0, 0);
   renderHeaderAuth();
   loadCountries();
   loadProvinces();
