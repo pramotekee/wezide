@@ -165,8 +165,14 @@
 
   .pill-row{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
   .pill-row::-webkit-scrollbar{ display:none; }
-  .result-count{ font-size:12.5px; color:var(--text-muted); padding:10px 2px 0; }
+  .result-count-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding-top:10px; }
+  .result-count{ font-size:12.5px; color:var(--text-muted); padding:0 2px; }
   .result-count b{ color:var(--text); }
+  .feed-view-toggle{ display:flex; gap:3px; background:var(--surface); border:1.5px solid var(--line);
+    border-radius:100px; padding:3px; flex-shrink:0; }
+  .fv-btn{ width:26px; height:26px; display:flex; align-items:center; justify-content:center;
+    border-radius:100px; color:var(--text-muted); transition:all .15s ease; }
+  .fv-btn.active{ background:var(--primary); color:#fff; }
 
   /* ===== Pagination ===== */
   .pagination-row{
@@ -222,6 +228,27 @@
   }
   .empty-state{ text-align:center; padding:60px 20px; color:var(--text-muted); }
   .empty-state .emoji{ font-size:40px; margin-bottom:10px; }
+
+  /* ===== Line view (feature: View by Card/Line) ===== */
+  .feed.view-line{ gap:8px; } /* แถบเส้นบางกว่าการ์ดเต็ม ใช้ gap แคบลงเพื่อไม่ให้ดูโล่งเกินไป */
+  .line-item{ display:flex; flex-direction:column; }
+  .line-bar{
+    width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:14px 16px; background:var(--surface); border:1.5px solid var(--line); border-left:4px solid var(--primary);
+    border-radius:var(--radius); text-align:left; cursor:pointer;
+  }
+  .line-bar-text{
+    flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    font-size:14px; font-weight:600; color:var(--text);
+  }
+  .line-bar-arrow{ flex-shrink:0; font-size:11px; color:var(--text-muted); transition:transform .2s ease; }
+  .line-bar[aria-expanded="true"] .line-bar-arrow{ transform:rotate(180deg); }
+  /* grid-template-rows: 0fr → 1fr คือเทคนิค animate ความสูง "auto" แบบ smooth โดยไม่ต้องวัด scrollHeight ด้วย JS
+     (เนื้อหาข้างในความสูงไม่คงที่ เช่น mini-dash ที่ขยายได้อีกชั้น — ถ้าใช้ max-height คงที่แบบเดิมจะพังกรณีนี้) */
+  .line-expand-wrap{ display:grid; grid-template-rows:0fr; transition:grid-template-rows .3s ease; }
+  .line-expand-wrap.open{ grid-template-rows:1fr; }
+  .line-expand-inner{ overflow:hidden; min-height:0; }
+  .line-expand-inner .topic-card{ margin-top:10px; }
 
   .topic-card{
     background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow);
@@ -667,7 +694,17 @@
     <button data-sort="popular" data-i18n="sortPopular">Popular</button>
   </div>
   <div class="pill-row" id="categoryPills"></div>
-  <div class="result-count" id="resultCount"></div>
+  <div class="result-count-row">
+    <div class="result-count" id="resultCount"></div>
+    <div class="feed-view-toggle" id="feedViewToggle">
+      <button type="button" class="fv-btn" data-view="card" aria-label="Card view" title="Card view">
+        <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="7" height="7" rx="1.4"/><rect x="11" y="2" width="7" height="7" rx="1.4"/><rect x="2" y="11" width="7" height="7" rx="1.4"/><rect x="11" y="11" width="7" height="7" rx="1.4"/></svg>
+      </button>
+      <button type="button" class="fv-btn" data-view="line" aria-label="Line view" title="Line view">
+        <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/></svg>
+      </button>
+    </div>
+  </div>
 </div>
 
 <main class="feed" id="feed"></main>
@@ -1049,6 +1086,9 @@ const CONFIG = {
    ระบบนี้แปลเฉพาะข้อความคงที่ของ UI ด้วย dictionary มือ ไม่ยิง API แปล runtime
    Key ตรวจสอบแล้วว่าไม่ชนกับ localStorage key เดิม ('wz_session') ที่ใช้เก็บ session อยู่แล้ว */
 const LANG_KEY = 'wz_lang';
+/* Feed view toggle (Card/Line) — คนละ key กับ LANG_KEY/wz_session เดิม ไม่ชนกัน
+   first-time user (ไม่มี key นี้เลย) = default 'card' เสมอ, ค่าอื่นที่ไม่ใช่ 'line' ก็ถือเป็น 'card' */
+const FEED_VIEW_KEY = 'wz_feed_view';
 const I18N = {
   th: {
     createBtn: '＋ สร้างหัวข้อ', createBtn2: 'สร้างหัวข้อ', loginBtn: 'เข้าสู่ระบบ',
@@ -1231,8 +1271,14 @@ let STATE = {
   pageSize: 20,
   totalCount: 0,
   totalPages: 1,
-  pendingVote: null // {topicId, side} ถ้าโหวตตอนยังไม่ login จะเก็บไว้แล้ว resume หลัง login สำเร็จ
+  pendingVote: null, // {topicId, side} ถ้าโหวตตอนยังไม่ login จะเก็บไว้แล้ว resume หลัง login สำเร็จ
+  feedView: (localStorage.getItem(FEED_VIEW_KEY) === 'line') ? 'line' : 'card' // first-time (key ไม่มีเลย) = 'card' เสมอ
 };
+
+// topicId ของการ์ดที่เปิด (expand) อยู่ใน Line view — module-level เจตนาให้ "อยู่ข้ามการ re-render"
+// (เช่นหลังโหวตสำเร็จที่ยิง loadTopics() ใหม่ทั้งก้อน) การ์ดที่เปิดอยู่ก่อนหน้าจะยังถูก render เป็น "เปิด" ต่อทันที
+// ไม่ auto-หุบเอง — user เป็นคนกดปิดเองเท่านั้น ตามที่ confirm ไว้
+let EXPANDED_TOPIC_ID = null;
 
 /* ---------- API helper ---------- */
 async function api(action, params = {}, method = 'GET', _isRetry = false){
@@ -2169,6 +2215,7 @@ document.getElementById('searchInput').addEventListener('input', (e)=>{
 
 function renderFeed(){
   const feed = document.getElementById('feed');
+  feed.classList.toggle('view-line', STATE.feedView === 'line');
   if(STATE.feedLoadError){
     feed.innerHTML = `<div class="empty-state"><div class="emoji">⚠️</div>${escapeHtml(STATE.feedLoadError)}<br>
       <button class="btn btn-primary" id="feedRetryBtn" style="margin-top:14px;">Try again</button></div>`;
@@ -2180,10 +2227,71 @@ function renderFeed(){
     feed.innerHTML = `<div class="empty-state"><div class="emoji">🌫️</div>ยังไม่มีหัวข้อในตอนนี้<br>ลองเปลี่ยนหมวดหรือคำค้นหาดูครับ</div>`;
     return;
   }
-  feed.innerHTML = STATE.topics.map(topicCardHTML).join('');
+  feed.innerHTML = STATE.topics.map(feedItemHTML).join('');
   bindCardEvents(feed);
   setupDescMoreButtons();
+  if(STATE.feedView === 'line') bindLineEvents(feed);
 }
+
+// ---------- Line view (feature: View by Card/Line) ----------
+// Card view: คืน full card เดิมตรงๆ ไม่แตะ
+// Line view: ห่อ full card เดิม (reuse topicCardHTML ทั้งดุ้น ไม่ก็อปโค้ดซ้ำ) ไว้ใน .line-expand-wrap
+// ที่หุบ/ขยายด้วย CSS — เปิดอยู่ตาม EXPANDED_TOPIC_ID (module-level, อยู่ข้ามการ re-render)
+function feedItemHTML(t){
+  if(STATE.feedView !== 'line') return topicCardHTML(t);
+  const isOpen = EXPANDED_TOPIC_ID === t.topic_id;
+  const color = t.card_color || 'var(--primary)';
+  return `
+  <div class="line-item" data-line-id="${t.topic_id}">
+    <button type="button" class="line-bar" data-line-toggle="${t.topic_id}" aria-expanded="${isOpen ? 'true' : 'false'}" style="border-left-color:${color}">
+      <span class="line-bar-text">${escapeHtml(t.title)}</span>
+      <span class="line-bar-arrow">▾</span>
+    </button>
+    <div class="line-expand-wrap${isOpen ? ' open' : ''}" data-line-wrap="${t.topic_id}">
+      <div class="line-expand-inner">${topicCardHTML(t)}</div>
+    </div>
+  </div>`;
+}
+
+function bindLineEvents(scopeEl){
+  scopeEl.querySelectorAll('[data-line-toggle]').forEach(btn=>{
+    btn.addEventListener('click', ()=> toggleLineItem(btn.dataset.lineToggle));
+  });
+}
+
+// Exclusive accordion: เปิดได้ทีละใบ — ใบที่เปิดค้างก่อนหน้าหุบอัตโนมัติทันทีที่เปิดใบใหม่
+// ไม่มี auto-หุบหลังโหวตสำเร็จ (ตกลงกับ Pop แล้ว) — ปิดได้จาก user กดเองเท่านั้น จึงไม่มี logic auto-close อื่นใดที่นี่
+function toggleLineItem(topicId){
+  const willOpen = EXPANDED_TOPIC_ID !== topicId;
+  const prevId = EXPANDED_TOPIC_ID;
+  EXPANDED_TOPIC_ID = willOpen ? topicId : null;
+  if(prevId && prevId !== topicId) setLineItemOpen(prevId, false);
+  setLineItemOpen(topicId, willOpen);
+}
+
+function setLineItemOpen(topicId, open){
+  const wrap = document.querySelector(`.line-expand-wrap[data-line-wrap="${topicId}"]`);
+  const btn = document.querySelector(`.line-bar[data-line-toggle="${topicId}"]`);
+  if(wrap) wrap.classList.toggle('open', open);
+  if(btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
+function initFeedViewToggle(){
+  const wrap = document.getElementById('feedViewToggle');
+  if(!wrap) return;
+  wrap.querySelectorAll('.fv-btn').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.view === STATE.feedView);
+    btn.addEventListener('click', ()=>{
+      const view = btn.dataset.view;
+      if(view === STATE.feedView) return;
+      STATE.feedView = view;
+      localStorage.setItem(FEED_VIEW_KEY, view);
+      wrap.querySelectorAll('.fv-btn').forEach(b=> b.classList.toggle('active', b.dataset.view === view));
+      renderFeed();
+    });
+  });
+}
+initFeedViewToggle();
 
 // ผูก event listener ให้การ์ดหัวข้อ — แยกออกมาเป็นฟังก์ชันกลาง เรียกซ้ำได้ทั้งตอน render feed ทั้งก้อน
 // (scope = #feed) และตอน re-render การ์ดเดี่ยวๆ หลังกดแปลภาษา/ดูต้นฉบับ (scope = การ์ดใบนั้นใบเดียว)
@@ -2590,6 +2698,11 @@ function rerenderSingleCard(topicId){
     if(t._dashData) renderDashboard(topicId, t._dashData, t.card_color);
     else loadDashboardFor(topicId);
   }
+
+  // Line view: การ์ดที่แปลอยู่ ถ้าถูกห่อด้วย .line-item อยู่ ต้อง sync หัวข้อบน .line-bar (แถบหุบ)
+  // ให้ตรงกับ title ที่แปลแล้วด้วย ไม่งั้นแถบข้างบนจะค้างภาษาเดิมทั้งที่การ์ดข้างในแปลไปแล้ว
+  const lineBarText = document.querySelector(`.line-bar[data-line-toggle="${topicId}"] .line-bar-text`);
+  if(lineBarText) lineBarText.textContent = t.title;
 }
 
 /* ================= Translate (ปุ่ม "แปล" บนการ์ดหัวข้อ) =================
@@ -2794,7 +2907,10 @@ async function confirmVote(){
     t18n('okBtn')
   );
 
-  loadTopics().then(loadDashboards);
+  // แก้บั๊ก: เดิมเป็น loadTopics().then(loadDashboards) แต่ loadDashboards() ถูกถอดออกไปแล้วตอนทำ
+  // P0-fix lazy-load dashboard (ดูคอมเมนต์ใกล้ _buildVotesByTopic/loadDashboardFor) จุดเรียกนี้ตกหล่นไม่ได้ลบตาม
+  // ทำให้เกิด ReferenceError เงียบๆ (unhandled promise rejection) ทุกครั้งที่โหวตสำเร็จ — loadTopics() อย่างเดียวพอแล้ว
+  loadTopics();
 }
 
 /* ใช้กับ flow "โหวตค้างไว้ก่อน login/สมัคร แล้ว resume อัตโนมัติหลัง login สำเร็จ" เท่านั้น
@@ -2815,7 +2931,7 @@ async function castVote(topicId, side, btnEl){
     pickLang(res.message) + (res.remaining_changes !== undefined ? t18n('remainingChangesText').replace('{n}', res.remaining_changes) : ''),
     t18n('okBtn')
   );
-  loadTopics().then(loadDashboards);
+  loadTopics(); // เหตุผลเดียวกับใน confirmVote() ด้านบน — loadDashboards ไม่มีนิยามแล้ว ตัด .then() ทิ้ง
 }
 
 /* ================= Comment Modal (public, anonymous, อ่านความคิดเห็นแยกฝั่ง A/B) =================
