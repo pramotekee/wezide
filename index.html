@@ -473,6 +473,13 @@
   }
   .modal-overlay.open{ display:flex; }
   @media(min-width:520px){ .modal-overlay{ align-items:center; } }
+  /* UX-fix (feature: View by Carousel): modal ทุกตัวใน z-index:100 เท่ากันหมด เวลาเท่ากัน browser จัดลำดับซ้อนทับ
+     ตามตำแหน่งใน HTML (อยู่หลังกว่า = วาดทับ) ไม่ใช่ตามลำดับเวลาที่เปิด — carouselCardModal ถูกเพิ่มเข้ามาทีหลังใน
+     HTML เลยวาดทับ voteConfirmModal/commentModal/descModal ฯลฯ ที่ user เปิดซ้อนจากข้างในโดยไม่ตั้งใจ (user เห็น
+     เหมือนกดโหวต/คอมเมนต์แล้ว "ไม่มีอะไรเกิดขึ้น" ทั้งที่ popup เปิดจริง แค่โผล่ไปอยู่หลัง full card) แก้โดยลด
+     z-index เฉพาะ carouselCardModal ให้ต่ำกว่า modal อื่นทั้งหมดเสมอ ไม่ว่าจะมี modal ใหม่เพิ่มเข้ามาที่ไหนใน
+     HTML ในอนาคตก็ยังถูกต้องอัตโนมัติ ไม่ต้องพึ่งการเรียงลำดับโค้ดที่ลืมง่าย */
+  #carouselCardModal{ z-index:90; }
   .modal-box{
     background:var(--surface); width:100%; max-width:420px; border-radius:20px 20px 0 0;
     padding:24px 22px 28px; max-height:88vh; overflow-y:auto;
