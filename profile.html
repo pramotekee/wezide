@@ -1478,11 +1478,11 @@ async function doSetTopicStatus(topicId, status){
   const res = await api('setMyTopicStatus', { session_token: STATE.session.session_token, topic_id: topicId, status }, 'POST');
 
   if(!res.success){
-    showInfoPopup(res.message, 'ปิด');
+    showInfoPopup(res.message, pickLang('ปิด / Close'));
     return;
   }
   closeModal('confirmModal');
-  showInfoPopup(res.message, 'ตกลง');
+  showInfoPopup(res.message, pickLang('ตกลง / OK'));
   loadMyTopics();
 }
 
@@ -1495,11 +1495,11 @@ async function doDeleteTopic(topicId){
   const res = await api('deleteTopic', { session_token: STATE.session.session_token, topic_id: topicId }, 'POST');
 
   if(!res.success){
-    showInfoPopup(res.message, 'ปิด');
+    showInfoPopup(res.message, pickLang('ปิด / Close'));
     return;
   }
   closeModal('confirmModal');
-  showInfoPopup(res.message, 'ตกลง');
+  showInfoPopup(res.message, pickLang('ตกลง / OK'));
   STATE.myTopics = STATE.myTopics.filter(t=> t.topic_id !== topicId);
   renderMyTopics();
   loadDashboard(); // จำนวนหัวข้อ/โหวตรวมในแดชบอร์ดเปลี่ยนไปแล้ว รีเฟรชด้วย
@@ -1691,7 +1691,7 @@ document.getElementById('etSaveBtn').addEventListener('click', async ()=>{
   closeModal('editTopicModal');
   // แก้ตาม feedback ของ Pop: หัวข้อ popup เดิม default เป็น "แจ้งให้ทราบ" ทุกจุด กว้างไป ไม่สื่อว่าคือผลของ
   // การกดบันทึกแก้ไขหัวข้อ -> ใส่หัวข้อเฉพาะเจาะจงตรงนี้แทน (bilingual ตาม pickLang เหมือน res.message)
-  showInfoPopup(pickLang(res.message), 'ตกลง', pickLang('แก้ไขสำเร็จ / Edit Successful'));
+  showInfoPopup(pickLang(res.message), pickLang('ตกลง / OK'), pickLang('แก้ไขสำเร็จ / Edit Successful'));
   loadMyTopics();
 });
 
