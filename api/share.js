@@ -103,9 +103,19 @@ ${image ? `<meta property="og:image" content="${escapeHtml(image)}">` : ''}
 <meta property="og:url" content="${escapeHtml(redirectUrl)}">
 </head><body></body></html>`;
 
+    // P0-fix (Facebook link preview ไม่ขึ้นรูป/title ผิด): เดิม Cache-Control มี s-maxage ทำให้ Vercel Edge
+    // Network มองว่า response นี้ "cache ได้" แล้วเปิด Range-request support ให้อัตโนมัติ (พฤติกรรมมาตรฐานของ
+    // Vercel สำหรับ response ที่ cache ได้ เพื่อรองรับ media streaming) — Facebook crawler (facebookexternalhit)
+    // ส่ง Range header มาขอเป็นปกติ พอเจอ Range support เข้า เลยได้ 206 Partial Content กลับไปพร้อม HTML ที่ถูก
+    // ตัดไม่ครบ ทำให้ parse หา og:title/og:image ของหัวข้อจริงไม่เจอ แล้ว fallback ไปอ่าน canonical URL (og:url)
+    // ซึ่งชี้ไปหน้า index.html แทน (ได้ title/desc เริ่มต้นของเว็บทั่วไปแทนของหัวข้อจริง ไม่มีรูปเลย) ยืนยันจาก
+    // Facebook Sharing Debugger: Response Code 206 ซ้ำทุกครั้งแม้ scrape สดๆ ไม่ใช่ cache เก่าค้าง
+    // -> เอา s-maxage/stale-while-revalidate ออก เพราะเนื้อหาต้องเปลี่ยนตาม topic_id ทุกครั้งอยู่แล้ว ไม่ได้
+    //    ต้องการ cache ระดับ edge จริงๆ ตั้งแต่แรก แล้วปิด Range support ตรงๆ อีกชั้นกันเหตุการณ์นี้เกิดซ้ำ
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Accept-Ranges', 'none');
     return res.end(html);
 
   }catch(err){
