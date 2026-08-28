@@ -234,9 +234,11 @@
   .line-item{ display:flex; flex-direction:column; }
   .line-bar{
     width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px;
-    padding:14px 16px; background:var(--surface); border:1.5px solid var(--line); border-left:4px solid var(--primary);
-    border-radius:var(--radius); text-align:left; cursor:pointer;
+    padding:14px 16px; background:color-mix(in srgb, var(--card-color, var(--primary)) 8%, white);
+    border:2px solid var(--card-color, var(--primary));
+    border-radius:var(--radius); text-align:left; cursor:pointer; transition:background .15s ease;
   }
+  .line-bar:hover{ background:color-mix(in srgb, var(--card-color, var(--primary)) 15%, white); }
   .line-bar-text{
     flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     font-size:14px; font-weight:600; color:var(--text);
@@ -2243,7 +2245,7 @@ function feedItemHTML(t){
   const color = t.card_color || 'var(--primary)';
   return `
   <div class="line-item" data-line-id="${t.topic_id}">
-    <button type="button" class="line-bar" data-line-toggle="${t.topic_id}" aria-expanded="${isOpen ? 'true' : 'false'}" style="border-left-color:${color}">
+    <button type="button" class="line-bar" data-line-toggle="${t.topic_id}" aria-expanded="${isOpen ? 'true' : 'false'}" style="--card-color:${color}">
       <span class="line-bar-text">${escapeHtml(t.title)}</span>
       <span class="line-bar-arrow">▾</span>
     </button>
