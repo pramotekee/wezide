@@ -21,9 +21,6 @@
   window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
 </script>
 <script defer src="/_vercel/speed-insights/script.js"></script>
-<!-- [PRO PLAN] Omise.js: สร้าง card token ฝั่ง client เท่านั้น (PCI compliance) — ใช้งานจริงได้ก็ต่อเมื่อตั้งค่า
-     CONFIG.OPN_PUBLIC_KEY ด้านล่างแล้ว (รอ Pop ได้ public key จริงจาก OPN หลัง merchant account approved) -->
-<script defer src="https://cdn.omise.co/omise.js"></script>
 
 <style>
   :root{
@@ -735,34 +732,14 @@
   </div>
 </div>
 
-<!-- ===== PRO Upgrade — Card Entry Modal (Omise.js tokenization, บัตรไม่ผ่าน server ของเราเลย) ===== -->
-<div class="modal-overlay" id="proCardModal">
-  <div class="modal-box">
-    <div class="modal-head">
-      <h3 data-i18n="proCardModalTitle">ชำระเงิน — 199 บาท/เดือน</h3>
-      <button class="modal-close" data-close="proCardModal">✕</button>
-    </div>
-    <p class="field-hint" style="margin:-4px 0 14px;" data-i18n="proCardModalHint">ข้อมูลบัตรของคุณเข้ารหัสส่งตรงถึงผู้ให้บริการชำระเงิน ไม่ผ่านเซิร์ฟเวอร์ของเราเลย</p>
-    <div class="field"><label data-i18n="cardNumberLabel">หมายเลขบัตร</label><input type="text" id="pcCardNumber" inputmode="numeric" maxlength="19" placeholder="4242 4242 4242 4242"></div>
-    <div class="field"><label data-i18n="cardNameLabel">ชื่อบนบัตร</label><input type="text" id="pcCardName" autocomplete="cc-name" placeholder="SOMCHAI JAIDEE"></div>
-    <div class="date-row">
-      <div class="field"><label data-i18n="cardExpiryLabel">หมดอายุ (MM/YY)</label><input type="text" id="pcCardExpiry" inputmode="numeric" maxlength="5" placeholder="12/29"></div>
-      <div class="field"><label>CVV</label><input type="text" id="pcCardCvv" inputmode="numeric" maxlength="4" placeholder="123"></div>
-    </div>
-    <div class="field-error" id="pcError"></div>
-    <button class="btn btn-primary full-btn" id="pcPayBtn" data-i18n="pcPayBtn">ยืนยันชำระเงิน 199 บาท</button>
-  </div>
-</div>
-
 <div id="toast"></div>
 
 <script>
 const CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbwUBBRSKVfEkr-FmanTnQ1pHDD_-gNQ53pWkzHLvm3kvDWSTu-ARtV70yXiuN8hep8Gmg/exec',
-  // [PRO PLAN] Public key จาก OPN (Omise) — ค่านี้ปลอดภัยที่จะอยู่ฝั่ง frontend (ไม่ใช่ secret key)
-  // TODO: ใส่ public key จริง (เริ่มด้วย pkey_test_ หรือ pkey_live_) หลัง Pop ได้รับ approve บัญชี OPN merchant
-  // ปล่อยว่างไว้ตอนนี้ -> ปุ่มอัพเกรดจะโชว์ข้อความ "ระบบชำระเงินยังไม่พร้อมใช้งาน" แทนการพยายามตัดบัตรจริง
-  OPN_PUBLIC_KEY: ''
+  API_URL: 'https://script.google.com/macros/s/AKfycbwUBBRSKVfEkr-FmanTnQ1pHDD_-gNQ53pWkzHLvm3kvDWSTu-ARtV70yXiuN8hep8Gmg/exec'
+  // [PRO PLAN] ไม่ต้องมี public key ฝั่ง frontend อีกต่อไป — ใช้ Stripe Checkout (pre-built hosted page)
+  // Session ถูกสร้างจากฝั่ง backend (Apps Script) ล้วนๆ แล้วส่ง URL กลับมาให้ redirect ไปเลย ไม่มีการเรียก
+  // Stripe.js ที่ฝั่งนี้เลย บัตรของ user จึงไม่ผ่านหน้าเว็บของเราแม้แต่วินาทีเดียว (Stripe เก็บให้ทั้งหมด)
 };
 
 /* ================= I18N (TH ⇄ EN toggle สำหรับข้อความระบบ/static UI) =================
@@ -817,16 +794,12 @@ const I18N = {
     cancelProConfirmBtn: 'ยืนยันยกเลิก',
     upgradeSuccessToast: 'อัพเกรดเป็น PRO สำเร็จ!',
     cancelSuccessToast: 'ยกเลิกการสมัครสมาชิกแล้ว',
-    proCardModalTitle: 'ชำระเงิน — 199 บาท/เดือน',
-    proCardModalHint: 'ข้อมูลบัตรของคุณเข้ารหัสส่งตรงถึงผู้ให้บริการชำระเงิน ไม่ผ่านเซิร์ฟเวอร์ของเราเลย',
-    cardNumberLabel: 'หมายเลขบัตร', cardNameLabel: 'ชื่อบนบัตร', cardExpiryLabel: 'หมดอายุ (MM/YY)',
-    pcPayBtn: 'ยืนยันชำระเงิน 199 บาท', pcPayLoading: 'กำลังชำระเงิน...',
-    pcNotReadyMsg: 'ระบบชำระเงินยังไม่พร้อมใช้งานในขณะนี้ กรุณาลองใหม่อีกครั้งภายหลัง',
+    checkoutCanceledToast: 'ยกเลิกการชำระเงินแล้ว ยังไม่มีการตัดเงินใดๆ',
+    pcPayLoading: 'กำลังไปหน้าชำระเงิน...',
     exportGateMsg: 'ฟีเจอร์นี้ใช้ได้เฉพาะแพลน PRO เท่านั้น อัปเกรดเป็น PRO เพื่อปลดล็อกการใช้งาน',
     exportGateUpgradeBtn: 'อัปเกรด', exportBtn: 'Export', exportLoading: 'กำลัง export...',
     exportSuccessToast: 'Export สำเร็จ',
-    billingStatusSuccess: 'สำเร็จ', billingStatusFailed: 'ไม่สำเร็จ',
-    cardFieldsRequiredMsg: 'กรุณากรอกข้อมูลบัตรให้ครบ'
+    billingStatusSuccess: 'สำเร็จ', billingStatusFailed: 'ไม่สำเร็จ'
   },
   en: {
     backHome: '← Back to Home', lockedTitle: 'Please log in first',
@@ -875,16 +848,12 @@ const I18N = {
     cancelProConfirmBtn: 'Confirm Cancel',
     upgradeSuccessToast: 'Successfully upgraded to PRO!',
     cancelSuccessToast: 'Subscription canceled.',
-    proCardModalTitle: 'Payment — 199 THB/month',
-    proCardModalHint: 'Your card details are encrypted and sent directly to our payment provider. They never touch our servers.',
-    cardNumberLabel: 'Card Number', cardNameLabel: 'Name on Card', cardExpiryLabel: 'Expiry (MM/YY)',
-    pcPayBtn: 'Confirm Payment — 199 THB', pcPayLoading: 'Processing payment...',
-    pcNotReadyMsg: 'The payment system is not available right now. Please try again later.',
+    checkoutCanceledToast: 'Checkout canceled. You have not been charged.',
+    pcPayLoading: 'Redirecting to checkout...',
     exportGateMsg: 'This feature is available on PRO. Upgrade to PRO to unlock it.',
     exportGateUpgradeBtn: 'Upgrade', exportBtn: 'Export', exportLoading: 'Exporting...',
     exportSuccessToast: 'Export successful',
-    billingStatusSuccess: 'Success', billingStatusFailed: 'Failed',
-    cardFieldsRequiredMsg: 'Please fill in all card details'
+    billingStatusSuccess: 'Success', billingStatusFailed: 'Failed'
   }
 };
 function getLang(){ return localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'th'; }
@@ -1017,7 +986,7 @@ document.querySelectorAll('[data-close]').forEach(btn=>{
   btn.addEventListener('click', ()=> closeModal(btn.dataset.close));
 });
 // modal ที่เป็นฟอร์มยาว กรอกข้อมูลเยอะ ต้องกันพลาด: ปิดได้เฉพาะกดปุ่ม (x) เท่านั้น ห้ามปิดด้วยการแตะนอกกรอบ (เหมือนกับ createModal ใน index.html)
-const STRICT_CLOSE_MODALS = ['editTopicModal', 'proCardModal'];
+const STRICT_CLOSE_MODALS = ['editTopicModal'];
 document.querySelectorAll('.modal-overlay').forEach(ov=>{
   if(STRICT_CLOSE_MODALS.includes(ov.id)) return;
   ov.addEventListener('click', (e)=>{ if(e.target === ov) ov.classList.remove('open'); });
@@ -1919,11 +1888,10 @@ async function doDeleteAccount(){
   setTimeout(()=>{ location.href = 'index.html'; }, 1200);
 }
 
-/* ================= Plan & Billing (spec: wezide_pro_plan_handoff.md) =================
- * OPN Payment (Omise) integration เต็มรูปแบบ — บัตรไม่ผ่าน server ของเราเลย (Omise.js tokenize ที่ client)
- * ทำงานได้จริงก็ต่อเมื่อ CONFIG.OPN_PUBLIC_KEY ถูกตั้งค่าแล้ว (รอ Pop ได้ public key จริงจาก OPN หลัง
- * merchant account approved) — ก่อนหน้านั้นปุ่มอัพเกรดจะโชว์ popup แจ้งว่าระบบชำระเงินยังไม่พร้อมใช้งาน
- * แทนที่จะพยายามเรียก Omise.js ที่ยังไม่มี key จริง (กันหน้าเว็บพังหรือ error ดิบโผล่ให้ user เห็น) */
+/* ================= Plan & Billing (spec: wezide_pro_plan_handoff.md + wezide_stripe_migration_handoff.md) =================
+ * Stripe Checkout integration — ไม่มีฟอร์มบัตรของเราเองอีกต่อไป กดอัพเกรดแล้ว redirect ทั้งหน้าไปจ่ายเงินที่
+ * หน้า Checkout ที่ Stripe โฮสต์เอง บัตรของ user ไม่ผ่าน server ของเราแม้แต่วินาทีเดียว จ่ายเสร็จ Stripe จะ
+ * redirect กลับมาที่หน้านี้พร้อม ?checkout=success&stripe_session_id=... ให้เอง (ดู confirmCheckoutIfNeeded) */
 
 function formatDateShort(dateStr){
   if(!dateStr) return '';
@@ -2043,18 +2011,19 @@ function downloadCsv(csvContent, filename){
   URL.revokeObjectURL(url);
 }
 
-/* ---------- Upgrade flow (Omise.js card tokenization -> actionUpgradeToPro) ---------- */
-function handleUpgradeClick(){
-  if(!CONFIG.OPN_PUBLIC_KEY){
-    showInfoPopup(t('pcNotReadyMsg'), 'OK', 'Notice');
+/* ---------- Upgrade flow (redirect ไป Stripe Checkout -> actionCreateCheckoutSession) ---------- */
+async function handleUpgradeClick(){
+  const btn = document.getElementById('upgradeProBtn');
+  if(btn) setBtnLoading(btn, true, t('pcPayLoading'));
+  const res = await api('createCheckoutSession', { session_token: STATE.session.session_token }, 'POST');
+  if(!res.success){
+    if(btn) setBtnLoading(btn, false);
+    showToast(res.message);
     return;
   }
-  document.getElementById('pcError').style.display = 'none';
-  document.getElementById('pcCardNumber').value = '';
-  document.getElementById('pcCardName').value = '';
-  document.getElementById('pcCardExpiry').value = '';
-  document.getElementById('pcCardCvv').value = '';
-  openModal('proCardModal');
+  // full-page redirect ไปหน้าจ่ายเงินที่ Stripe โฮสต์เอง (ไม่ใช่ modal ในเว็บเรา) — บัตรของ user ไม่ผ่าน
+  // server ของเราแม้แต่วินาทีเดียว จ่ายเสร็จ Stripe จะ redirect กลับมาที่ profile.html ให้เอง (ดู confirmCheckoutIfNeeded)
+  window.location.href = res.checkout_url;
 }
 
 document.getElementById('chargeFailedRetryBtn').addEventListener('click', ()=>{
@@ -2062,67 +2031,39 @@ document.getElementById('chargeFailedRetryBtn').addEventListener('click', ()=>{
   handleUpgradeClick();
 });
 
-document.getElementById('pcPayBtn').addEventListener('click', ()=>{
-  const errEl = document.getElementById('pcError');
-  errEl.style.display = 'none';
+// เรียกทันทีตอนหน้าโหลดถ้า URL มี ?checkout=success&stripe_session_id=... (Stripe redirect กลับมาหลังจ่ายเงินสำเร็จ)
+// ยืนยันกับ backend อีกทีว่าจ่ายจริง แล้วค่อยปลด PRO ในหน้าเว็บ — ไม่เชื่อ query string เฉยๆ เพราะปลอมง่าย
+// เคลียร์ query string ออกจาก URL ด้วย history.replaceState หลังประมวลผลเสร็จ กันรีเฟรชหน้าแล้วยิงซ้ำ/สับสน
+async function confirmCheckoutIfNeeded(){
+  const params = new URLSearchParams(window.location.search);
+  const checkoutResult = params.get('checkout');
+  const stripeSessionId = params.get('stripe_session_id');
 
-  const cardNumber = document.getElementById('pcCardNumber').value.replace(/\s+/g,'');
-  const cardName = document.getElementById('pcCardName').value.trim();
-  const expiry = document.getElementById('pcCardExpiry').value.trim();
-  const cvv = document.getElementById('pcCardCvv').value.trim();
-  const expMatch = expiry.match(/^(\d{2})\/(\d{2})$/);
-
-  if(!cardNumber || !cardName || !expMatch || !cvv){
-    errEl.textContent = t('cardFieldsRequiredMsg');
-    errEl.style.display = 'block';
+  if(checkoutResult === 'cancel'){
+    history.replaceState(null, '', window.location.pathname);
+    showToast(t('checkoutCanceledToast'));
     return;
   }
 
-  const btn = document.getElementById('pcPayBtn');
-  setBtnLoading(btn, true, t('pcPayLoading'));
+  if(checkoutResult !== 'success' || !stripeSessionId) return;
 
-  if(typeof Omise === 'undefined'){
-    setBtnLoading(btn, false);
-    errEl.textContent = t('pcNotReadyMsg');
-    errEl.style.display = 'block';
+  history.replaceState(null, '', window.location.pathname); // เคลียร์ query string ทันที กันยิงซ้ำถ้ารีเฟรชหน้า
+  const res = await api('confirmCheckoutSession', { session_token: STATE.session.session_token, stripe_session_id: stripeSessionId }, 'POST');
+  if(!res.success){
+    showToast(res.message);
     return;
   }
 
-  Omise.setPublicKey(CONFIG.OPN_PUBLIC_KEY);
-  Omise.createToken('card', {
-    number: cardNumber,
-    name: cardName,
-    expiration_month: expMatch[1],
-    expiration_year: '20' + expMatch[2],
-    security_code: cvv
-  }, async (statusCode, response) => {
-    if(statusCode !== 200){
-      setBtnLoading(btn, false);
-      errEl.textContent = (response && response.message) || t('cardFieldsRequiredMsg');
-      errEl.style.display = 'block';
-      return;
-    }
-
-    const res = await api('upgradeToPro', { session_token: STATE.session.session_token, omise_token: response.id }, 'POST');
-    setBtnLoading(btn, false);
-    if(!res.success){
-      errEl.textContent = res.message;
-      errEl.style.display = 'block';
-      return;
-    }
-
-    closeModal('proCardModal');
-    STATE.profile.plan = res.plan;
-    STATE.profile.subscription_status = res.subscription_status;
-    STATE.profile.pro_until = res.pro_until;
-    STATE.profile.next_billing_date = res.next_billing_date;
-    STATE.profile.last_charge_status = 'success';
-    renderPlanStatusCard();
-    renderChargeFailedBanner();
-    showToast(t('upgradeSuccessToast'));
-    loadPlanBilling(); // ดึงประวัติการตัดเงินใหม่ ให้เห็นแถวล่าสุดที่เพิ่งจ่ายไป
-  });
-});
+  STATE.profile.plan = res.plan;
+  STATE.profile.subscription_status = res.subscription_status;
+  STATE.profile.pro_until = res.pro_until;
+  STATE.profile.next_billing_date = res.next_billing_date;
+  STATE.profile.last_charge_status = 'success';
+  renderPlanStatusCard();
+  renderChargeFailedBanner();
+  showToast(t('upgradeSuccessToast'));
+  loadPlanBilling(); // ดึงประวัติการตัดเงินใหม่ ให้เห็นแถวล่าสุดที่เพิ่งจ่ายไป
+}
 
 /* ---------- Cancel flow ---------- */
 function handleCancelClick(){
@@ -2195,6 +2136,16 @@ async function initProfilePage(){
   // แม้ตอนนี้จะเปิดอยู่ที่แท็บ Dashboard ก็ตาม เพราะ user อาจไม่ได้กดไปดูแท็บ Plan & Billing เอง
   if(STATE.profile.last_charge_status === 'failed' && STATE.profile.plan !== 'pro'){
     showToast(t('chargeFailedToast'));
+  }
+
+  // Stripe Checkout ส่งกลับมาที่ ?tab=planbilling&checkout=success|cancel เสมอ (ดู createCheckoutSession
+  // ฝั่ง backend) — เปิดแท็บ Plan & Billing ให้ทันทีก่อนแล้วค่อยยืนยันผลการจ่ายเงินกับ backend
+  const urlParams = new URLSearchParams(window.location.search);
+  if(urlParams.get('tab') === 'planbilling'){
+    goToPlanBillingTab();
+  }
+  if(urlParams.get('checkout')){
+    confirmCheckoutIfNeeded();
   }
 }
 initProfilePage();
