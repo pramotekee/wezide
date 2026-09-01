@@ -366,10 +366,15 @@
     background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow);
     padding:20px 16px; margin-bottom:16px;
   }
-  .plan-badge-row{ display:flex; flex-direction:column; gap:4px; margin-bottom:6px; }
+  .plan-badge-row{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:6px; }
+  .plan-badge-row-left{ display:flex; flex-direction:column; gap:4px; }
   .plan-badge-label{ font-size:12px; color:var(--text-muted); font-weight:500; }
   .plan-badge-current{ display:flex; align-items:center; gap:8px; }
   .plan-badge{ font-size:12px; font-weight:700; padding:4px 12px; border-radius:100px; letter-spacing:0.5px; }
+  /* ปุ่มยกเลิก — ตาม feedback: ไม่ใช่ปุ่มใหญ่เด่นอีกต่อไป ให้เป็นแค่ text สีเทาเล็กๆ มุมขวาบน แถวเดียวกับ
+     "Your current plan" (ไม่ใช่ full-width button แถวล่างสุดแบบเดิม) */
+  .plan-cancel-link{ font-size:12px; color:var(--text-muted); font-weight:500; text-decoration:underline; flex-shrink:0; margin-top:1px; }
+  .plan-cancel-link:hover{ color:var(--text); }
   .plan-badge.free{ background:#EFECF5; color:var(--text-muted); }
   .plan-badge.pro{ background:linear-gradient(135deg,var(--accent),#FFA53C); color:var(--primary-dark); }
   .plan-until-text{ font-size:12.5px; color:var(--text-muted); margin:0 0 12px; }
@@ -1925,8 +1930,12 @@ function renderPlanStatusCard(){
   const el = document.getElementById('planStatusCard');
   const pf = STATE.profile;
   const isPro = pf.plan === 'pro';
-  const badgeHtml = `<span class="plan-badge-label">${t('currentPlanLabel')}</span>
-    <div class="plan-badge-current"><span class="plan-badge ${isPro ? 'pro' : 'free'}">${isPro ? t('proActiveLabel') : t('freeLabel')}</span></div>`;
+  const showCancelLink = isPro && pf.subscription_status === 'active';
+  const badgeHtml = `<div class="plan-badge-row-left">
+      <span class="plan-badge-label">${t('currentPlanLabel')}</span>
+      <div class="plan-badge-current"><span class="plan-badge ${isPro ? 'pro' : 'free'}">${isPro ? t('proActiveLabel') : t('freeLabel')}</span></div>
+    </div>
+    ${showCancelLink ? `<button class="plan-cancel-link" id="cancelProBtn">${t('cancelProBtn')}</button>` : ''}`;
 
   let untilHtml = '';
   if(isPro && pf.pro_until){
@@ -1946,8 +1955,6 @@ function renderPlanStatusCard(){
       <p class="plan-price-tag">199 THB / month</p>
       <p class="plan-price-usd">${t('planPriceUsdHint')}</p>
       <button class="btn btn-primary full-btn" id="upgradeProBtn">${t('upgradeToProBtn')}</button>`;
-  } else if(pf.subscription_status === 'active'){
-    actionHtml = `<button class="btn btn-ghost full-btn" id="cancelProBtn">${t('cancelProBtn')}</button>`;
   }
 
   el.innerHTML = `<div class="plan-badge-row">${badgeHtml}</div>${untilHtml}${actionHtml}`;
@@ -2032,7 +2039,10 @@ async function downloadCsv(csvContent, filename){
 
   if(canShareFile){
     try{
-      await navigator.share({ files: [file], title: safeFilename });
+      // P1-fix: เดิมส่ง title ไปด้วย ({files, title}) -> บาง share target (เช่น LINE/Messages) เอา title มาโชว์
+      // เป็นข้อความ caption แยกก้อนอยู่เหนือไฟล์แนบ (เห็นชื่อไฟล์ซ้ำเป็น text bubble ก่อนไฟล์จริง) ทั้งที่ตัวไฟล์
+      // ก็มีชื่อไฟล์ถูกต้องติดไปอยู่แล้วในตัวเอง ไม่จำเป็นต้องมี caption ซ้ำ -> ส่งแค่ files อย่างเดียวพอ
+      await navigator.share({ files: [file] });
       return;
     }catch(e){
       // user กด Cancel เอง หรือ share ไม่สำเร็จ — ไม่ใช่ error ที่ต้อง toast ฟ้อง, fallback ไปดาวน์โหลดปกติแทน
