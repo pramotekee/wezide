@@ -372,7 +372,12 @@
   .plan-badge{ font-size:12px; font-weight:700; padding:4px 12px; border-radius:100px; letter-spacing:0.5px; }
   .plan-badge.free{ background:#EFECF5; color:var(--text-muted); }
   .plan-badge.pro{ background:linear-gradient(135deg,var(--accent),#FFA53C); color:var(--primary-dark); }
-  .plan-until-text{ font-size:12.5px; color:var(--text-muted); margin:0 0 16px; }
+  .plan-until-text{ font-size:12.5px; color:var(--text-muted); margin:0 0 12px; }
+  /* รายการสิทธิ์ PRO — วางใต้บรรทัด Auto-renews เยื้องเข้ามาจากขอบซ้ายให้ต่างชั้นกับข้อความหลัก
+     เป็น list ที่ต่อรายการใหม่ได้เรื่อยๆ ในอนาคตแค่เพิ่ม item เข้า PRO_BENEFITS array (ดู JS) */
+  .plan-benefits-list{ margin:0 0 16px; padding-left:16px; display:flex; flex-direction:column; gap:8px; }
+  .plan-benefit-item{ display:flex; align-items:flex-start; gap:8px; font-size:12.5px; color:var(--text-muted); line-height:1.5; }
+  .plan-benefit-check{ color:#2C8A4B; font-weight:700; flex-shrink:0; }
   .plan-pitch-title{ font-size:15px; font-weight:700; margin:0 0 8px; }
   .plan-pitch-desc{ font-size:13px; color:var(--text-muted); line-height:1.7; margin:0 0 18px; }
   .plan-price-tag{ font-family:'Antonio',sans-serif; font-size:26px; font-weight:700; color:var(--primary); margin:0 0 4px; }
@@ -1893,6 +1898,13 @@ async function doDeleteAccount(){
  * หน้า Checkout ที่ Stripe โฮสต์เอง บัตรของ user ไม่ผ่าน server ของเราแม้แต่วินาทีเดียว จ่ายเสร็จ Stripe จะ
  * redirect กลับมาที่หน้านี้พร้อม ?checkout=success&stripe_session_id=... ให้เอง (ดู confirmCheckoutIfNeeded) */
 
+// รายการสิทธิ์ PRO — โชว์ใต้บรรทัด "Auto-renews on {date}" ในกรอบ PRO เท่านั้น (ตาม spec: เขียนเป็น EN เสมอ
+// ไม่มี TH เลยไม่ว่า user จะสลับภาษาเว็บเป็นอะไร เพื่อให้ global user อ่านเข้าใจทันที) เพิ่มสิทธิ์ใหม่ในอนาคต
+// แค่เติม string เข้า array นี้ แถวถัดไปจะต่อให้อัตโนมัติ ไม่ต้องแก้ renderPlanStatusCard() เลย
+const PRO_BENEFITS = [
+  'Export poll results & comments to CSV — unlimited topics, unlimited exports'
+];
+
 function formatDateShort(dateStr){
   if(!dateStr) return '';
   const d = new Date(dateStr);
@@ -1920,7 +1932,10 @@ function renderPlanStatusCard(){
   if(isPro && pf.pro_until){
     const dateStr = formatDateShort(pf.pro_until);
     const key = pf.subscription_status === 'canceled' ? 'proUntilCanceledText' : 'proUntilActiveText';
-    untilHtml = `<p class="plan-until-text">${t(key).replace('{date}', dateStr)}</p>`;
+    const benefitsHtml = `<div class="plan-benefits-list">${PRO_BENEFITS.map(b =>
+      `<div class="plan-benefit-item"><span class="plan-benefit-check">✓</span><span>${escapeHtml(b)}</span></div>`
+    ).join('')}</div>`;
+    untilHtml = `<p class="plan-until-text">${t(key).replace('{date}', dateStr)}</p>${benefitsHtml}`;
   }
 
   let actionHtml = '';
@@ -1998,15 +2013,35 @@ async function handleExportClick(topicId, btn){
   const res = await api('exportTopicVotes', { session_token: STATE.session.session_token, topic_id: topicId }, 'POST');
   setBtnLoading(btn, false);
   if(!res.success){ showToast(res.message); return; }
-  downloadCsv(res.csv, res.filename);
+  await downloadCsv(res.csv, res.filename);
   showToast(t('exportSuccessToast'));
 }
 
-function downloadCsv(csvContent, filename){
+// P0-fix (blob: text ติดไปกับไฟล์ตอนแชร์บนมือถือ): ต้นตอเดียวกับที่เจอใน My Type PDF export — เดิม <a download>
+// ชี้ไป blob: ตรงๆ, iOS Safari บางเวอร์ชันไม่ respect download attribute กับ blob: เลยเปิดเป็นแท็บ preview แทน
+// (address bar กลายเป็น blob:...) พอ user กดปุ่ม share ของตัว browser เอง (ไม่ใช่ปุ่มในแอป) จากแท็บนั้น มันเลย
+// แชร์ URL ของแท็บ (ข้อความ blob:...) ติดไปพร้อมไฟล์ด้วย -> ทางแก้: ถ้าเบราว์เซอร์รองรับ Web Share API แบบไฟล์
+// (navigator.canShare({files})) ให้เรียก navigator.share() ตรงๆ จากปุ่มในแอปเลย ไม่ต้อง navigate ไป blob: เลย
+// สักครั้ง (ต่างจาก PDF ตรงที่ CSV ไม่มีอะไรให้ preview เลยไม่ต้องทำ overlay/iframe เหมือน My Type) เบราว์เซอร์ที่
+// ไม่รองรับค่อย fallback ไปทาง <a download> แบบเดิม (ใช้ได้ปกติบน desktop และ Android Chrome อยู่แล้ว)
+async function downloadCsv(csvContent, filename){
+  const safeFilename = filename || 'export.csv';
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const file = new File([blob], safeFilename, { type: 'text/csv' });
+  const canShareFile = !!(navigator.canShare && navigator.share && navigator.canShare({ files: [file] }));
+
+  if(canShareFile){
+    try{
+      await navigator.share({ files: [file], title: safeFilename });
+      return;
+    }catch(e){
+      // user กด Cancel เอง หรือ share ไม่สำเร็จ — ไม่ใช่ error ที่ต้อง toast ฟ้อง, fallback ไปดาวน์โหลดปกติแทน
+    }
+  }
+
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = filename || 'export.csv';
+  a.href = url; a.download = safeFilename;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
