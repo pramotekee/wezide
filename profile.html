@@ -802,6 +802,7 @@ const I18N = {
     cancelProConfirmTitle: 'ยืนยันการยกเลิก',
     cancelProConfirmMsg: 'แน่ใจนะว่าจะยกเลิก? คุณจะยังใช้ PRO ได้ถึงวันที่ {date} หลังจากนั้นจะกลับเป็น FREE plan อัตโนมัติ',
     cancelProConfirmBtn: 'ยืนยันยกเลิก',
+    cancelProConfirmDismissBtn: 'ใช้ PRO ต่อ',
     upgradeSuccessToast: 'อัพเกรดเป็น PRO สำเร็จ!',
     cancelSuccessToast: 'ยกเลิกการสมัครสมาชิกแล้ว',
     checkoutCanceledToast: 'ยกเลิกการชำระเงินแล้ว ยังไม่มีการตัดเงินใดๆ',
@@ -856,6 +857,7 @@ const I18N = {
     cancelProConfirmTitle: 'Confirm Cancellation',
     cancelProConfirmMsg: 'Are you sure you want to cancel? You can keep using PRO until {date}, after which your account will automatically switch to the FREE plan.',
     cancelProConfirmBtn: 'Confirm Cancel',
+    cancelProConfirmDismissBtn: 'Keep Subscription',
     upgradeSuccessToast: 'Successfully upgraded to PRO!',
     cancelSuccessToast: 'Subscription canceled.',
     checkoutCanceledToast: 'Checkout canceled. You have not been charged.',
@@ -2116,6 +2118,12 @@ function handleCancelClick(){
     title: t('cancelProConfirmTitle'),
     message: t('cancelProConfirmMsg').replace('{date}', formatDateShort(STATE.profile.pro_until)),
     confirmLabel: t('cancelProConfirmBtn'),
+    cancelLabel: t('cancelProConfirmDismissBtn'), // P1-fix: เดิมไม่ส่ง cancelLabel มา เลย fallback ไปใช้ค่า
+    // default ในตัว showConfirmPopup() ซึ่ง hardcode เป็นภาษาไทย ('ยกเลิก') เสมอไม่ว่า user จะสลับเว็บเป็น EN
+    // อยู่หรือไม่ก็ตาม -> ทำให้ปุ่มข้างๆ กัน TH/EN ปนกัน แก้โดยส่ง label ที่ผ่าน t() มาเอง ตรงตามภาษาเว็บจริง
+    // เลือกคำว่า "Keep Subscription" (แทน No/Yes/Back ทั่วไป) เพราะบอกผลลัพธ์ของการกดตรงๆ ไม่ต้องตีความเพิ่ม
+    // และไม่ซ้ำคำ "Cancel" กับปุ่มข้างๆ (Confirm Cancel) เป็น pattern มาตรฐานที่แนะนำสำหรับ destructive confirm
+    // dialog (ตรงข้ามกับ Yes/No ซึ่งเป็น anti-pattern เพราะ user ต้องย้อนอ่านคำถามซ้ำเพื่อตีความว่า Yes/No คืออะไร)
     danger: true,
     onConfirm: doCancelSubscription
   });
