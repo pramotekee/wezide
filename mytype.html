@@ -12,6 +12,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Antonio:wght@100;400;700&family=Lexend:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="mytype-narrative.txt"></script>
+<!-- ไฟล์แยกจาก mytype.txt ตั้งใจ (ดูคอมเมนต์ในไฟล์นั้น) — โหลดหลัง html2pdf เพราะ
+     downloadMyTypePdf() ต้องใช้ buildMyTypeNarrativePage() ที่มันประกาศไว้ -->
 
 <style>
   :root{
@@ -324,6 +327,21 @@
   </div>
 </div>
 
+<!-- ===== My Type Summary Sheet Modal (เปิดก่อน generate PDF จริงเสมอ — copy ล็อกตาม brief, EN only) ===== -->
+<div class="modal-overlay" id="myTypeSummaryModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>My Type Summary Sheet</h3>
+      <button class="modal-close" data-close="myTypeSummaryModal">✕</button>
+    </div>
+    <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 12px;">A snapshot of your lifestyle, how you tend to think, work, and connect with others.</p>
+    <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 20px;">My Type Summary Sheet helps you see what makes you <em>you</em>. Use for your Resume, job applications, team building, 1-on-1 conversations, getting to know your boss or teammates, or simply share it with friends and have fun comparing your types.</p>
+    <div class="btn-row" style="margin:0;">
+      <button class="btn btn-primary full-btn" id="myTypeSummaryDownloadBtn" onclick="closeModal('myTypeSummaryModal'); downloadMyTypePdf(this)">Download</button>
+    </div>
+  </div>
+</div>
+
 <div id="myTypeExportPrint"></div>
 <div id="myTypeExportOverlay"><div class="state-box"><div class="spinner"></div><div class="msg">Preparing your PDF...</div></div></div>
 
@@ -629,7 +647,7 @@ function gameSectionInnerHtml(mode){
     return `
       <div class="game-actions"><button class="btn btn-ghost full-btn" onclick="startGuessGame()">🎮 Let's Play</button></div>
       ${renderAnswerSliders(currentProfile.answers, false)}
-      <div class="btn-row" style="margin-top:16px;margin-bottom:0;"><button class="btn btn-ghost full-btn" onclick="downloadMyTypePdf(this)">⬇ Download (PDF)</button></div>
+      <div class="btn-row" style="margin-top:16px;margin-bottom:0;"><button class="btn btn-ghost full-btn" onclick="openModal('myTypeSummaryModal')">📄 See My Type Summary Sheet</button></div>
     `;
   }
   if(mode === 'playing'){
@@ -772,7 +790,7 @@ function renderView(data){
     if(isOwner){
       // เจ้าของโปรไฟล์เห็นคำตอบตัวเองปกติ ไม่ต้องเล่นเกมทาย
       slidersHtml = `<div class="card"><div class="section-title">My Type</div>${renderAnswerSliders(data.answers, false)}
-        <div class="btn-row" style="margin-top:16px;margin-bottom:0;"><button class="btn btn-ghost full-btn" onclick="downloadMyTypePdf(this)">⬇ Download (PDF)</button></div>
+        <div class="btn-row" style="margin-top:16px;margin-bottom:0;"><button class="btn btn-ghost full-btn" onclick="openModal('myTypeSummaryModal')">📄 See My Type Summary Sheet</button></div>
       </div>`;
     } else {
       // ผู้เยี่ยมชม (เช่นเพื่อนที่กด share link มา) เจอโหมดเกมทายแทน — ไม่เห็นตำแหน่งจุดจริงจนกว่าจะเล่น/กด Show Me
@@ -1177,11 +1195,43 @@ async function downloadMyTypePdf(btn){
   await new Promise(r => setTimeout(r, 60)); // เผื่อเวลาให้ browser reflow/paint ก่อนเริ่ม capture
   try{
     const container = document.getElementById('myTypeExportPrint');
-    container.innerHTML = await myTypeExportHtml();
+
+    // หน้า 1 (เดิม, ไม่แตะ) + หน้า 2 (narrative, มาจาก mytype-narrative.txt — ไฟล์แยก
+    // ตั้งใจ อนาคตจะตัด/ผูก paywall เฉพาะหน้า 2 ได้โดยไม่แตะโค้ดหน้า 1 เลย)
+    const page1Html = await myTypeExportHtml();
+    const narrativeName = (currentProfile && currentProfile.user && currentProfile.user.username) || '';
+    const narrativeAnswers = (currentProfile && currentProfile.answers) || {};
+    // กันทั้ง 2 เคส: ไฟล์ mytype-narrative โหลดไม่สำเร็จเลย (ไม่มีฟังก์ชันนี้) กับ
+    // เคสที่ไฟล์โหลดมาได้แต่ตัวฟังก์ชัน error ตอนรัน (เช่น ข้อมูลผิดปกติ) — ทั้งสองเคส
+    // ต้อง "บอกผู้ใช้ตรงๆ" ไม่ใช่ปล่อยให้ได้ PDF แค่หน้า 1 แบบเงียบๆ โดยไม่รู้ตัว
+    let page2Html = '';
+    let page2Failed = false;
+    if (typeof buildMyTypeNarrativePage === 'function') {
+      try {
+        page2Html = buildMyTypeNarrativePage(narrativeName, narrativeAnswers);
+      } catch (e) {
+        console.warn('[downloadMyTypePdf] buildMyTypeNarrativePage threw:', e);
+        page2Failed = true;
+      }
+    } else {
+      page2Failed = true;
+    }
+    if (page2Failed) {
+      showToast('Summary Sheet page 2 could not be added this time — you got page 1 only. Please try again in a moment.');
+    }
+    container.innerHTML = page1Html + page2Html;
+
     const rawName = (currentProfile && currentProfile.user && currentProfile.user.username) || 'profile';
     const safeName = rawName.replace(/[^a-zA-Z0-9_-]+/g, '-');
     const filename = `WEZIDE-MyType-${safeName}.pdf`;
-    const pageEl = container.querySelector('.mte-page');
+
+    // บังคับตัดหน้าหลังหน้า 1 เสมอ (เมื่อมีหน้า 2 จริง) ด้วย class พิเศษที่ html2pdf.js
+    // รู้จักเอง (ตัดหน้าทันทีหลัง element ที่ติด class นี้ — ไม่ต้องพึ่ง page-break-after
+    // ของ CSS ล้วนๆ ซึ่งมีรายงานว่าพังกับ absolute-positioned ancestor บางกรณี)
+    const pageEls = Array.from(container.querySelectorAll('.mte-page'));
+    pageEls.forEach((el, i) => {
+      el.classList.toggle('html2pdf__page-break', i < pageEls.length - 1);
+    });
 
     // รอให้ font (Antonio, Inter) โหลดเสร็จสมบูรณ์ก่อน capture — ถ้า capture เร็วเกินไปตอน font ยังโหลดไม่เสร็จ
     // (โดยเฉพาะเน็ตมือถือช้า) browser จะ fallback ไปใช้ font สำรองชั่วคราวแทน แล้วภาพที่ capture ออกมาจะติด font ผิด
@@ -1197,11 +1247,15 @@ async function downloadMyTypePdf(btn){
     // (ค่าคงที่ 620 เดิมตั้งใจไว้กันข้อความห่อบรรทัดผิดตอน capture จากจอมือถือแคบ แต่ #myTypeExportPrint กำหนด
     // width:560px ตายตัวใน CSS อยู่แล้ว ไม่ยืดหด/ห่อบรรทัดใหม่ตามความกว้างจอเครื่องอยู่แล้วตั้งแต่ต้น ไม่จำเป็นต้อง
     // แยกค่าให้ต่างจาก width จริงเลย)
-    const pageWidth = pageEl.scrollWidth;
-    const pageHeight = pageEl.scrollHeight;
+    // capture ทั้ง container (ทุกหน้า) แทนที่จะเป็น .mte-page เดียวเหมือนเดิม — container
+    // กว้าง 560px ตายตัวจาก CSS (#myTypeExportPrint) อยู่แล้ว ส่วนสูงเป็น auto = ผลรวม
+    // ความสูงจริงของทุก .mte-page ที่ต่อกันอยู่ข้างใน (page1 auto-height + page2 800px)
+    const pageWidth = container.scrollWidth;
+    const pageHeight = container.scrollHeight;
     const pdfBlob = await html2pdf().set({
       margin: 10,
       image: { type: 'jpeg', quality: 0.95 },
+      pagebreak: { mode: ['css', 'legacy'] },
       html2canvas: {
         scale: 2, useCORS: true,
         scrollX: 0, scrollY: 0,
@@ -1210,7 +1264,7 @@ async function downloadMyTypePdf(btn){
         x: 0, y: 0
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).from(pageEl).outputPdf('blob');
+    }).from(container).outputPdf('blob');
 
     blobUrl = URL.createObjectURL(pdfBlob);
 
