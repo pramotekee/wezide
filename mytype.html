@@ -215,7 +215,7 @@
   .mte-preview-actions{ flex-shrink:0; padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px)); background:var(--bg); }
   .mte-preview-actions .btn{ display:block; width:100%; box-sizing:border-box; text-align:center; }
   .mte-page{
-    font-family:'Inter',Arial,sans-serif; color:#1C1329; background:#fff; padding:20px 26px; box-sizing:border-box;
+    font-family:'Inter',Arial,sans-serif; color:#1C1329; background:#fff; padding:15px 26px; box-sizing:border-box;
     /* P0-fix (ตัวจริงของปัญหาตัดขอบขวา): html2pdf.js clone element นี้ไปใส่ container ของมันเอง (กว้าง 190mm ~718px
        ตามขนาดกระดาษ, ดู toContainer() ใน src/worker.js) โดยไม่ติด #myTypeExportPrint (พ่อเดิมที่เคยให้ width:560px)
        ไปด้วย — เดิม .mte-page ไม่มี width เป็นของตัวเอง (ได้ 560px มาจากพ่อเฉยๆ) พอถูก clone ไปอยู่ผิดที่ก็ยืดเต็ม
@@ -223,20 +223,23 @@
        ทิ้งไปทุกรอบ -> ใส่ width ให้ตัวเองตรงนี้เลย ไม่ต้องพึ่งพ่อ จะได้ขนาดคงที่ไม่ว่าโดน clone ไปไว้ที่ไหนก็ตาม */
     width:560px;
   }
-  .mte-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; border-bottom:1px solid #E6E2EF; padding-bottom:8px; margin-bottom:10px; }
+  /* trim ระยะห่าง (ไม่ใช่ font size — 9.5px ของแถวคำถามเล็กสุดที่ยังอ่านออกอยู่แล้ว ลดต่ออีกจะอ่านยาก)
+     กันแถวที่ 50 โดนตัดตอนท้ายหน้า: เทสจริงพบว่า capture แยกหน้า (pdf-lib merge) วัดความสูงตึงกว่า
+     ตอน capture รวม container เดิมเล็กน้อย เผื่อ margin ไว้ ~30px */
+  .mte-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; border-bottom:1px solid #E6E2EF; padding-bottom:6px; margin-bottom:7px; }
   .mte-brand{ font-family:'Antonio',sans-serif; font-weight:700; font-size:16px; color:#5B2A9E; letter-spacing:0.5px; }
   .mte-desc{ font-size:10px; color:#6E6680; max-width:420px; margin-top:4px; line-height:1.4; }
   .mte-head-right{ display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0; }
   .mte-date{ font-size:10px; color:#6E6680; white-space:nowrap; }
   .mte-qr{ width:40px; height:40px; }
-  .mte-identity{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
+  .mte-identity{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:6px; }
   .mte-identity-left{ display:flex; align-items:center; gap:12px; }
   .mte-powered{ font-size:9px; color:#6E6680; white-space:nowrap; }
   .mte-avatar{ width:44px; height:44px; border-radius:50%; object-fit:cover; }
   .mte-avatar-fallback{ background:#5B2A9E; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:17px; }
   .mte-name{ font-size:17px; font-weight:700; }
-  .mte-toppick{ background:#FFF8E5; border:1px solid #FFC93C; border-radius:8px; padding:8px 12px; margin-bottom:9px; }
-  .mte-toppick-head{ display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
+  .mte-toppick{ background:#FFF8E5; border:1px solid #FFC93C; border-radius:8px; padding:6px 12px; margin-bottom:6px; }
+  .mte-toppick-head{ display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; margin-bottom:4px; }
   .mte-toppick-label{ font-size:9px; font-weight:700; color:#8A6A10; letter-spacing:0.5px; text-transform:uppercase; white-space:nowrap; }
   .mte-toppick-desc{ font-size:9.5px; color:#6E6680; line-height:1.3; }
   .mte-toppick-pills{ display:flex; flex-wrap:wrap; gap:5px; }
@@ -1239,6 +1242,10 @@ async function downloadMyTypePdf(btn){
       return await html2pdf().set({
         margin: 10,
         image: { type: 'jpeg', quality: 0.95 },
+        // safety net: ถ้าเนื้อหาสูงเกิน 1 หน้า A4 จริงๆ (เช่น username ยาวจนตัด wrap เพิ่มบรรทัด, หรือ
+        // อนาคตมีคนเพิ่มเนื้อหา) ให้ไหลต่อเป็นหน้าเพิ่มอัตโนมัติแทนที่จะ "ตัดทิ้งเงียบๆ" แบบที่เจอรอบนี้ —
+        // legacy mode คือโหมดเดียวที่แบ่งหน้าอัตโนมัติตามความสูงเกิน ไม่ต้องพึ่ง marker/class ใดๆ
+        pagebreak: { mode: ['legacy'] },
         html2canvas: {
           scale: 2, useCORS: true,
           scrollX: 0, scrollY: 0,
