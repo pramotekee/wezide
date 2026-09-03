@@ -240,7 +240,7 @@
   .mte-name{ font-size:17px; font-weight:700; }
   .mte-toppick{ background:#FFF8E5; border:1px solid #FFC93C; border-radius:8px; padding:6px 12px; margin-bottom:6px; }
   .mte-toppick-head{ display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; margin-bottom:4px; }
-  .mte-toppick-label{ font-size:9px; font-weight:700; color:#8A6A10; letter-spacing:0.5px; text-transform:uppercase; white-space:nowrap; }
+  .mte-toppick-label{ font-size:12.5px; font-weight:700; color:#8A6A10; letter-spacing:0.2px; white-space:nowrap; }
   .mte-toppick-desc{ font-size:9.5px; color:#6E6680; line-height:1.3; }
   .mte-toppick-pills{ display:flex; flex-wrap:wrap; gap:5px; }
   .mte-pill{ background:#fff; border:1px solid #FFC93C; color:#1C1329; font-size:11px; font-weight:700; padding:3px 10px; border-radius:100px; }
@@ -249,7 +249,7 @@
   /* P0-fix (ล้นไปหน้า 2): เดิม padding:4px 0 ต่อแถว x 25 แถว กินพื้นที่ไปเยอะ ลดเหลือ 2px 0 ประหยัดได้ ~100px
      รวม (2px x 2 x 25) — เลือกทางนี้แทนการลด font-size ตามที่ Pop เสนอ (option B) เพราะลด font 30% จะทำให้
      ตัวเลข/คำที่ 9.5px อยู่แล้วอ่านแทบไม่ออกเวลาพิมพ์จริง ส่วนการลด padding แถวแทบไม่กระทบสายตาเลย */
-  .mte-row{ display:flex; align-items:center; gap:6px; font-size:9.5px; padding:2px 0; border-bottom:1px solid #F1EDF9; }
+  .mte-row{ display:flex; align-items:center; gap:6px; font-size:9.5px; padding:1px 0; border-bottom:1px solid #F1EDF9; }
   .mte-num{ width:16px; flex-shrink:0; color:#B4ACC7; font-size:8.5px; }
   .mte-a{ flex:1; text-align:right; color:#6E6680; }
   .mte-b{ flex:1; color:#6E6680; }
@@ -1146,8 +1146,8 @@ async function myTypeExportHtml(){
   const topPickHtml = topPicks.length ? `
     <div class="mte-toppick">
       <div class="mte-toppick-head">
-        <span class="mte-toppick-label">Top pick</span>
-        <span class="mte-toppick-desc">— Their strongest picks — the choices they feel most strongly about.</span>
+        <span class="mte-toppick-label">The Strongest Picks</span>
+        <span class="mte-toppick-desc">The choices I feel most strongly about.</span>
       </div>
       <div class="mte-toppick-pills">${topPicks.map(w => `<span class="mte-pill">${escapeHtml(w)}</span>`).join('')}</div>
     </div>` : '';
@@ -1157,7 +1157,7 @@ async function myTypeExportHtml(){
       <div class="mte-head">
         <div>
           <div class="mte-brand">WEZIDE — My Type Summary Sheet</div>
-          <div class="mte-desc">A snapshot of ${escapeHtml(name)}’s mindset, working style, and relationships. No right or wrong — just a clearer way to understand each other and get along better.</div>
+          <div class="mte-desc">A snapshot of my mindset, working style, and relationships. No right or wrong — just a clearer way to understand each other and get along better.</div>
         </div>
         <div class="mte-head-right">
           <div class="mte-date">Updated ${dateStr}</div>
@@ -1238,11 +1238,13 @@ async function downloadMyTypePdf(btn){
     // เดี่ยวๆ ทำงานถูกต้องอยู่แล้ว ไม่มีอะไรใหม่ที่เสี่ยง) แล้วต่อไฟล์ PDF เข้าด้วยกันด้วย pdf-lib
     // (ทำงานระดับไฟล์ PDF ตรงๆ ไม่ผ่านการตัด canvas เลย)
     async function captureMtePageToPdfBytes(pageEl){
-      // +28px buffer กันเหนียว: ถ้า scrollHeight วัดได้น้อยกว่าเนื้อหาจริงที่ห้เรนเดอร์ (เช่น
-      // margin ของ child ตัวสุดท้ายยุบตัวออกนอก parent -- CSS margin-collapse เป็นเคสที่พบบ่อย
-      // และวัด scrollHeight ไม่เจอ) canvas ที่สั่ง capture จะเล็กกว่าเนื้อหาจริงแล้ว "ตัดทิ้ง" ส่วน
-      // ท้ายไปเงียบๆ โดยไม่มี error ให้เห็นเลย -- เผื่อพื้นที่ว่างเกินไว้ปลอดภัยกว่าพอดีเป๊ะเสมอ
-      const w = pageEl.scrollWidth, h = pageEl.scrollHeight + 28;
+      // +10px buffer กันเหนียว (ลดจาก 28px รอบก่อน — 28px มากเกินไปจนดันเนื้อหาที่พอดีอยู่แล้วให้
+      // เกินขอบ 1 หน้าไป เกิดหน้าเปล่าที่ 3 ตามที่เจอ, บวกกับตัด padding แถวคำถามลง 1px/แถว
+      // ด้านบนแล้วด้วย ทำให้มีที่ว่างจริงเหลือเผื่อพอสมควรแล้ว ไม่ต้อง buffer เยอะเท่าเดิม):
+      // ถ้า scrollHeight วัดได้น้อยกว่าเนื้อหาจริงที่เรนเดอร์ (เช่น margin ของ child ตัวสุดท้ายยุบตัว
+      // ออกนอก parent -- CSS margin-collapse) canvas ที่สั่ง capture จะเล็กกว่าเนื้อหาจริงแล้ว "ตัดทิ้ง"
+      // ส่วนท้ายไปเงียบๆ โดยไม่มี error ให้เห็นเลย
+      const w = pageEl.scrollWidth, h = pageEl.scrollHeight + 10;
       return await html2pdf().set({
         margin: 10,
         image: { type: 'jpeg', quality: 0.95 },
