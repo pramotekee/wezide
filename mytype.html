@@ -228,7 +228,7 @@
      ตอน capture รวม container เดิมเล็กน้อย เผื่อ margin ไว้ ~30px */
   .mte-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; border-bottom:1px solid #E6E2EF; padding-bottom:6px; margin-bottom:7px; }
   .mte-brand{ font-family:'Antonio',sans-serif; font-weight:700; font-size:16px; color:#5B2A9E; letter-spacing:0.5px; }
-  .mte-desc{ font-size:10px; color:#6E6680; max-width:420px; margin-top:4px; line-height:1.4; }
+  .mte-desc{ font-size:5px; color:#6E6680; max-width:420px; margin-top:4px; line-height:1.4; }
   .mte-head-right{ display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0; }
   .mte-date{ font-size:10px; color:#6E6680; white-space:nowrap; }
   .mte-qr{ width:40px; height:40px; }
@@ -1238,7 +1238,11 @@ async function downloadMyTypePdf(btn){
     // เดี่ยวๆ ทำงานถูกต้องอยู่แล้ว ไม่มีอะไรใหม่ที่เสี่ยง) แล้วต่อไฟล์ PDF เข้าด้วยกันด้วย pdf-lib
     // (ทำงานระดับไฟล์ PDF ตรงๆ ไม่ผ่านการตัด canvas เลย)
     async function captureMtePageToPdfBytes(pageEl){
-      const w = pageEl.scrollWidth, h = pageEl.scrollHeight;
+      // +28px buffer กันเหนียว: ถ้า scrollHeight วัดได้น้อยกว่าเนื้อหาจริงที่ห้เรนเดอร์ (เช่น
+      // margin ของ child ตัวสุดท้ายยุบตัวออกนอก parent -- CSS margin-collapse เป็นเคสที่พบบ่อย
+      // และวัด scrollHeight ไม่เจอ) canvas ที่สั่ง capture จะเล็กกว่าเนื้อหาจริงแล้ว "ตัดทิ้ง" ส่วน
+      // ท้ายไปเงียบๆ โดยไม่มี error ให้เห็นเลย -- เผื่อพื้นที่ว่างเกินไว้ปลอดภัยกว่าพอดีเป๊ะเสมอ
+      const w = pageEl.scrollWidth, h = pageEl.scrollHeight + 28;
       return await html2pdf().set({
         margin: 10,
         image: { type: 'jpeg', quality: 0.95 },
