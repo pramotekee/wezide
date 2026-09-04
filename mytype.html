@@ -59,6 +59,9 @@
   .btn-primary{ background:var(--primary); color:#fff; }
   .btn-primary:hover{ box-shadow:0 6px 16px rgba(91,42,158,0.35); }
   .btn-ghost{ background:var(--surface); color:var(--primary); border:1.5px solid var(--line); }
+  /* ปุ่ม "See My Type Summary Sheet" โดยเฉพาะ (ไม่แตะ .btn-ghost ตัวเดิม เพราะใช้ร่วมกับปุ่มอื่นอีกหลายจุด
+     เช่น Let's Play, Show Me, Cancel, Share) — พื้นเหลืองล้วน ไม่มีเส้นขอบ ตัวอักษรม่วงเดิม ให้เด่นสะดุดตากว่าปุ่มทั่วไป */
+  .btn-summary-highlight{ background:#FFC93C; color:var(--primary); border:none; }
   .btn:disabled{ opacity:.6; cursor:not-allowed; }
   .full-btn{ width:100%; padding:13px; border-radius:12px; font-size:15px; font-weight:600; }
   .btn-row{ display:flex; gap:10px; margin:16px 0; }
@@ -66,8 +69,8 @@
   .btn-spinner{ display:inline-block; width:14px; height:14px; border-radius:50%; border:2px solid rgba(255,255,255,0.5); border-top-color:#fff; animation:spin .7s linear infinite; margin-right:6px; vertical-align:-2px; }
   @keyframes spin{ to{ transform:rotate(360deg); } }
 
-  .state-box{ text-align:center; padding:70px 20px; color:rgba(255,255,255,0.75); }
-  .state-box .spinner{ width:30px; height:30px; border:3px solid rgba(255,255,255,0.25); border-top-color:#fff; border-radius:50%; margin:0 auto 14px; animation:spin .8s linear infinite; }
+  .state-box{ text-align:center; padding:70px 20px; color:#6E6680; }
+  .state-box .spinner{ width:30px; height:30px; border:3px solid rgba(91,42,158,0.15); border-top-color:#5B2A9E; border-radius:50%; margin:0 auto 14px; animation:spin .8s linear infinite; }
   .state-box .msg{ font-size:14.5px; }
 
   /* ===== การ์ดพื้นขาว (ทุกกล่องคอนเทนต์วางอยู่บนพื้นม่วง) ===== */
@@ -651,7 +654,7 @@ function gameSectionInnerHtml(mode){
     return `
       <div class="game-actions"><button class="btn btn-ghost full-btn" onclick="startGuessGame()">🎮 Let's Play</button></div>
       ${renderAnswerSliders(currentProfile.answers, false)}
-      <div class="btn-row" style="margin-top:16px;margin-bottom:0;"><button class="btn btn-ghost full-btn" onclick="openModal('myTypeSummaryModal')">📄 See My Type Summary Sheet</button></div>
+      <div class="btn-row" style="margin-top:16px;margin-bottom:0;"><button class="btn btn-ghost btn-summary-highlight full-btn" onclick="openModal('myTypeSummaryModal')">📄 See My Type Summary Sheet</button></div>
     `;
   }
   if(mode === 'playing'){
@@ -794,7 +797,7 @@ function renderView(data){
     if(isOwner){
       // เจ้าของโปรไฟล์เห็นคำตอบตัวเองปกติ ไม่ต้องเล่นเกมทาย
       slidersHtml = `<div class="card"><div class="section-title">My Type</div>${renderAnswerSliders(data.answers, false)}
-        <div class="btn-row" style="margin-top:16px;margin-bottom:0;"><button class="btn btn-ghost full-btn" onclick="openModal('myTypeSummaryModal')">📄 See My Type Summary Sheet</button></div>
+        <div class="btn-row" style="margin-top:16px;margin-bottom:0;"><button class="btn btn-ghost btn-summary-highlight full-btn" onclick="openModal('myTypeSummaryModal')">📄 See My Type Summary Sheet</button></div>
       </div>`;
     } else {
       // ผู้เยี่ยมชม (เช่นเพื่อนที่กด share link มา) เจอโหมดเกมทายแทน — ไม่เห็นตำแหน่งจุดจริงจนกว่าจะเล่น/กด Show Me
