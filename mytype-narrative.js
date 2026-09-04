@@ -173,23 +173,23 @@ const MYTYPE_DIMENSION_LABELS = {
 const MYTYPE_NARRATIVE_BLOCKS = {
   achievement_drive: {
     high:     { personal: 'You are energized by progress, meaningful goals, and seeing effort move something forward, more than by staying comfortable.',
-                work: 'Clear goals, visible progress, and ownership help you do your best work; a project with no clear finish line can feel harder to stay motivated on.',
+                work: 'Clear goals, visible progress, and ownership help you do your best work, since a project with no clear finish line can feel harder to stay motivated on.',
                 notice: 'I may look for the next challenge and become restless when progress feels too slow, even if the current one is not finished yet.',
-                working: 'Give me a clear goal and room to move it forward -- regular markers of progress help more than a single deadline far in the future.' },
+                working: 'Give me a clear goal and room to move it forward. Regular markers of progress help more than a single deadline far in the future.' },
     balanced: { personal: 'You can balance pursuing results with appreciating the journey, shifting between the two as needed.',
                 work: 'A clear outcome with a sustainable pace tends to work well for you, without needing constant urgency to stay engaged.',
                 notice: 'I can shift between pushing ahead and slowing down when the situation needs it, rather than defaulting to one speed.',
-                working: 'Align on the goal and the pace with me; I can adapt to either a sprint or a marathon.' },
+                working: 'Align on the goal and the pace with me, and I can adapt to either a sprint or a marathon.' },
     low:      { personal: 'You may value sustainable progress, experience, and balance over constant achievement, rather than chasing every milestone.',
                 work: 'A thoughtful pace and work that feels worthwhile can bring out your best, more than pressure to hit an aggressive number.',
                 notice: 'I may protect quality of experience rather than chase every next milestone, even if that means moving a little slower.',
-                working: 'Avoid creating urgency for its own sake; explain what truly matters and why, and I will meet you there.' }
+                working: 'Avoid creating urgency for its own sake. Explain what truly matters and why, and I will meet you there.' }
   },
   growth_adaptability: {
     high:     { personal: 'You are drawn to learning, experimentation, and new possibilities, more than repeating what already works.',
-                work: 'Room to explore, improve, and adapt works better than a rigid script; a fixed process can start to feel limiting fairly quickly.',
+                work: 'Room to explore, improve, and adapt works better than a rigid script, since a fixed process can start to feel limiting fairly quickly.',
                 notice: 'I may ask "what if?" and question established ways of doing things, even ones that already work reasonably well.',
-                working: 'Give me direction and space to experiment -- I tend to find a better way when I am allowed to test a few first.' },
+                working: 'Give me direction and space to experiment. I tend to find a better way when I am allowed to test a few first.' },
     balanced: { personal: 'You can appreciate both exploration and stability, depending on the situation, without needing to pick one.',
                 work: 'A balance of proven methods and room for improvement suits you better than either extreme on its own.',
                 notice: 'I can try a new route when it clearly helps, while still respecting what already works well enough.',
@@ -203,7 +203,7 @@ const MYTYPE_NARRATIVE_BLOCKS = {
     high:     { personal: 'You tend to value planning, clarity, and knowing what needs to happen next, even under pressure.',
                 work: 'Clear expectations, ownership, and a workable structure help you perform, while ambiguity about what is expected can slow you down.',
                 notice: 'I may plan ahead and care about how work is organized, sometimes more than the people around me do.',
-                working: 'Be clear about the destination and responsibilities from the start; avoid unnecessary ambiguity about who owns what.' },
+                working: 'Be clear about the destination and responsibilities from the start, and avoid unnecessary ambiguity about who owns what.' },
     balanced: { personal: 'You can move between structure and flexibility as the situation requires, without feeling locked into either.',
                 work: 'A light framework with room to adjust tends to work well, giving you enough direction without boxing you in.',
                 notice: 'I can plan when needed without needing every detail fixed in advance, and I am comfortable filling in the gaps.',
@@ -211,13 +211,13 @@ const MYTYPE_NARRATIVE_BLOCKS = {
     low:      { personal: 'You may prefer flexibility and room to adapt over a fixed process, which can feel limiting.',
                 work: 'Freedom in how you approach work can bring out your best, more than a step-by-step process ever could.',
                 notice: 'I may work things out as I go rather than over-plan the route, trusting that I can adjust along the way.',
-                working: 'Define the outcome, not every step -- close oversight tends to slow me down rather than help.' }
+                working: 'Define the outcome, not every step. Close oversight tends to slow me down rather than help.' }
   },
   thinking_decision: {
     high:     { personal: 'You tend to connect ideas, patterns, and the bigger picture before deciding what matters, stepping back before diving in.',
                 work: 'Context and the "why" behind a problem help you contribute most, more than a list of tasks without the reasoning behind them.',
                 notice: 'I may step back, question assumptions, and look for the underlying pattern before agreeing with the first answer given.',
-                working: 'Share the problem and context, not only the task -- I do better work once I understand what it is really for.' },
+                working: 'Share the problem and context, not only the task. I do better work once I understand what it is really for.' },
     balanced: { personal: 'You can move between practical details and broader possibilities, depending on what a moment calls for.',
                 work: 'A clear goal plus enough context lets you choose the right level of detail without needing everything spelled out.',
                 notice: 'I can zoom in on the details or step back to the bigger picture, depending on what the work needs.',
@@ -225,13 +225,13 @@ const MYTYPE_NARRATIVE_BLOCKS = {
     low:      { personal: 'You tend to focus on what is practical, specific, and immediately actionable, over an open-ended idea.',
                 work: 'Concrete details and clear next steps help you make decisions quickly, without needing to explore every possible angle first.',
                 notice: 'I may bring discussions back to execution and what can be done now, rather than staying in the idea stage too long.',
-                working: 'Be specific about the facts, constraints, and next actions -- I move faster once I know exactly what is needed.' }
+                working: 'Be specific about the facts, constraints, and next actions. I move faster once I know exactly what is needed.' }
   },
   social_collaboration: {
     high:     { personal: 'You gain energy and perspective through interaction, shared ideas, and collective progress, often thinking out loud with others.',
                 work: 'Purposeful collaboration and shared ownership can bring out your best work, more than tasks handled entirely on your own.',
                 notice: 'I may involve others, talk ideas through out loud, and pay attention to how the group is responding as we go.',
-                working: 'Include me in meaningful discussions and align us around a shared goal -- I contribute more once I feel part of it.' },
+                working: 'Include me in meaningful discussions and align us around a shared goal. I contribute more once I feel part of it.' },
     balanced: { personal: 'You can enjoy collaboration while still needing independent space, without one costing the other.',
                 work: 'A mix of teamwork and focused individual time tends to suit you, depending on what the task in front of you needs.',
                 notice: 'I can contribute in groups and work independently when needed, adjusting to whichever the moment calls for.',
@@ -239,21 +239,21 @@ const MYTYPE_NARRATIVE_BLOCKS = {
     low:      { personal: 'You may prefer focused interaction and enough personal space to think and recharge, rather than constant back-and-forth.',
                 work: 'Quiet focus and purposeful meetings work better than constant social demands, which can wear on your energy over time.',
                 notice: 'I may listen more than I speak, and I would rather have one meaningful conversation than several short ones.',
-                working: 'Do not mistake quietness for disengagement -- give me time to think it through, then invite my input directly.' }
+                working: 'Do not mistake quietness for disengagement. Give me time to think it through, then invite my input directly.' }
   },
   communication_style: {
     high:     { personal: 'You tend to consider people, timing, and context before choosing how to communicate, reading the room first.',
                 work: 'Thoughtful timing and tone make collaboration easier, and you tend to notice when a message needs softening before it is sent.',
                 notice: 'I may listen first, read the room, and show care through practical follow-through rather than a lot of reassuring words.',
-                working: 'Share context and be mindful of timing; I value a considerate approach, especially around anything sensitive.' },
+                working: 'Share context and be mindful of timing. I value a considerate approach, especially around anything sensitive.' },
     balanced: { personal: 'You can be clear while adapting your style to the people and situation, without losing the point.',
                 work: 'Direct expectations with room for context tend to work well, letting you adjust tone without losing clarity.',
                 notice: 'I can speak plainly when that is what is needed, or take a more thoughtful approach when the moment calls for it.',
-                working: 'Be honest and clear with me; I will adjust my own approach depending on the situation.' },
+                working: 'Be honest and clear with me, and I will adjust my own approach depending on the situation.' },
     low:      { personal: 'You tend to value clarity, honesty, and getting to the point, over softening a message.',
                 work: 'Straightforward feedback and clear expectations help you move quickly, without needing to read between the lines.',
                 notice: 'I may say what I think directly when clarity matters, even if a gentler phrasing would take longer to land.',
-                working: 'Be clear with me -- I prefer an honest, direct conversation to guessing at what is actually meant.' }
+                working: 'Be clear with me. I prefer an honest, direct conversation to guessing at what is actually meant.' }
   },
   // Relationship Orientation: spec explicitly says "use sparingly in work
   // outputs; best suited to Personal Reflection and Working With Me" -- so it
@@ -261,7 +261,7 @@ const MYTYPE_NARRATIVE_BLOCKS = {
   // routes it into how_i_work_best / what_you_may_notice.
   relationship_orientation: {
     high:     { personal: 'You tend to value depth, trust, consistency, and relationships that develop over time, rather than many surface-level ones.',
-                working: 'Trust matters to me; once it is established, I tend to invest more deeply and stay consistent over time.' },
+                working: 'Trust matters to me, and once it is established, I tend to invest more deeply and stay consistent over time.' },
     balanced: { personal: 'You can value both independence and connection, depending on the relationship and context, without needing to choose.',
                 working: 'I value both personal space and genuine connection, and I do not need one to come at the cost of the other.' },
     low:      { personal: 'You may place greater value on freedom, flexibility, and maintaining your own space, even in close relationships.',
@@ -273,7 +273,7 @@ const MYTYPE_COMBINATION_RULES = [
   { id: 'social_low_comm_low',        when: { social_collaboration: 'low', communication_style: 'low' },  section: 'what_you_may_notice',
     text: 'I may prefer fewer interactions, but when something matters, I tend to communicate clearly.' },
   { id: 'growth_high_structure_high', when: { growth_adaptability: 'high', structure_autonomy: 'high' },  section: 'how_i_work_best',
-    text: 'You enjoy change, but not chaos -- experimentation works best when there is enough structure to keep it moving.' },
+    text: 'You enjoy change, but not chaos. Experimentation works best when there is enough structure to keep it moving.' },
   { id: 'growth_high_achv_high',      when: { growth_adaptability: 'high', achievement_drive: 'high' },   section: 'how_i_work_best',
     text: 'You are likely to enjoy challenges that give you both progress and learning.' },
   { id: 'achv_high_social_high',      when: { achievement_drive: 'high', social_collaboration: 'high' },  section: 'how_i_work_best',
@@ -313,10 +313,10 @@ const MYTYPE_MAX_WORDS = 65;
 // balanced/low-confidence). Keeps output non-empty without ever forcing a
 // dimension into a headline it does not have the confidence to support.
 const MYTYPE_FALLBACK = {
-  personal_reflection: 'Your answers show a well-rounded mix across these areas, without one single trait standing far above the rest -- which is its own kind of balance.',
+  personal_reflection: 'Your answers show a well-rounded mix across these areas, without one single trait standing far above the rest, which is its own kind of balance.',
   how_i_work_best: 'You tend to draw on a flexible mix of approaches depending on the situation, rather than leaning heavily on one working style.',
   what_you_may_notice: 'I tend to adapt my approach to the situation rather than following one fixed pattern.',
-  working_with_me: 'Get to know the context, and I will meet you where it makes sense -- I do not lean strongly toward one fixed style.'
+  working_with_me: 'Get to know the context, and I will meet you where it makes sense. I do not lean strongly toward one fixed style.'
 };
 
 /* ----------------------------------------------------------------------------
